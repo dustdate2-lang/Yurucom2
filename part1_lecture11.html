@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第1部 第11講 プログラミング言語 ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="機械語から高級言語へ。コンパイラ、オブジェクト指向、関数型まで。人間と機械の言葉の翻訳の歴史を身近に学ぶ。ゆるコンピュータ科学講義 第1部 第11講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#c8503a; --accent-soft:#f7e3dd;
+    --accent2:#2f6f6a; --accent2-soft:#dcebe9;
+    --code-bg:#2b2722; --code-ink:#f3ead9;
+    --sidebar:#262320; --sidebar-ink:#e9e2d4; --sidebar-muted:#a59c8a;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#16140f; --paper:#1f1c16; --ink:#ece6d8; --muted:#a79e8c;
+    --line:#332f27; --accent:#e8775f; --accent-soft:#3a221c;
+    --accent2:#6fb6ad; --accent2-soft:#1c2c2a;
+    --code-bg:#100e0a; --code-ink:#f3ead9;
+    --sidebar:#100e0a; --sidebar-ink:#e9e2d4; --sidebar-muted:#8d8472;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#a83c2c 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"{ ; }";position:absolute;right:10px;bottom:-6px;font-family:ui-monospace,monospace;font-size:4rem;font-weight:800;color:rgba(255,255,255,.08)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.9;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent2);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent2-soft);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent2)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:var(--accent2-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#2b2722}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent2-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent2-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent2);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent2-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent2);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第11講 プログラミング言語</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第1部 第11講</span><br>プログラミング言語</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-ladder">抽象化の階段</a></li>
+      <li><a href="#s-translate">コンパイラとインタプリタ</a></li>
+      <li><a href="#s-basics">プログラムの3つの基本</a></li>
+      <li><a href="#s-paradigm">パラダイムの歴史</a></li>
+      <li><a href="#s-history">人物 ― 高級言語の母</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第1部 基礎教養編 ／ 第11講</div>
+        <h1>プログラミング言語<br>― 人間の言葉と、機械の言葉</h1>
+        <p>機械は0と1しか分からない。その機械に、人間はどうやって"指示"を伝えてきたのか。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― 翻訳の歴史としてのプログラミング言語</h2>
+        <p>第4講で、コンピュータが実際に実行できるのは、0と1の羅列――機械語だけだと学びました。
+        では、私たちはどうやって、その無愛想な機械に「こう動け」と伝えているのでしょうか。
+        その橋渡しをするのが<span class="term">プログラミング言語</span>です。</p>
+        <p>プログラミング言語の歴史は、ひとことで言えば<span class="em">「人間と機械の距離を、どう縮めるか」という翻訳の歴史</span>です。
+        最初、人間は機械の言葉（0と1）に必死で歩み寄っていました。
+        しかし時代とともに、機械のほうが人間の考え方に歩み寄るよう、言語は進化していきます。
+        この講では、その「抽象化の階段」を上りながら、
+        コンパイラという翻訳のからくり、そして「オブジェクト指向」「関数型」といった
+        プログラムの"設計思想"の変遷をたどります。
+        プログラミングを実際に書かない人でも、「コードを書く」という営みの正体が見えてくるはずです。</p>
+        <p>ひとつ、最初に強調しておきたいことがあります。
+        プログラミング言語は「言語」と名がつくものの、英単語を覚えるような<strong>暗記の科目ではありません</strong>。
+        本質は<span class="em">「やりたいことを、機械が実行できる手順に翻訳する」考え方</span>のほうにあります。
+        だから、1つの言語でその考え方の骨格をつかめば、別の言語へも比較的すんなり移れる。
+        本講でも、個々の言語の細かい文法ではなく、すべての言語に共通する"幹"の部分――
+        抽象化、翻訳、3つの基本構造、設計思想――に焦点を当てます。
+        この幹さえ見えていれば、新しい言語やAIによるコード生成にも、落ち着いて向き合えるようになります。</p>
+        <p class="lead-in">抽象化の階段 → コンパイラとインタプリタ → プログラムの3つの基本 → パラダイムの歴史。
+        第3講の論理回路、第4講の機械語が、ここで人間の言葉とつながります。</p>
+      </section>
+
+      <!-- 抽象化の階段 -->
+      <section id="s-ladder">
+        <h2>抽象化の階段 ― 機械語から高級言語へ</h2>
+        <p>初期のプログラマは、本当に <code>10110000 01100001</code> のような0と1の羅列――<span class="term">機械語</span>を、
+        手で書いていました。当然、間違いだらけで、書いた本人ですら何が書いてあるか読めません。
+        そこで、人間に優しくするための「抽象化の階段」が、一段ずつ作られていきます。</p>
+        <p>最初の一段が<span class="term">アセンブリ言語</span>。
+        機械語の各命令に、人間が読めるあだ名をつけたものです（<code>MOV</code>＝移動、<code>ADD</code>＝加算 など）。
+        機械語と1対1で対応しますが、数字の列よりはずっとマシになりました。
+        次の大きな一段が<span class="term">高級言語</span>。
+        Python、Java、C、JavaScriptなど、現代の主要な言語です。
+        ここでは、機械の都合をかなり忘れて、人間の考え方に近い書き方ができます。</p>
+        <pre><code>機械語     : 10110000 01100001 …（人間には読めない）
+アセンブリ : MOV AL, 61h        （機械語にあだ名をつけた）
+高級言語   : price = price + tax  （ほぼ日常の数式）</code></pre>
+        <p><span class="em">階段を上がるほど人間に優しく、下がるほど機械に近い。</span>
+        高級言語で書いた <code>price = price + tax</code> という一行は、
+        最終的にアセンブリを経て機械語へと翻訳され、第3講の論理ゲートが理解できる0と1の命令列になります。
+        私たちは、この階段のおかげで、機械の細かい都合を気にせず、やりたいことに集中できるのです。
+        これは第1講以来くり返し登場する<strong>「複雑なものは層に分けて隠す（抽象化）」</strong>という、
+        コンピュータ科学の最重要の思想そのものです。</p>
+        <p>この抽象化のありがたみは、たとえるなら「車の運転」に似ています。
+        私たちは、エンジン内部で何が燃えてピストンがどう動くかを知らなくても、
+        アクセルとハンドルという"高級な操作"だけで車を走らせられます。
+        高級言語も同じで、CPUの中でレジスタがどう動くかを知らなくても、
+        <code>price + tax</code> と書けば、下の層が全部うまくやってくれる。
+        <span class="em">下の層の複雑さを"隠す"ことで、人はより大きく、より創造的なことに頭を使える</span>ようになる。
+        プログラミング言語の進化とは、つきつめれば「人間が考えなくていいことを、どんどん増やしてきた」歴史なのです。
+        そしてその最終地点に、後述する「AIにコードを書かせる」という新しい段が、いま加わろうとしています。</p>
+      </section>
+
+      <!-- コンパイラとインタプリタ -->
+      <section id="s-translate">
+        <h2>コンパイラとインタプリタ ― 2種類の翻訳</h2>
+        <p>高級言語で書いたプログラム（ソースコード）を、機械語に翻訳する方式には、大きく2つあります。</p>
+        <ul>
+          <li><strong>コンパイラ方式</strong>：実行する前に、プログラム全体をまとめて機械語に翻訳し、翻訳済みのファイルを作っておく。
+          翻訳の手間が先にかかるが、実行は高速。書籍をまるごと翻訳出版するイメージ（C、Rust、Go など）。</li>
+          <li><strong>インタプリタ方式</strong>：実行しながら、1行ずつその場で翻訳・実行していく。
+          手軽にすぐ試せるが、実行は相対的に遅い。同時通訳のイメージ（Python、JavaScript、Ruby など）。</li>
+        </ul>
+        <p>翻訳の中身も、なかなか奥深いものです。コンパイラは、まず文章を意味のある単語に区切り（字句解析）、
+        次に文法構造を木の形に組み立て（構文解析。第7講の木構造！）、意味の矛盾をチェックし、
+        無駄を削る最適化を行って、ようやく機械語を吐き出します。
+        私たちが何気なく書く <code>if</code> や <code>for</code> が、こうした何段もの処理を経て、
+        0と1の命令列にまで変換されていく。
+        <span class="em">「実行」という一瞬の裏で、この壮大な翻訳の連鎖が毎回走っている</span>のです。</p>
+        <p>ここで第4講を思い出してください。コンパイラ自身も、ひとつのプログラムです。
+        つまりコンパイラは、<strong>「プログラム（ソースコード）を入力として受け取り、別のプログラム（機械語）を出力する」</strong>プログラム。
+        これはまさに、第4講の「プログラムはデータである」というノイマン型の精神の、最も鮮やかな応用例です。
+        プログラムが、別のプログラムを生み出す。この入れ子の構造が、ソフトウェアの世界を豊かにしています。</p>
+        <p>翻訳の段階を知ると、「エラー（バグ）」の種類も腑に落ちます。
+        コンパイルの段階で見つかる<strong>構文エラー</strong>は、いわば"文法のまちがい"。
+        カッコの閉じ忘れやスペルミスなど、翻訳の時点で機械が「これは言葉になっていない」と気づくものです。
+        一方、翻訳は通ったのに、実行してみて初めて起きる<strong>実行時エラー</strong>もあります
+        （存在しないファイルを開こうとした、ゼロで割ってしまった等）。
+        さらに厄介なのが、エラーにもならず、ただ"答えがまちがっている"<strong>論理エラー</strong>。
+        第5講で学んだとおり、こうしたバグを完全自動で見つけることは原理的にできないので、
+        プログラマはテストやデバッグという地道な確かめ作業を繰り返します。
+        コンパイラは"文法の番人"にはなれても、"意図の番人"にはなれないのです。</p>
+      </section>
+
+      <!-- 基本 -->
+      <section id="s-basics">
+        <h2>プログラムの3つの基本 ― 順次・分岐・反復</h2>
+        <p>世の中には何百ものプログラミング言語がありますが、
+        どんなプログラムも、突き詰めれば<strong>たった3つの組み立て方</strong>でできています。
+        これを<span class="term">構造化プログラミングの3要素</span>と呼びます。</p>
+        <div class="def">
+          <p><b>プログラムを作る3つの基本構造</b></p>
+          <p style="margin:.2em 0"><b>順次</b>：上から順に、ひとつずつ実行する。</p>
+          <p style="margin:.2em 0"><b>分岐</b>：条件によって、やることを変える（もし〜なら）。第3講のブール代数そのもの。</p>
+          <p style="margin-bottom:0"><b>反復</b>：同じことを、条件を満たすあいだ繰り返す（ループ）。</p>
+        </div>
+        <p>料理のレシピにたとえれば、「材料を順に入れる（順次）」「焦げそうなら火を弱める（分岐）」
+        「とろみがつくまで混ぜ続ける（反復）」。
+        どんなに複雑なソフトウェアも、この3つの積み木の、気の遠くなるような組み合わせにすぎません。
+        とくに<strong>分岐</strong>は、第3講で学んだ「条件で動きを変える」論理回路の発想と地続きで、
+        最終的には機械語の中で、論理ゲートとして実行されます。
+        ここでも「単純な部品の組み合わせで、複雑なものを作る」という、本講義の通奏低音が響いています。</p>
+        <p>あわせて、プログラムには<strong>変数</strong>（データに名前をつけて出し入れする入れ物）という基本があります。
+        <code>price</code> という名前の箱に数値をしまい、あとで取り出して計算する。
+        この「名前で値を覚えておく」仕組みは、第4講のメモリに、名前という人間用のラベルを貼ったものだと考えると分かりやすいでしょう。</p>
+        <p>具体的なコードで、3つの基本構造を見てみましょう。
+        「1から10までの合計を求める」プログラムは、たとえばこんな形になります（読めなくて大丈夫です）。</p>
+        <pre><code>合計 = 0                 ← 変数を用意（順次）
+i を 1 から 10 まで繰り返す: ← 反復
+    合計 = 合計 + i       ← 順次
+もし 合計 > 50 なら:       ← 分岐
+    「50を超えた」と表示
+答え: 合計 = 55</code></pre>
+        <p>「箱を用意し、繰り返し足し、条件で表示を変える」。
+        順次・分岐・反復という3つの積み木だけで、ちゃんと意味のある処理ができあがっています。
+        どんなに巨大なアプリも、根っこではこれと同じ3要素の組み合わせ。
+        <span class="em">プログラミングとは、やりたいことを、この3つの積み木に翻訳する作業</span>なのだと考えると、
+        ぐっと身近に感じられるはずです。</p>
+      </section>
+
+      <!-- パラダイム -->
+      <section id="s-paradigm">
+        <h2>パラダイムの歴史 ― 設計思想の変遷</h2>
+        <p>プログラミング言語には、単なる文法の違いを超えた、<strong>「プログラムをどう組み立てるか」という思想（パラダイム）</strong>の
+        違いがあります。その歴史は、ソフトウェアが巨大化するなかで、
+        「いかに人間が混乱せずに、大きなプログラムを作れるか」という格闘の記録でもあります。</p>
+        <h3>① 構造化 ― 混沌に秩序を</h3>
+        <p>初期のプログラムは、「ここから、あそこへ飛べ（GOTO）」という命令で処理があちこちに飛び回り、
+        まるで絡まった糸（スパゲッティ・コード）のようでした。
+        そこで「処理は、さきほどの順次・分岐・反復だけで組み立てよう」という<strong>構造化プログラミング</strong>が提唱され、
+        プログラムに見通しのよい秩序が生まれました。
+        この転換の口火を切った有名な主張が、第8講の最短経路（ダイクストラ法）でも名を残す
+        エドガー・ダイクストラの「GOTO文は有害である」という論考です。
+        「どこへでも飛べる自由」が、かえってプログラムを読めなくしている――という指摘は当時大きな論争を呼びましたが、
+        やがて「飛び回らない、構造化された書き方」が常識になりました。
+        <span class="em">自由を一部あえて手放すことで、全体の見通しと安全を得る</span>。
+        これは、後のパラダイムにも一貫して流れる考え方です。</p>
+        <h3>② オブジェクト指向 ― 世界を「モノ」で捉える</h3>
+        <p>プログラムがさらに大きくなると、データと処理がバラバラだと管理しきれなくなります。
+        そこで登場したのが<span class="term">オブジェクト指向</span>。
+        <strong>関連するデータと、それを操作する処理を、「モノ（オブジェクト）」としてひとまとめにする</strong>考え方です。
+        たとえば「犬」というオブジェクトに、「名前・年齢」というデータと「吠える・歩く」という動作をまとめて持たせる。
+        現実世界の"モノ"になぞらえてプログラムを設計できるので、大規模開発の主流になりました。
+        絵画が世界を写実的に描こうとしたように、オブジェクト指向は世界をプログラムで写し取ろうとした、とも言えます。</p>
+        <p>オブジェクト指向の強力な武器のひとつが<strong>ポリモーフィズム（多態性）</strong>です。
+        むずかしい言葉ですが、発想は単純。「ペンギン」も「鳩」も、種類は違えど"鳥"として
+        <strong>「鳴け」という同じ命令で、それぞれの鳴き方をする</strong>ように扱える、という仕組みです。
+        プログラム側は「相手が鳥である」とだけ知っていれば、「鳴け」と言うだけでよく、
+        ペンギンか鳩かの細かい違いを気にしなくていい。
+        新しい鳥（たとえば「カラス」）を追加しても、「鳴け」と言う側のコードは一切変えずに済みます。
+        <span class="em">違うものを、共通の窓口で同じように扱う</span>――この仕組みのおかげで、
+        プログラムは拡張しやすく、壊れにくくなります。これも一種の"抽象化"です。</p>
+        <h3>③ 関数型 ― 状態を持たない美しさ</h3>
+        <p>近年あらためて注目されているのが<span class="term">関数型プログラミング</span>です。
+        「データを書き換える」のではなく、「入力から出力を計算する関数の組み合わせ」でプログラムを作る考え方。
+        状態（途中で変わる値）をできるだけ持たないので、バグが入りにくく、
+        複数の処理を同時に走らせる並列計算とも相性がよい――という強みがあります。
+        その源流は、じつは第5講で触れた「ラムダ計算」という、計算の理論的モデルにまで遡ります。
+        <span class="em">理論の世界で生まれた考え方が、数十年を経て実用の最前線に戻ってきた</span>のです。</p>
+        <div class="trivia">
+          <p>プログラミング言語には、文法（書き方）だけでなく、
+          <strong>「その書き方が、厳密には"何を意味する"のか」を数学的に定める「意味論（semantics）」</strong>という、
+          奥深い研究分野があります。
+          「<code>x = x + 1</code> は、本当は何が起きているのか」を、ごまかしなく形式的に定義しようとするのです。
+          これがまた、底なし沼のように抽象的で難解。
+          軽い気持ちで意味論の教科書を開いて、記号の海に溺れ、何時間も格闘したあげく
+          「結局よく分からなかった…」と打ちのめされる、というのは、この道の"あるある"です。
+          とはいえ、この厳密さがあるからこそ、コンパイラは安心して翻訳でき、
+          プログラムの正しさを数学的に検証する技術も成り立つ。
+          普段は意識しない縁の下に、こうした硬派な理論が静かに横たわっているのです。</p>
+        </div>
+        <p>大事なのは、これらは「新しいものが古いものを駆逐した」のではなく、
+        <strong>用途に応じて使い分けられている</strong>ということ。
+        現代の言語の多くは、複数のパラダイムのいいところを取り入れた"ハイブリッド"になっています。
+        ここでも「万能の最善はなく、適材適所」という、第7講以来の教訓が当てはまります。</p>
+        <p>パラダイムの変遷を貫いているのは、じつは一貫したテーマです。
+        それは<strong>「人間の頭が一度に把握できる複雑さには限界がある。だから、どう分割し、どう隠すか」</strong>という問い。
+        構造化は「処理の流れ」を整理し、オブジェクト指向は「データと処理のまとまり」で分割し、
+        関数型は「状態という厄介者」をできるだけ排除しようとしました。
+        アプローチは違えど、目指すところは同じ――<span class="em">人間が、巨大なプログラムに押しつぶされずに付き合う方法</span>です。
+        プログラミング言語の進化史は、技術の歴史であると同時に、
+        「人間の認知の限界とどう折り合うか」という、きわめて人間くさい工夫の歴史でもあるのです。</p>
+      </section>
+
+      <!-- 歴史 -->
+      <section id="s-history">
+        <h2>人物 ― 高級言語の母、グレース・ホッパー</h2>
+        <div class="history">
+          <p><strong>「英語でプログラムを書く」という発想。</strong>
+          第4講で「バグ（虫）」の語源として登場したグレース・ホッパーは、高級言語の母でもあります。
+          当時は「コンピュータは数字しか扱えない、英語のような言葉で命令するなど無理だ」という空気が支配的でした。
+          しかしホッパーは、<strong>「人間に近い言葉でプログラムを書き、それを機械語に翻訳させればいい」</strong>と主張し、
+          初期のコンパイラを作り上げます。
+          この発想が、のちのビジネス用言語COBOLにつながり、
+          「人間が読み書きしやすい言語」という現代の当たり前を切り開きました。
+          <span class="em">機械に合わせるのをやめ、機械に翻訳させる</span>――この一歩が、プログラミングを一部の専門家のものから、
+          多くの人が学べるものへと変えていったのです。</p>
+        </div>
+        <p>言語そのものにも、それぞれドラマがあります。
+        科学技術計算のために生まれたFORTRAN、教育用に設計されたBASIC、
+        OSを記述するために作られ、いまも土台で動き続けるC言語、
+        Webを動かすために数週間で作られたとされるJavaScript――。
+        どの言語も、その時代の「こういうことがしたい」という切実な必要から生まれました。
+        言語の歴史は、コンピュータで何をしようとしてきたか、という人類の欲望の歴史でもあるのです。</p>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用</h2>
+        <h3>なぜ言語はこんなにたくさんあるのか</h3>
+        <p>「言語は1つに統一すればいいのに」と思うかもしれません。
+        しかし、用途によって"得意な言語"が違うのです。
+        スマホアプリ、Webサイト、AI、業務システム、組み込み機器、科学計算――
+        それぞれに「書きやすさ・速さ・安全性・既存の資産」のバランスの最適点が違う。
+        速度が命なら低水準寄りの言語、開発の速さが大事なら手軽な言語、というように、
+        <span class="em">目的に応じて道具を選ぶ</span>のが現実です。
+        英語・日本語・数式・楽譜を場面で使い分けるように、プログラマも複数の言語を使い分けます。
+        「どの言語を学ぶべき？」の答えも、結局は「何を作りたいか」次第なのです。</p>
+        <p>もうひとつ、言語が乱立する理由に「過去の資産（レガシー）」があります。
+        いったん大量のプログラムがある言語で書かれると、それを動かし続ける必要があるため、
+        古い言語もなかなか消えません。
+        たとえば銀行や行政の基幹システムには、数十年前のCOBOLで書かれたものがいまも現役で動いており、
+        それを保守できる技術者が貴重になっている、という話もあります。
+        <span class="em">技術は「新しいものに一斉に入れ替わる」のではなく、古いものが層をなして残り続ける</span>。
+        この現実は、第2部で扱う「技術的負債」や社会インフラの話にもつながっていきます。</p>
+        <h3>そして、AIがコードを書く時代へ</h3>
+        <p>抽象化の階段は、いまも上り続けています。
+        近年は、自然言語（ふつうの日本語や英語）で「こういうものを作って」と頼むと、
+        AIがコードを書いてくれる時代が始まりました。
+        これは、見方を変えれば<strong>「人間の言葉から、プログラムへの翻訳」という、究極の高級言語</strong>の登場とも言えます。
+        ホッパーが「英語でプログラムを」と夢見たことが、別の形で現実になりつつあるのです。
+        ただし、AIが書いたコードが正しいかを見抜くには、結局このプログラミングの基礎知識が要る。
+        <span class="em">道具が賢くなるほど、それを使いこなす側の理解が問われる</span>――この点は第15講で深めます。</p>
+        <h3>バグとデバッグ ― プログラミングの大半は「直す」作業</h3>
+        <p>意外に思われるかもしれませんが、プログラミングの時間の多くは、「書く」ことより「直す」ことに費やされます。
+        書いたコードは、たいてい一発では思い通りに動きません。
+        第4講で触れた「バグ（虫）」を見つけて取り除く作業――<strong>デバッグ</strong>こそが、プログラミングの実態の中心なのです。
+        そして第5講で学んだとおり、「すべてのバグを自動で見つける万能ツール」は原理的に作れません。
+        だからプログラマは、コードの動きを少しずつ確認し、仮説を立てては検証する、地道な探偵のような仕事を繰り返します。
+        <span class="em">プログラミングとは、書く技術であると同時に、間違いと根気よく付き合う技術</span>でもあるのです。</p>
+        <p>だからこそ、「読みやすいコードを書く」ことが、とても大切にされます。
+        プログラムは一度書いて終わりではなく、何年も読み返し、直し続けられるもの。
+        しかも、書いた本人とは別の人が引き継ぐことも多い。
+        「コンピュータが理解できるコードは誰でも書ける。優れたプログラマは、人間が理解できるコードを書く」という有名な言葉は、
+        この事実を言い当てています。
+        本講で見たパラダイムの進化も、突き詰めれば「いかに人間にとって読みやすく、間違いにくいコードを書くか」という、
+        きわめて人間くさい工夫の積み重ねだったのです。</p>
+        <h3>「コードは詩」とも言われる</h3>
+        <p>プログラミング言語には、同じ動きをするコードでも、書き方に「うまい・へた」や「美しさ」があります。
+        同じ問題を、ある人は10行で簡潔に、ある人は100行で冗長に書く。
+        無駄がなく、意図が明快で、後から読んでもすっと理解できるコードは、しばしば"美しい"と評されます。
+        プログラミングは、単なる機械への命令ではなく、<span class="em">論理を組み立て、表現する、一種の創作活動</span>でもあるのです。
+        だからこそ、世界には自分の書いたコードの美しさにこだわる職人たちがいて、その情熱が、いまのソフトウェアを支えています。</p>
+        <h3>ライブラリとオープンソース ― 巨人の肩の上に立つ</h3>
+        <p>現代のプログラミングでは、すべてをゼロから書くことは、ほとんどありません。
+        先人が作った便利な部品の集まり（<strong>ライブラリ</strong>）を組み合わせて、効率よく作るのが普通です。
+        画像を扱う部品、通信する部品、計算する部品――世界中の誰かが作って公開してくれたものを、自分のプログラムから呼び出す。
+        とくに、ソースコードを誰でも自由に見て・使って・改良できる<strong>オープンソース</strong>という文化が、
+        この"共有"を支えています。
+        <span class="em">世界中の開発者が、互いの成果を持ち寄り、巨人の肩の上に立って、より高いものを作っていく</span>――
+        いまのソフトウェアは、こうした壮大な協力の上に成り立っているのです。</p>
+        <p>これは、第4講の「プログラムはデータ」、本講の「抽象化」とも深くつながっています。
+        部品の「使い方（約束）」さえ分かれば、その「中身」を知らなくても利用できる。
+        だから、自分は得意な部分に集中し、苦手な部分は優れた既存の部品に任せられる。
+        ―― ただし、便利さには影もあります。
+        多くのサービスが、ある共通の部品に依存していると、その部品に欠陥が見つかったとき、世界中が一斉に危険にさらされる。
+        誰が、どんな責任で、その共有部品を保守し続けるのか、という問題も生まれます。
+        この「共有の恩恵とリスク」は、第2部のソフトウェア開発やセキュリティの回で、さらに考えていきます。</p>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「プログラミング言語は、英語のように"言語"だから、たくさん暗記するもの」</p>
+          <p class="a">暗記より、組み立て方の理解が大事です。どの言語も結局は「順次・分岐・反復」の3つで動いており、
+          1つの言語で考え方をつかめば、他の言語も比較的すんなり学べます。</p>
+          <p class="q">誤解②：「コンパイラ方式のほうが、インタプリタ方式より"優れている"」</p>
+          <p class="a">優劣ではなく使い分けです。実行速度ならコンパイラ、手軽さや試行錯誤のしやすさならインタプリタ。
+          目的に応じて選ぶもので、どちらが上ということはありません。</p>
+          <p class="q">誤解③：「オブジェクト指向が最新で、構造化は時代遅れ」</p>
+          <p class="a">どれも現役です。構造化（順次・分岐・反復）はすべての土台で、いまも使われています。
+          オブジェクト指向や関数型は、その上で大規模開発を支える設計思想。新旧で優劣はつきません。</p>
+          <p class="q">誤解④：「AIが書けるなら、もう人間は言語を学ばなくていい」</p>
+          <p class="a">むしろ逆かもしれません。AIの書いたコードが正しいか判断し、意図を正確に伝えるには、
+          言語と仕組みの理解が必要です。道具が高度になるほど、土台の理解の価値は下がりません。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <div class="summary">
+          <ul>
+            <li>機械語→アセンブリ→高級言語と、抽象化の階段を上るほど人間に優しくなる。「層に分けて隠す」思想の典型。</li>
+            <li>コンパイラは事前に全体翻訳（実行が速い）、インタプリタは逐次翻訳（手軽）。優劣でなく使い分け。</li>
+            <li>コンパイラ自身が「プログラムを入力にするプログラム」。第4講「プログラムはデータ」の好例。</li>
+            <li>どんなプログラムも「順次・分岐・反復」の3つの組み合わせ。分岐は第3講の論理と地続き。</li>
+            <li>パラダイム（構造化→オブジェクト指向→関数型）は用途で使い分け。関数型の源流はラムダ計算（第5講）。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>機械語・アセンブリ・高級言語を、「人間に優しい順」に並べよ。なぜその順か。</li>
+            <li>「何度も実行する本番システム」と「ちょっと試したい使い捨てスクリプト」。コンパイラ向き・インタプリタ向きはそれぞれどちらか。</li>
+            <li>どんなプログラムも3つの基本構造でできている。その3つを挙げよ。</li>
+            <li>コンパイラが「プログラムはデータである」という第4講の考えの好例だといえるのは、なぜか。</li>
+            <li>プログラミング言語が1つに統一されず、たくさん存在するのはなぜか。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) 高級言語 ＞ アセンブリ ＞ 機械語。上の段ほど人間の考え方に近く、下の段ほど機械（0と1）に近いから。<br>
+            (2) 本番システムは<strong>コンパイラ</strong>（実行速度重視）、使い捨ては<strong>インタプリタ</strong>（手軽さ重視）。<br>
+            (3) 順次・分岐・反復。<br>
+            (4) コンパイラは「ソースコードというプログラムを入力に受け取り、機械語という別のプログラムを出力する」プログラムだから。プログラムをデータとして扱っている。<br>
+            (5) 用途（速度・手軽さ・安全性・既存資産など）によって最適な言語が違うため。目的に応じて使い分けるのが合理的。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">ローレン・イプサム『コーディングを支える技術』（西尾泰和）</span>（技術評論社）
+          ― 変数・型・スコープ・オブジェクト指向・関数型など、言語の概念が「なぜ生まれたか」を歴史的にたどる名著。本講の最良の続き。</li>
+          <li><span class="bk">岩波明日香ほか／『プログラミング言語の基礎概念』</span>（サイエンス社）
+          ― 言語の意味論や型など、理論的な土台をきちんと学びたい人へ。</li>
+          <li><span class="bk">『Hello World ― プログラムはこうして動く』系の入門書</span>
+          ― ソースコードがコンパイル・実行されて動くまでを、初学者向けに追える一冊を手元に。</li>
+          <li><span class="bk">ピーター・サイベル『コーダーズ・アット・ワーク』</span>（オーム社）
+          ― 著名プログラマたちへのインタビュー集。言語や設計をめぐる"現場の哲学"が読める。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part1_lecture10.html"><span class="lab">← 前の講</span>第10講 暗号とハッシュ</a>
+        <a class="nx" href="part1_lecture12.html"><span class="lab">次の講 →</span>第12講 データベースと表形式データ</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第1部 第11講「プログラミング言語」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ゆるコンピュータ科学講義 ― 全30講で学ぶコンピュータの仕組み</title>
+<meta name="description" content="情報理論からAI、半導体、社会制度まで。コンピュータ科学を全30講・2部構成で体系的に、そして面白く学ぶWeb教科書。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#c8503a; --accent-soft:#f7e3dd;
+    --accent2:#2f6f6a; --accent2-soft:#dcebe9;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 10px 30px rgba(40,34,24,.08);
+  }
+  html[data-theme="dark"]{
+    --bg:#16140f; --paper:#1f1c16; --ink:#ece6d8; --muted:#a79e8c;
+    --line:#332f27; --accent:#e8775f; --accent-soft:#3a221c;
+    --accent2:#6fb6ad; --accent2-soft:#1c2c2a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.9;font-size:17px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 24px}
+  a{color:var(--accent)}
+
+  /* ヘッダー */
+  .topnav{position:sticky;top:0;z-index:30;background:rgba(255,253,248,.86);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  html[data-theme="dark"] .topnav{background:rgba(31,28,22,.86)}
+  .topnav .wrap{display:flex;align-items:center;justify-content:space-between;height:58px}
+  .topnav .logo{font-weight:800;font-size:.98rem;letter-spacing:.01em;text-decoration:none;color:var(--ink)}
+  .topnav .logo span{color:var(--accent)}
+  .topnav button{background:none;border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;color:var(--ink);font-size:.8rem;font-family:inherit}
+
+  /* ヒーロー */
+  .hero{background:linear-gradient(160deg,var(--accent) 0%,#a83c2c 100%);color:#fff;padding:74px 0 66px;position:relative;overflow:hidden}
+  .hero:after{content:"01000011 01010011";position:absolute;right:-10px;bottom:-6px;font-family:ui-monospace,monospace;font-size:5.5rem;font-weight:800;color:rgba(255,255,255,.07);white-space:nowrap}
+  .hero .wrap{position:relative;z-index:1}
+  .hero .tag{display:inline-block;background:rgba(255,255,255,.18);padding:5px 14px;border-radius:999px;font-size:.8rem;letter-spacing:.05em;font-weight:600;margin-bottom:18px}
+  .hero h1{font-size:2.4rem;line-height:1.32;margin:0 0 .4em;font-weight:800}
+  .hero p{font-size:1.06rem;opacity:.96;max-width:40em;line-height:1.85}
+
+  section.block{padding:60px 0}
+  section.block.alt{background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  h2.sec{font-size:1.5rem;font-weight:800;margin:0 0 6px;letter-spacing:.01em}
+  .sec-lead{color:var(--muted);margin:0 0 28px;font-size:.98rem}
+
+  .about p{margin:.9em 0;max-width:46em}
+  .about .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700}
+
+  /* 4つの思想 */
+  .ideas{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-top:24px}
+  .idea{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+  html[data-theme="dark"] .idea{background:var(--paper)}
+  .idea h3{margin:0 0 6px;font-size:1.02rem;color:var(--accent2)}
+  .idea p{margin:0;font-size:.9rem;color:var(--muted);line-height:1.7}
+
+  /* 講義リスト */
+  .part-head{display:flex;align-items:baseline;gap:14px;margin:8px 0 4px}
+  .part-head .pno{background:var(--accent);color:#fff;font-weight:800;font-size:.74rem;padding:4px 12px;border-radius:999px;letter-spacing:.06em}
+  .part-head h2{font-size:1.32rem;font-weight:800;margin:0}
+  .part-sub{color:var(--muted);font-size:.92rem;margin:0 0 22px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:40px}
+  .card{display:block;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 18px;text-decoration:none;color:var(--ink);box-shadow:var(--shadow);transition:transform .14s,border-color .14s;position:relative;overflow:hidden}
+  a.card:hover{transform:translateY(-3px);border-color:var(--accent)}
+  .card .lecno{font-size:.72rem;font-weight:800;letter-spacing:.08em;color:var(--accent);font-variant-numeric:tabular-nums}
+  .card h3{margin:4px 0 6px;font-size:1.04rem;font-weight:800;line-height:1.45}
+  .card p{margin:0;font-size:.84rem;color:var(--muted);line-height:1.6}
+  .card.soon{opacity:.62;box-shadow:none;cursor:default}
+  .card .badge{position:absolute;top:12px;right:12px;font-size:.66rem;font-weight:700;padding:2px 8px;border-radius:999px}
+  .card .badge.ready{background:var(--accent2-soft);color:var(--accent2)}
+  .card .badge.soon{background:var(--line);color:var(--muted)}
+
+  footer{border-top:1px solid var(--line);padding:36px 0 64px;color:var(--muted);font-size:.86rem}
+  footer .wrap{max-width:1000px}
+
+  @media (max-width:640px){
+    .hero h1{font-size:1.7rem}
+    .hero{padding:54px 0 48px}
+    section.block{padding:44px 0}
+  }
+</style>
+</head>
+<body>
+<header class="topnav">
+  <div class="wrap">
+    <a class="logo" href="index.html">ゆる<span>コンピュータ科学</span>講義</a>
+    <button id="themeBtn">🌓 配色</button>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <span class="tag">全30講・2部構成 ／ Web教科書</span>
+    <h1>コンピュータの仕組みを、<br>面白く、体系的に。</h1>
+    <p>情報理論からAI、半導体、データセンター、そして社会制度まで。
+    身近な疑問を入口に、コンピュータ科学の「なぜそうなっているのか」を
+    全30講かけてたどる、独立したWeb教科書です。</p>
+  </div>
+</section>
+
+<!-- この教材について -->
+<section class="block about">
+  <div class="wrap">
+    <h2 class="sec">この教材について</h2>
+    <p class="sec-lead">難しい話を、できるだけ面白く。けれど、ごまかさずに。</p>
+    <p>コンピュータ科学（Computer Science）と聞くと、多くの人は「プログラミングの授業」を思い浮かべます。
+    しかしプログラミングは、この学問の応用のひとつにすぎません。
+    本当に問われているのは、もっと根っこの素朴な疑問です。
+    ―― <span class="em">情報とは何か。計算とは何か。機械はどこまで「考える」ことができるのか。</span></p>
+    <p>この教材は、その素朴な問いを30講かけて掘り下げます。
+    各講は、身近な具体例という「入口」から始まり、教科書的な基礎へと降り、
+    必要に応じて<strong>技術史・人物史</strong>、<strong>現代的な応用</strong>、<strong>よくある誤解</strong>を織り交ぜていきます。
+    厳密な証明や難解な記号はできるだけ脇に置き、「なぜ人類はそういう仕組みを思いついたのか」という
+    動機と歴史の物語として読めるように書きました。各講の末尾には、次の一歩のための「さらに読む本・資料」を必ず添えています。</p>
+    <p>前から順に読むと一本の物語になりますが、気になる講からつまみ食いしても大丈夫。
+    各講はそれぞれ独立して読めるように作られています。</p>
+
+    <div class="ideas">
+      <div class="idea"><h3>① 抽象化</h3><p>複雑なものは「層」に分けて隠す。この整理術が、回路からインターネットまで貫いている。</p></div>
+      <div class="idea"><h3>② トレードオフ</h3><p>何かを得れば何かを失う。速さと正確さ、安全と便利さ。万能の答えはない。</p></div>
+      <div class="idea"><h3>③ 限界</h3><p>できることには原理的な境界がある。それを知ることが、無駄な夢と本当の可能性を分ける。</p></div>
+      <div class="idea"><h3>④ すべては情報</h3><p>文字も画像も音も、根っこは0と1。情報という一つの視点で世界が見通せる。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 第1部 -->
+<section class="block alt">
+  <div class="wrap">
+    <div class="part-head"><span class="pno">第1部</span><h2>基礎教養編</h2></div>
+    <p class="part-sub">情報と計算の原理から、アルゴリズム・データ・AIまで。コンピュータ科学の土台を順番に積み上げる15講。</p>
+    <div class="grid">
+      <a class="card" href="part1_lecture1.html">
+        <span class="badge ready">公開中</span>
+        <span class="lecno">第1講</span><h3>情報とは何か</h3>
+        <p>情報を「量」で測るという大発明。ビット、エントロピー、符号化。すべての土台。</p>
+      </a>
+      <a class="card" href="part1_lecture2.html"><span class="badge ready">公開中</span><span class="lecno">第2講</span><h3>0と1で世界を表す</h3><p>二進数、バイト、補数、文字コード。なぜコンピュータは2進法なのか。</p></a>
+      <a class="card" href="part1_lecture3.html"><span class="badge ready">公開中</span><span class="lecno">第3講</span><h3>論理回路と計算の素材</h3><p>ブール代数、論理ゲート、半加算器。哲学が計算機の心臓になるまで。</p></a>
+      <a class="card" href="part1_lecture4.html"><span class="badge ready">公開中</span><span class="lecno">第4講</span><h3>コンピュータの設計図</h3><p>ノイマン型、CPU、メモリ。なぜ世界中の計算機が同じ設計に従うのか。</p></a>
+      <a class="card" href="part1_lecture5.html"><span class="badge ready">公開中</span><span class="lecno">第5講</span><h3>計算とは何か</h3><p>チューリングマシン、計算可能性、停止問題。計算機ができる前に限界が示された話。</p></a>
+      <a class="card" href="part1_lecture6.html"><span class="badge ready">公開中</span><span class="lecno">第6講</span><h3>アルゴリズムと計算量</h3><p>探索、整列、ビッグオー。「解ける」と「現実的に解ける」の違い。</p></a>
+      <a class="card" href="part1_lecture7.html"><span class="badge ready">公開中</span><span class="lecno">第7講</span><h3>データ構造</h3><p>配列、リスト、木、ハッシュ。データの「しまい方」が速さを決める。</p></a>
+      <a class="card" href="part1_lecture8.html"><span class="badge ready">公開中</span><span class="lecno">第8講</span><h3>グラフとネットワーク構造</h3><p>点と線で世界を表す。最短経路、PageRank、SNS。</p></a>
+      <a class="card" href="part1_lecture9.html"><span class="badge ready">公開中</span><span class="lecno">第9講</span><h3>圧縮と誤り訂正</h3><p>なぜデータは縮むのか。ノイズに勝つ符号化。QRコードが汚れても読める理由。</p></a>
+      <a class="card" href="part1_lecture10.html"><span class="badge ready">公開中</span><span class="lecno">第10講</span><h3>暗号とハッシュ</h3><p>会わずに秘密を共有する魔法。公開鍵暗号、ハッシュ、ブロックチェーン。</p></a>
+      <a class="card" href="part1_lecture11.html"><span class="badge ready">公開中</span><span class="lecno">第11講</span><h3>プログラミング言語</h3><p>機械語から高級言語へ。構造化、オブジェクト指向、関数型。</p></a>
+      <a class="card" href="part1_lecture12.html"><span class="badge ready">公開中</span><span class="lecno">第12講</span><h3>データベースと表形式データ</h3><p>表でデータを管理する。SQL、正規化、トランザクション。</p></a>
+      <a class="card" href="part1_lecture13.html"><span class="badge ready">公開中</span><span class="lecno">第13講</span><h3>インターネットの基礎</h3><p>パケット、IP、DNS、TCP/IP。中央の管制塔なしで世界がつながる仕組み。</p></a>
+      <a class="card" href="part1_lecture14.html"><span class="badge ready">公開中</span><span class="lecno">第14講</span><h3>数値計算と誤差</h3><p>0.1+0.2が0.3にならない理由。浮動小数点、乱数、シミュレーション。</p></a>
+      <a class="card" href="part1_lecture15.html"><span class="badge ready">公開中</span><span class="lecno">第15講</span><h3>AIと大規模言語モデル</h3><p>ルールを書くのをやめ、例から学ばせる。ニューラルネット、LLM、生成AI。</p></a>
+    </div>
+  </div>
+</section>
+
+<!-- 第2部 -->
+<section class="block">
+  <div class="wrap">
+    <div class="part-head"><span class="pno">第2部</span><h2>応用・社会・現代技術編</h2></div>
+    <p class="part-sub">基礎理論が、現実の技術・企業・社会・身体・文化にどう現れるか。ニュースの裏側がわかる15講。</p>
+    <div class="grid">
+      <a class="card" href="part2_lecture1.html"><span class="badge ready">公開中</span><span class="lecno">第1講</span><h3>ブラウザ・HTML・Webページのしくみ</h3><p>マークアップ言語、ブラウザ、Webページが表示されるまで。</p></a>
+      <div class="card soon"><span class="badge soon">準備中</span><span class="lecno">第2講</span><h3>ファイル・拡張子・フォーマット</h3><p>ファイルとは何か。拡張子、ZIP、画像・音声・動画形式、ファイルサイズ感覚。</p></div>
+      <div class="card soon"><span class="badge soon">準備中</span><span class="lecno">第3講</span><h3>APIとソフトウェア同士の会話</h3><p>API、リクエストとレスポンス、JSON、Web API、ノーコード。</p></div>
+      <div class="card soon"><span class="badge soon">準備中</span><span class="lecno">第4講</span><h3>ソフトウェア開発の現場</h3><p>納期、リリース、バグ、90対90の法則、技術的負債、開発文化。</p></div>
+      <div class="card soon"><span class="badge soon">準備中</span><span class="lecno">第5講</span><h3>セキュリティはなぜ敗北するのか</h3><p>情報セキュリティ史、人間要因、組織と運用、失敗の構造。</p></div>
+      <div class="card soon"><span class="badge soon">準備中</span><span class="lecno">第6講</span><h3>認証・パスワード・パスキー</h3><p>パスワード、パスキー、公開鍵認証、多要素認証、UXとしての安全。</p></div>
+      <div class="card soon"><span class="badge soon">準備中</span><span class="lecno">第7講</span><h3>ハッキングと攻撃者の世界</h3><p>脆弱性、SQLインジェクション、Tor、ダークウェブ、ランサムウェア（仕組みと防御）。</p></div>
+      <div class="card soon"><span class="badge soon">準備中</span><span class="lecno">第8講</span><h3>ネット回線・Wi-Fi・通信の実用知識</h3><p>Wi-Fi、回線速度、DHCP、ルーター、IPv4枯渇、カフェWi-Fi。</p></div>
+      <div class="card soon"><span class="badge soon">準備中</span><span class="lecno">第9講</span><h3>匿名通信・暗号通貨・信頼の設計</h3><p>Tor、ビットコイン、ブロックチェーン。中央集権なしに信頼を作れるか。</p></div>
+      <div class="card soon"><span class="badge soon">準備中</span><span class="lecno">第10講</span><h3>半導体・メモリ・GPU・TPU</h3><p>ムーアの法則、メモリ、GPU、TPU、並列計算、AIチップ。</p></div>
+      <div class="card soon"><span class="badge soon">準備中</span><span class="lecno">第11講</span><h3>NVIDIAとAIインフラ</h3><p>GPU経済圏、AI計算資源、データセンター、生成AIの裏側。</p></div>
+      <div class="card soon"><span class="badge soon">準備中</span><span class="lecno">第12講</span><h3>データセンター・CDN・動画配信</h3><p>冷却、電力、CDN、Netflix、動画配信の裏側。</p></div>
+      <div class="card soon"><span class="badge soon">準備中</span><span class="lecno">第13講</span><h3>UI・アフォーダンス・身体</h3><p>タッチ操作、UI/UX、アフォーダンス、ロボット、VR。画面の外のコンピュータ。</p></div>
+      <div class="card soon"><span class="badge soon">準備中</span><span class="lecno">第14講</span><h3>技術史・人物史から学ぶ</h3><p>バベッジ、チューリング、ゲイツ、ジョブズ。技術は人間のドラマでもある。</p></div>
+      <div class="card soon"><span class="badge soon">準備中</span><span class="lecno">第15講</span><h3>コンピュータ科学と社会</h3><p>DX、通信主権、海底ケーブル、法と制度、学び続ける方法。最終講。</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><strong>ゆるコンピュータ科学講義</strong> ― 全30講で学ぶ、コンピュータの仕組み</p>
+    <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+    各講は独立して読めます。</p>
+    <p style="opacity:.7">© ゆるコンピュータ科学講義 ／ 教育目的の利用を想定したサンプル教材</p>
+  </div>
+</footer>
+
+<script>
+  var b=document.getElementById('themeBtn');
+  b.addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+</script>
+</body>
+</html>

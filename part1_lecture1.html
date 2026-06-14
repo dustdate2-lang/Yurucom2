@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第1部 第1講 情報とは何か ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="情報を「量」で測るという大発明。ビット、エントロピー、符号化を、身近な例から体系的に学ぶ。ゆるコンピュータ科学講義 第1部 第1講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#c8503a; --accent-soft:#f7e3dd;
+    --accent2:#2f6f6a; --accent2-soft:#dcebe9;
+    --code-bg:#2b2722; --code-ink:#f3ead9;
+    --sidebar:#262320; --sidebar-ink:#e9e2d4; --sidebar-muted:#a59c8a;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#16140f; --paper:#1f1c16; --ink:#ece6d8; --muted:#a79e8c;
+    --line:#332f27; --accent:#e8775f; --accent-soft:#3a221c;
+    --accent2:#6fb6ad; --accent2-soft:#1c2c2a;
+    --code-bg:#100e0a; --code-ink:#f3ead9;
+    --sidebar:#100e0a; --sidebar-ink:#e9e2d4; --sidebar-muted:#8d8472;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  /* サイドバー（ページ内目次） */
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+
+  /* 講義ヘッダー */
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#a83c2c 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"information";position:absolute;right:-6px;bottom:-14px;font-family:ui-monospace,monospace;font-size:4.6rem;font-weight:800;color:rgba(255,255,255,.08)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.9;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent2);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+
+  .def{background:var(--accent2-soft);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent2)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+
+  /* プラス要素：歴史・人物 */
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:var(--accent2-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+
+  /* プラス要素：余談・トリビア */
+  .trivia{background:var(--accent-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#2b2722}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+
+  /* プラス要素：よくある誤解 */
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent2-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent2-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent2);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent2-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent2);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .lab{display:block;font-size:.72rem;color:var(--muted);margin-bottom:2px}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第1講 情報とは何か</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第1部 第1講</span><br>情報とは何か</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-joho">情報量 ― びっくり度で測る</a></li>
+      <li><a href="#s-bit">ビット ― 情報の単位</a></li>
+      <li><a href="#s-entropy">エントロピー ― 平均の予測しにくさ</a></li>
+      <li><a href="#s-encode">通信モデルと符号化</a></li>
+      <li><a href="#s-shannon">人物：クロード・シャノン</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第1部 基礎教養編 ／ 第1講</div>
+        <h1>情報とは何か<br>― ビット・エントロピー・符号化</h1>
+        <p>「情報の量」を数字で測る、という人類史上の大発明。コンピュータ科学は、ここから始まった。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― 情報を「量」で測るという発明</h2>
+        <p>私たちは毎日、当たり前のように「情報」という言葉を使います。
+        「役立つ情報」「個人情報」「情報過多」――。けれど、いざ
+        <span class="em">「情報とは何か」「情報の"量"はどう測るのか」</span>と問われると、
+        とたんに答えに詰まります。長さならメートル、重さならグラムで測れますが、
+        情報を測る"ものさし"なんて、あるのでしょうか。</p>
+        <p>20世紀の半ば、この問いにきっちりした答えを出した人がいました。
+        そして驚くべきことに、その答え――情報を数値として測る方法――は、
+        その後のコンピュータ、通信、圧縮、暗号、そして現代のAIに至るまで、
+        デジタル世界のすべての土台になりました。
+        この第1講は、これから続く講義のいちばん深いところにある<strong>共通の地面</strong>です。
+        ここを踏み固めておくと、後の話がぐっと見通しよくなります。</p>
+        <p class="lead-in">キーワードは3つ。<strong>情報量</strong>・<strong>エントロピー</strong>・<strong>符号化</strong>。
+        いきなり数式で説明されても誰も食いつかないので、まずは身近な例から、ゆっくり登っていきましょう。</p>
+
+        <h3>「データ」「情報」「知識」はどう違う？</h3>
+        <p>本題に入る前に、混同しやすい3つの言葉を整理しておきます。
+        この区別をしておくと、後半の「よくある誤解」でつまずかずに済みます。</p>
+        <ul>
+          <li><strong>データ</strong>：記号や数値そのもの。例：「28」。それ単体では意味を持たない。</li>
+          <li><strong>情報</strong>：データに文脈が加わり、意味を持ったもの。例：「今日の最高気温は28℃」。</li>
+          <li><strong>知識</strong>：情報を一般化し、使える形にしたもの。例：「28℃なら上着は要らない」。</li>
+        </ul>
+        <p>この講で扱うのは、このうち<span class="em">「情報を運ぶのに必要な"量"」</span>です。
+        つまり、意味が正しいかどうかや、役に立つかどうかではなく、
+        「それを伝えるのに、はい／いいえ何回ぶんが要るか」という、ドライな"量"の話だと心得てください。
+        意味や価値の話と切り分けることが、情報理論を理解する最初のコツです。</p>
+      </section>
+
+      <!-- 情報量 -->
+      <section id="s-joho">
+        <h2>情報量 ― 情報は「びっくり度」で測れる</h2>
+        <p>こんな場面を想像してください。ある家庭では、<strong>毎晩かならずカレー</strong>が出るとします。
+        来る日も来る日もカレー。この家で、お母さんが「今日の晩ごはんはカレーよ」と言ったとして、
+        家族はどれくらいの情報を受け取るでしょうか。――ほとんどゼロです。
+        どうせカレーなのですから、言われなくても分かっている。
+        極端に言えば、<span class="em">何も言わない（沈黙）こと自体が、すでに「カレー」を意味している</span>。
+        わざわざ言葉にする必要すらないのです。</p>
+        <p>では逆に、毎日メニューがバラバラの家庭ではどうでしょう。
+        「今日はカレー」の一言には、ちゃんと意味があります。
+        昨日は魚、一昨日はパスタ、今日は何だろう……という不確かさが、
+        「カレー」という知らせを<strong>価値あるもの</strong>にしている。</p>
+        <p>ここに、情報理論の出発点となる発想があります。</p>
+        <div class="def">
+          <p><b>情報量の正体</b></p>
+          <p style="margin-bottom:0">情報量とは、その知らせの<strong>「びっくり度（驚き）」</strong>である。
+          めったに起きないことほど、知らされたときの情報量は大きい。
+          わかりきったことを知らされても、情報量はほとんどゼロ。</p>
+        </div>
+        <p>天気予報を考えても同じです。一年中ほぼ晴れの砂漠で、わざわざ天気予報を見る人はいません。
+        明日も晴れに決まっているからです（情報量がゼロに近い）。
+        反対に、晴れと雨が半々で予測しにくい土地では、予報に価値がある。
+        <strong>「予測しにくい出来事ほど、知ったときの情報が多い」</strong>――
+        この素朴な直感を、これから数値にしていきます。</p>
+        <p>数式で書くと、起こりやすさ（確率 <code>p</code>）の出来事の情報量は <code>log₂(1/p)</code> ビットと定義されます。
+        確率が小さい（レアな）出来事ほど <code>1/p</code> が大きくなり、情報量も大きくなる――
+        さきほどの直感と、ちゃんと一致しています。
+        この「ビット」と「log」が何者なのかは、すぐあとで説明します。</p>
+
+        <h3>情報とは「不確かさが減った分」である</h3>
+        <p>同じことを、別の角度からも言えます。
+        知らせを受け取る前、あなたの中には<strong>「不確かさ（モヤモヤ）」</strong>があります。
+        晩ごはんが何か分からない、明日が晴れか雨か分からない――。
+        知らせを受け取ると、その不確かさが減ります。
+        <span class="em">情報量とは、この「減った不確かさの大きさ」だ</span>と考えてもいいのです。</p>
+        <p>毎晩カレーの家では、そもそも不確かさがほぼゼロ（どうせカレー）。
+        だから「カレーだよ」と言われても減るモヤモヤがなく、情報量もゼロ。
+        メニューがバラバラの家では不確かさが大きく、「カレーだよ」の一言が大きくモヤモヤを晴らす――だから情報量が大きい。
+        「びっくり度」と「減った不確かさ」は、同じことを送り手側・受け手側から見ているだけ。
+        どちらの言い方でも、結論は同じところに着きます。</p>
+        <p>ちなみに、20の質問でお題を当てる遊び（アキネーターのような）も、この原理そのものです。
+        うまく質問すれば、はい／いいえ20回で <code>2²⁰ ≒ 約100万通り</code>から1つを絞り込めます。
+        「たった20回で100万」――情報が指数的に積み上がる感覚を、ぜひ味わってください。</p>
+      </section>
+
+      <!-- ビット -->
+      <section id="s-bit">
+        <h2>ビット ― 情報の単位は「はい／いいえ何回ぶん」</h2>
+        <p>情報を測るには、共通の単位が要ります。長さのメートルにあたるものです。
+        それが<span class="term">ビット（bit）</span>。その正体は、拍子抜けするほどシンプルです。</p>
+        <div class="def">
+          <p><b>1ビットとは</b></p>
+          <p style="margin-bottom:0">「はい／いいえ」で答えられる質問、<strong>ちょうど1回ぶんの情報量</strong>が1ビット。</p>
+        </div>
+        <p>具体的に体験してみましょう。だれかが1〜8の数字を1つ思い浮かべ、あなたが質問して当てるゲームです。
+        ただし相手は「はい」「いいえ」しか答えてくれません。
+        やみくもに「1ですか？」「2ですか？」と聞いていては、最悪7回かかります。
+        賢い人は、こう聞きます。<strong>毎回、候補をちょうど半分に割る</strong>のです。</p>
+        <pre><code>「その数は 5以上 ？」 → はい  （残りは 5,6,7,8 の4つ）
+「その数は 7以上 ？」 → いいえ（残りは 5,6 の2つ）
+「その数は 6 ？」     → はい  （6 に確定！）</code></pre>
+        <p>たった3回の質問で、8通りのどれかを必ず特定できました。
+        8 = 2 × 2 × 2 = 2³ だから、3回。これは偶然ではありません。
+        候補が2倍になるごとに、必要な質問は1回ずつ増えていきます。</p>
+        <figure>
+          <svg viewBox="0 0 560 210" role="img" aria-label="8通りを3回の質問で特定する二分木">
+            <style>.nd{fill:var(--accent2-soft);stroke:var(--accent2);stroke-width:1.5}.lf{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5}.tx{font:13px sans-serif;fill:var(--ink);text-anchor:middle}.ed{stroke:var(--muted);stroke-width:1.3;fill:none}.lb{font:11px sans-serif;fill:var(--muted)}</style>
+            <line class="ed" x1="280" y1="34" x2="150" y2="90"/><line class="ed" x1="280" y1="34" x2="410" y2="90"/>
+            <line class="ed" x1="150" y1="110" x2="90" y2="158"/><line class="ed" x1="150" y1="110" x2="210" y2="158"/>
+            <line class="ed" x1="410" y1="110" x2="350" y2="158"/><line class="ed" x1="410" y1="110" x2="470" y2="158"/>
+            <rect class="nd" x="232" y="16" width="96" height="32" rx="8"/><text class="tx" x="280" y="37">1〜8 のどれ？</text>
+            <text class="lb" x="195" y="66">5未満</text><text class="lb" x="350" y="66">5以上</text>
+            <rect class="nd" x="106" y="92" width="88" height="30" rx="8"/><text class="tx" x="150" y="112">1〜4</text>
+            <rect class="nd" x="366" y="92" width="88" height="30" rx="8"/><text class="tx" x="410" y="112">5〜8</text>
+            <rect class="lf" x="58" y="160" width="64" height="28" rx="8"/><text class="tx" x="90" y="179">1,2</text>
+            <rect class="lf" x="178" y="160" width="64" height="28" rx="8"/><text class="tx" x="210" y="179">3,4</text>
+            <rect class="lf" x="318" y="160" width="64" height="28" rx="8"/><text class="tx" x="350" y="179">5,6</text>
+            <rect class="lf" x="438" y="160" width="64" height="28" rx="8"/><text class="tx" x="470" y="179">7,8</text>
+          </svg>
+          <figcaption>図1：候補を毎回半分に割る。木の深さ（質問回数）が、そのまま必要なビット数になる。</figcaption>
+        </figure>
+        <p>一般に、<strong>N通りの可能性から1つを特定する情報量は <code>log₂N</code> ビット</strong>です。
+        「<code>log₂N</code>」とは、ものものしく見えますが、要は<strong>「Nを1になるまで半分にし続けたら、何回で割り切れるか」</strong>。
+        8なら3回（8→4→2→1）、16なら4回、256なら8回。
+        この<strong>8ビットをひとまとめにした単位が「1バイト」</strong>で、0〜255の256通りを表せます。
+        ファイルサイズの「キロバイト」「メガバイト」のバイトは、ここから来ています。</p>
+        <table class="tbl">
+          <caption>表：候補の数と、必要なビット数（情報量）</caption>
+          <tr><th>候補の数 N</th><th>必要なビット数 <code>log₂N</code></th><th>身近な例</th></tr>
+          <tr><td>2</td><td>1 ビット</td><td>コインの表裏、はい／いいえ</td></tr>
+          <tr><td>8</td><td>3 ビット</td><td>1〜8の数当て</td></tr>
+          <tr><td>256</td><td>8 ビット（＝1バイト）</td><td>半角文字1つ、色の濃淡256段階</td></tr>
+          <tr><td>約100万</td><td>約20 ビット</td><td>20の質問でお題を当てる</td></tr>
+          <tr><td>約43億</td><td>32 ビット</td><td>古い方式のIPアドレス（第13講）</td></tr>
+        </table>
+        <p>候補が2倍になるたびに、必要なビットはたった1ずつしか増えません。
+        逆に言えば、ビットが1増えるごとに、表せる候補は2倍に膨らむ。
+        この<strong>「指数的な効率のよさ」</strong>こそ、デジタル表現が世界を席巻した理由のひとつです。</p>
+
+        <h3>なぜ「log」が出てくるのか</h3>
+        <p>情報量の式に対数 <code>log</code> が現れるのには、はっきりした理由があります。
+        それは<span class="em">「情報は足し算でつながってほしい」</span>から。
+        コイン投げ1回の情報量を1ビットとするなら、独立した2回ぶんは「1＋1＝2ビット」と
+        <strong>足し算</strong>で増えてほしい。ところが、起こりうる「場合の数」のほうは、
+        2通り × 2通り ＝ 4通りと<strong>掛け算</strong>で膨らみます。
+        この「掛け算で増える場合の数」を「足し算で増える量」へ翻訳する道具が、まさに対数なのです
+        （<code>log(a×b) = log a + log b</code>）。
+        難しく考えなくて構いません。<strong>log とは、さっきの数当てゲームの「半分・半分・半分…」の回数を数えているだけ</strong>です。</p>
+      </section>
+
+      <!-- エントロピー -->
+      <section id="s-entropy">
+        <h2>エントロピー ― 平均の「予測しにくさ」</h2>
+        <p>ここまでは「8通りが等しく起こりそう」な場合でした。
+        では、起こりやすさに<strong>偏り</strong>があるときはどうなるでしょう。</p>
+        <p>表が出る確率が90%、裏が10%という、いびつなコインを考えます。
+        このコインを投げて結果を聞いても、たいてい「表」なので、あまり驚けません。
+        ときどき出る「裏」のときだけ、少し驚く。
+        平均してみると、この情報源の「びっくり度」は、公平なコイン（表裏五分五分）より<strong>小さい</strong>はずです。</p>
+        <p>この<strong>「平均のびっくり度」</strong>を表す量が、有名な<span class="term">エントロピー</span>です。</p>
+        <div class="def">
+          <p><b>シャノンのエントロピー</b></p>
+          <p style="text-align:center;font-size:1.08rem;margin:.4em 0">H = Σ pᵢ × log₂(1 / pᵢ)　〔単位：ビット〕</p>
+          <p style="margin-bottom:0">各結果の「びっくり度」を、その起こりやすさで重みづけして足し合わせたもの。
+          どの結果も同じくらい起こりそうなとき（最も予測しにくいとき）に最大になり、
+          結果がほぼ決まっているときは 0 に近づく。
+          つまりエントロピーとは、その情報源の<strong>「予測しにくさ・乱雑さ」</strong>のものさしである。</p>
+        </div>
+        <p>公平なコイン（表裏0.5ずつ）なら H ＝ 1ビット。
+        さきほどの90:10のいびつなコインでは H ≒ 0.47ビットと、半分以下に下がります。
+        「結果がだいたい読めてしまう」ほど、得られる情報は少ない、というわけです。
+        天気予報を見る価値も、これで説明がつきます。
+        晴れか雨かが五分五分の土地はエントロピーが高く、予報の情報価値が大きい。
+        ずっと晴れの土地はエントロピーがほぼ0で、予報を見る意味がない。</p>
+        <p>コインの偏りとエントロピーの関係を、図にするとこうなります。
+        いちばん予測しにくい五分五分（0.5）で頂点（1ビット）になり、
+        表ばかり・裏ばかりの両端（0や1）に向かうほど、なだらかにゼロへ落ちていきます。</p>
+        <figure>
+          <svg viewBox="0 0 460 200" role="img" aria-label="コインの確率とエントロピーの関係">
+            <style>.ax{stroke:var(--muted);stroke-width:1.3}.cv{stroke:var(--accent);stroke-width:2.5;fill:none}.gl{font:11px sans-serif;fill:var(--muted)}.dt{fill:var(--accent2)}</style>
+            <line class="ax" x1="60" y1="160" x2="430" y2="160"/>
+            <line class="ax" x1="60" y1="160" x2="60" y2="30"/>
+            <path class="cv" d="M60 160 Q 245 -55 430 160"/>
+            <circle class="dt" cx="245" cy="42" r="4"/>
+            <text class="gl" x="60" y="176">表0%</text>
+            <text class="gl" x="225" y="176">表50%</text>
+            <text class="gl" x="408" y="176">表100%</text>
+            <text class="gl" x="20" y="46">1ビット</text>
+            <text class="gl" x="30" y="164">0</text>
+            <text class="gl" x="252" y="38" style="fill:var(--accent2);font-weight:700">最大</text>
+            <text class="gl" x="150" y="20" style="fill:var(--accent);font-weight:700">エントロピー H</text>
+          </svg>
+          <figcaption>図3：偏りのないとき（五分五分）にエントロピーは最大。予測しやすくなるほどゼロに近づく。</figcaption>
+        </figure>
+        <p>ここから、大事な性質が読み取れます。
+        <strong>選択肢の数が同じなら、すべてが等しく起こりそうなとき（一様なとき）にエントロピーは最大になる</strong>。
+        サイコロなら、イカサマのない公平なサイコロがいちばん予測しにくく、情報量が大きい。
+        逆に、特定の目ばかり出るイカサマサイコロは予測しやすく、エントロピーが下がります。
+        「公平＝予測不能＝情報量最大」という対応は、第10講の暗号（鍵は予測不能であるほど良い）でも効いてくる、覚えておきたい関係です。</p>
+
+        <h3>手を動かして計算してみる</h3>
+        <p>一度だけ、実際に計算してみましょう。式は見るより使うほうが早く馴染みます。
+        ある地域の天気が「晴れ・くもり・雨・雪」の4通りで、確率がそれぞれ
+        <code>1/2, 1/4, 1/8, 1/8</code> だったとします。
+        各出来事のびっくり度 <code>log₂(1/p)</code> は、晴れ＝1ビット、くもり＝2ビット、雨＝3ビット、雪＝3ビット
+        （<code>1/8</code> は <code>log₂8 ＝ 3</code> だから）。これを確率で重みづけして足すと――</p>
+        <pre><code>H = 1/2×1 + 1/4×2 + 1/8×3 + 1/8×3
+  = 0.5  + 0.5  + 0.375 + 0.375
+  = 1.75 ビット</code></pre>
+        <p>もしこの4通りを単純に「2ビット固定」（00, 01, 10, 11）で表せば、1回あたり平均2ビットかかります。
+        ところが、よく出る「晴れ」に短い符号を、めったに出ない「雨・雪」に長い符号を割り当てれば、
+        平均を<strong>1.75ビットまで縮められる</strong>。
+        この 1.75 という数字がエントロピーであり、同時に<span class="em">「これ以上は縮められない」という圧縮の限界値</span>でもあります。
+        「頻度に偏りがあるほど、固定長より短くできる」――次の節の符号化、そして第9講の圧縮へ、まっすぐつながる話です。</p>
+
+        <h3>親密さもエントロピーで説明できる</h3>
+        <p>エントロピーの射程は、人間関係にまで届きます。
+        初対面の人は、何を言うか・どう反応するか、まるで予測がつきません（エントロピーが高い）。
+        ところが付き合いが長くなると、「この人ならこう言うな」と読めてくる（エントロピーが下がる）。
+        つまり<strong>親しさとは、相手についての予測精度が上がり、一言あたりの"驚き"が減っていくこと</strong>だと言えます。
+        味気ないようでいて、こんな日常の機微まで同じ理論で記述できてしまう。
+        情報理論の懐の深さが、ここに表れています。</p>
+      </section>
+
+      <!-- 通信モデルと符号化 -->
+      <section id="s-encode">
+        <h2>通信モデルと符号化 ― 情報を運び、短くする</h2>
+        <p>情報理論がこれほど強力なのは、<strong>あらゆる通信を、たった一枚の図に抽象化した</strong>からです。
+        会話も、手紙も、電話も、インターネットも、本質は同じ構造をしている――と見抜いたのです。</p>
+        <figure>
+          <svg viewBox="0 0 620 150" role="img" aria-label="通信モデル">
+            <style>.cb{fill:var(--accent2-soft);stroke:var(--accent2);stroke-width:1.8}.cbn{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}.ct{font:12px sans-serif;fill:var(--ink);text-anchor:middle;font-weight:700}.cs{font:10px sans-serif;fill:var(--muted);text-anchor:middle}.cw{stroke:var(--ink);stroke-width:1.6;fill:none}</style>
+            <rect class="cb" x="10" y="50" width="78" height="44" rx="8"/><text class="ct" x="49" y="68">情報源</text><text class="cs" x="49" y="84">送りたい中身</text>
+            <rect class="cb" x="118" y="50" width="78" height="44" rx="8"/><text class="ct" x="157" y="68">符号化</text><text class="cs" x="157" y="84">記号に変換</text>
+            <rect class="cbn" x="248" y="44" width="100" height="56" rx="8"/><text class="ct" x="298" y="64">通信路</text><text class="cs" x="298" y="79">電波・線・空気</text><text class="cs" x="298" y="92" style="fill:var(--accent)">↑ノイズ混入</text>
+            <rect class="cb" x="400" y="50" width="78" height="44" rx="8"/><text class="ct" x="439" y="68">復号</text><text class="cs" x="439" y="84">中身に戻す</text>
+            <rect class="cb" x="508" y="50" width="78" height="44" rx="8"/><text class="ct" x="547" y="68">受信者</text><text class="cs" x="547" y="84">受け取る人</text>
+            <line class="cw" x1="88" y1="72" x2="116" y2="72"/><polygon points="116,67 126,72 116,77" fill="var(--ink)"/>
+            <line class="cw" x1="196" y1="72" x2="246" y2="72"/><polygon points="246,67 256,72 246,77" fill="var(--ink)"/>
+            <line class="cw" x1="348" y1="72" x2="398" y2="72"/><polygon points="398,67 408,72 398,77" fill="var(--ink)"/>
+            <line class="cw" x1="478" y1="72" x2="506" y2="72"/><polygon points="506,67 516,72 506,77" fill="var(--ink)"/>
+            <line x1="298" y1="20" x2="298" y2="42" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="3 3"/><text class="cs" x="298" y="15" style="fill:var(--accent)">ノイズ源</text>
+          </svg>
+          <figcaption>図2：シャノンの通信モデル。送り手は中身を「符号化」し、ノイズの混じる通信路を通して送り、受け手が「復号」する。</figcaption>
+        </figure>
+        <p>この一枚に、情報理論の二大テーマが詰まっています。
+        ひとつは<strong>「符号化をどこまで短くできるか」</strong>（圧縮の問題。限界はエントロピー）。
+        もうひとつは<strong>「ノイズが混じっても、どこまで正確に送れるか」</strong>（誤り訂正の問題）。
+        この先の講で出てくる通信や記録の技術は、すべてこの図の上で議論されている、と考えてください。</p>
+
+        <h3>符号化の鉄則 ― 頻出は短く、レアは長く</h3>
+        <p><span class="term">符号化</span>とは、情報を0と1（や記号）の列に置き換える作業です。
+        ここでの鉄則が<strong>「よく出るものほど短く」</strong>。
+        毎晩カレーの家を思い出してください。出番の多い「カレー」を最短の符号
+        （究極的には沈黙＝0ビット）に割り当てれば、全体としていちばん効率がよくなります。
+        逆に、年に一度しか出ない「すき焼き」には長い符号を割り当てても、めったに使わないので全体の効率は落ちません。</p>
+        <p>この発想を100年以上前に実践していたのが、モールス信号です。
+        英語でいちばんよく使う <code>E</code> は「<code>・</code>」（短点ひとつ）、次に多い <code>T</code> は「<code>－</code>」。
+        一方、めったに使わない <code>Q</code> は「<code>－－・－</code>」、<code>Z</code> は「<code>－－・・</code>」と長い。
+        モールス兄弟は印刷所を訪ねて活字の数（＝使用頻度）を調べ、符号の長さを決めたと言われます。
+        理論なき時代の、見事に情報理論的な直感です。
+        そして、この「頻度に応じた符号長」を<strong>数学的に最適化</strong>したものが、第9講で扱うハフマン符号になります。</p>
+        <p>ひとつ注意があります。長さの違う符号を使うと、「区切りはどこ？」という問題が起きます。
+        たとえば <code>0</code>＝晴れ、<code>1</code>＝くもり、<code>01</code>＝雨…とすると、
+        受け取った <code>01</code> が「雨」なのか「晴れ＋くもり」なのか分からなくなる。
+        そこで使うのが<strong>「どの符号も、他の符号の先頭部分（語頭）になっていない」</strong>という工夫
+        （<span class="term">語頭符号／プレフィックス符号</span>）です。
+        本文で使った <code>0 / 10 / 110 / 111</code> がまさにそれ。
+        <code>0</code> で始まったら即「晴れ」で確定、<code>1</code> なら次を見る……と、区切り記号なしで一意に読めます。
+        ハフマン符号も、この語頭符号の性質を満たすように木をたどって作られます。</p>
+        <p>シャノンはさらに、踏み込んだことを証明しました。
+        <span class="em">どんなに工夫しても、平均の符号の長さは、その情報源のエントロピーより短くはできない。</span>
+        エントロピーは、圧縮の<strong>越えられない底</strong>なのです。
+        「あと何バイト縮められるか」は、最初からデータのエントロピーによって決まっている――
+        これはシャノンが人類に与えた、最も美しい贈り物のひとつです。</p>
+        <p>もう片方のテーマ、誤り訂正は、これと正反対に見えて表裏一体です。
+        圧縮が「ムダ（冗長性）をそぎ落とす」作業なのに対し、
+        誤り訂正は「ノイズに備えて、わざとムダを少し足しておく」作業。
+        足したムダのおかげで、一部が壊れても元を復元できる。
+        <strong>「どれだけそぎ落とせるか（圧縮）」と「どれだけ備えるか（誤り訂正）」のせめぎ合い</strong>――
+        通信や記録の設計は、つねにこの2つのバランスの上に成り立っています。</p>
+
+        <h3>なぜ「デジタル」なのか ― 0と1に落とす強さ</h3>
+        <p>ここまでの話は、じつは「なぜ世界中がデジタル（情報を0と1の飛び飛びの値で扱う方式）に移行したのか」
+        という大きな問いにも答えています。
+        対する<strong>アナログ</strong>は、レコードの溝のように、情報を連続的な量で表す方式です。
+        音や光そのものに近く、なめらかで味わい深い。けれど、決定的な弱点があります。
+        ―― <span class="em">アナログは、ノイズが乗ると、それを元の値と区別できない</span>のです。
+        テープを何度もダビングすると音がどんどん劣化していくのが、その典型です。</p>
+        <p>デジタルは違います。値が「0か1か」の<strong>2択しかない</strong>ので、
+        多少ノイズで波形が乱れても、「これは0寄り、これは1寄り」と<strong>きっぱり判定し直せる</strong>。
+        さらに前述の誤り訂正符号を組み合わせれば、劣化を限りなくゼロに近づけられます。
+        だからデジタルデータは、何百回コピーしても元とまったく同じ。
+        「飛び飛びの値にする（離散化する）ことで、かえって正確さと頑丈さを手に入れる」――
+        これがデジタルが世界を席巻した、本質的な理由です。
+        では、その0と1で、数や文字を具体的にどう表すのか。
+        それを扱うのが、次の第2講「0と1で世界を表す」です。</p>
+
+        <div class="trivia">
+          <p>かつての大学合格電報は、合格を「サクラサク」、不合格を「サクラチル」と打ちました。風流です。
+          しかし情報の目で見ると、ここで本当に送りたいのは<strong>「受かった／落ちた」のたった1ビット</strong>。
+          1ビットで足りる情報に、わざわざ5文字もの電報を使っているわけで、効率の鬼から見れば"もったいない"符号化です。
+          もちろん現実には、誤読しにくさや風情という別の価値もあります。
+          大事なのは、<strong>「情報の本質的な量」と「実際の表現の長さ」はまったく別物だ</strong>という区別。
+          この感覚が、圧縮・通信・データ設計のいたるところで効いてきます。</p>
+        </div>
+      </section>
+
+      <!-- 人物：シャノン -->
+      <section id="s-shannon">
+        <h2>人物：クロード・シャノンという天才</h2>
+        <p>ここまで何度も名前を出してきた理論は、ほぼ一人の天才から生まれました。
+        アメリカの数学者・電気技術者<span class="term">クロード・シャノン</span>（1916–2001）です。</p>
+        <div class="history">
+          <p>シャノンは1948年、ベル研究所で「通信の数学的理論（A Mathematical Theory of Communication）」という論文を発表します。
+          この一本が、それまで曖昧模糊としていた「情報」を、初めて<strong>測れる量</strong>として定義しました。
+          「ビット」という言葉が世に広まったのも、この論文です（言葉自体は同僚の統計学者ジョン・テューキーの案とされます。
+          binary digit ＝ 2進数字を縮めた造語です）。
+          いまや誰もが日常的に使う「ビット」は、生まれてまだ80年に満たない、意外と若い言葉なのです。</p>
+          <p>シャノンには、もうひとつの大きな顔があります。
+          彼は1937年、わずか21歳の修士論文で、
+          <strong>電気スイッチのオン・オフが、論理学のブール代数（真・偽）とぴったり対応する</strong>ことを示しました。
+          つまり「論理」を「電気回路」として組み立てられると証明したのです。
+          これは後に「20世紀で最も重要な修士論文」とも呼ばれ、
+          第3講で扱う<strong>論理回路</strong>――コンピュータの計算の素材――の理論的な出発点になりました。
+          情報理論と論理回路。現代コンピュータの2本の柱を、一人の若者が立て続けに打ち立てたわけです。</p>
+        </div>
+        <p>シャノンは「学習する機械」の先駆けでもありました。
+        1950年ごろ、「テセウス」と名づけた電動ネズミを作り、迷路を試行錯誤で解かせ、
+        二度目以降は学習して最短で抜けられるようにしています。
+        記憶し、学習する機械――これは第15講のAIの、ささやかで愛らしい原型です。
+        情報・論理・知能という、現代コンピュータ科学の主要なテーマのいくつもが、彼一人から伸びています。</p>
+        <p>意外なところでは、シャノンは<strong>投資家としても大成功</strong>しました。
+        確率と情報の考え方を市場に応用し、長期的に市場平均を上回るリターンを上げたと言われます。
+        友人の数学者エドワード・ソープとは、ルーレットの出目を予測する<strong>世界初とも言われる"装着型コンピュータ"</strong>を
+        こっそり作ってカジノに持ち込んだ、という逸話まで残っています。
+        「情報を制する者は、不確かさ（＝ギャンブルや市場）を制する」を、地で行った人でした。</p>
+
+        <div class="trivia">
+          <p>シャノンは大変な遊び心の持ち主でした。
+          ベル研究所の廊下を<strong>一輪車に乗りながらジャグリングして移動</strong>し、
+          スイッチを入れると箱から手が出てきて、自分のスイッチを切るだけの
+          「<strong>究極の機械（Ultimate Machine）</strong>」という、何の役にも立たない装置を作って楽しんでいました。
+          ジャグリングが好きすぎて「ジャグリングの数学的理論」まで書いたほどです。<br>
+          「エントロピー」という命名にも逸話があります。シャノンが名前に迷っていたとき、
+          天才数学者フォン・ノイマン（第4講で再登場）がこう助言したと伝わります。
+          「<strong>エントロピーと呼びたまえ。同じ式が熱力学で使われているし、
+          それが何なのか誰もよく分かっていないから、議論で常に君が有利になる</strong>」。
+          身もふたもない助言ですが、命名は大当たりでした。</p>
+        </div>
+      </section>
+
+      <!-- 現代への応用 -->
+      <section id="s-apply">
+        <h2>現代への応用 ― 情報理論はいまが全盛期</h2>
+        <p>情報理論は抽象的な数学に見えて、私たちの暮らしを丸ごと支えています。
+        むしろ、生まれて70年以上たった今こそ全盛期と言えます。代表例を見ていきましょう。</p>
+
+        <h3>① データ圧縮 ― 縮む限界はエントロピー</h3>
+        <p>ZIP・JPEG・MP3・動画圧縮は、すべて「冗長性（予測しやすさ）を削る」技術です。
+        テキストを ZIP で固めると半分以下になるのは、言葉に強い偏りがあり、エントロピーが低いから。
+        逆に、すでに圧縮済みのファイルや暗号化データはほぼランダムでエントロピーが高く、
+        ZIP してもほとんど縮みません。
+        <strong>「あと何バイト縮められるか」は、そのデータのエントロピーが決めている</strong>のです（くわしくは第9講）。</p>
+
+        <h3>② 誤り訂正 ― ノイズに勝つ符号化</h3>
+        <p>シャノンは「ノイズだらけの通信路でも、適切に符号化すれば、誤りをいくらでも小さくして情報を送れる」
+        ことを証明しました。これは直感に反する驚きの結果です。
+        わざと少し情報を"水増し"（冗長化）しておくことで、一部が壊れても元を復元できる。
+        スマホの電波が多少不安定でも通話できるのも、CDが傷ついても再生できるのも、
+        QRコードが汚れても読めるのも、宇宙探査機が何億km彼方から写真を送れるのも、
+        すべてこの誤り訂正符号のおかげです（第9講で再訪）。</p>
+
+        <h3>③ パスワードの強さ ― ビットで測る安全</h3>
+        <p>パスワードの「強さ」は、まさにエントロピー（ビット）で定量化できます。
+        数字4桁の暗証番号は <code>10⁴ ＝ 1万通り</code>＝約13.3ビット。
+        英大小文字＋数字（62種類）8文字なら <code>62⁸ ≒ 218兆通り</code>＝約47ビット。
+        ビットが大きいほど、総当たり攻撃に強くなります。
+        「長く・使う文字種を増やそう」と言われるのは、エントロピーを上げて候補数を指数的に膨らませるためです（第10講）。</p>
+
+        <h3>④ AI・大規模言語モデル ― 言葉のエントロピーを学ぶ</h3>
+        <p>現代AIの中心、大規模言語モデル（LLM）の学習目標は、煎じ詰めれば「文章の続きの一語を当てる」こと。
+        これは本質的に、<strong>言葉のエントロピー（次に何が来やすいか）を、極限まで精密に学ぶこと</strong>にほかなりません。
+        言語の予測しやすさを徹底的に学習した結果が、あの流暢な文章生成です。
+        第1講のいちばん素朴な問い――次に来るものをどれだけ予測できるか――が、
+        最先端AIの心臓部に、そのまま生きているのです（第15講）。</p>
+
+        <h3>⑤ 通信速度の上限 ― あなたの回線にも"天井"がある</h3>
+        <p>シャノンは、ある通信路で「1秒あたり最大何ビットまで誤りなく送れるか」という上限
+        （通信路容量、いわゆるシャノン限界）まで導きました。
+        スマホの「○Mbps」やWi-Fiの速度には、電波の帯域とノイズで決まる物理的な天井があり、
+        それを超えることは原理的にできません。
+        「もっと速い回線がほしい」という日常の願いの裏にも、シャノンの理論がいます（第13講）。</p>
+
+        <h3>⑥ 言葉そのものを測る ― 英語のエントロピー</h3>
+        <p>シャノン自身が行った、遊び心あふれる実験も紹介しましょう。
+        彼は「英語の文章は、1文字あたり何ビットの情報を持っているか」を測ろうとしました。
+        方法がふるっていて、人に文章の途中を見せ、<strong>「次の文字を当てさせる」</strong>のです。
+        人間は文脈から「<code>th</code> の次は <code>e</code> だろう」とかなり当てられる。
+        よく当たる＝予測しやすい＝エントロピーが低い、というわけです。</p>
+        <p>この実験から、英語のエントロピーは1文字あたり<strong>おおよそ1ビット程度</strong>と見積もられました。
+        アルファベットは26文字あるので、単純なら <code>log₂26 ≈ 4.7ビット</code> のはず。
+        それが実質1ビット前後まで下がるのは、言語にそれだけ<strong>強い規則性（冗長性）</strong>があるから。
+        だからこそ文章はよく圧縮でき、多少の誤字でも読める。
+        そして、この「次の文字（単語）をどれだけ当てられるか」を機械に極限まで突き詰めさせたものが、
+        ほかでもない現代の大規模言語モデルなのです。
+        シャノンの素朴な"次の文字当てゲーム"は、70年を経てAIの中心原理になりました。</p>
+
+        <h3>⑦ 生命の設計図も「情報」だった</h3>
+        <p>情報理論の視点は、生物学にも染み出しました。
+        私たちの遺伝情報DNAは、A・T・G・Cという<strong>4種類の塩基の並び</strong>で書かれた、いわば符号の列です。
+        4種類なら1文字あたり <code>log₂4 ＝ 2ビット</code>。
+        生命とは、化学であると同時に<span class="em">「情報を複製し、伝え、ときどき書き換える」システム</span>でもある――
+        こうした見方が成り立つのも、シャノンが「情報」を物質から切り離して扱えるようにしたからです。
+        情報理論は、通信工学の枠をはるかに超えて、20世紀後半の科学の共通言語になりました。</p>
+
+        <div class="trivia">
+          <p>ところで、私たちが何かを伝えるとき、頭の中の情報を「声」や「指のタイピング」という、
+          かなり<strong>帯域の狭い通信路</strong>に押し込んで出力しています。会話はせいぜい毎秒数十ビット程度とも言われます。
+          もし脳とコンピュータを直接つなげられたら（ブレイン・マシン・インターフェース）、
+          この"出力のボトルネック"を飛び越えられるかもしれません。
+          実際、麻痺のある人が「考えるだけ」でカーソルや義手を動かす研究は、現実に進んでいます。
+          「人間の思考を、どう符号化して外に出すか」――これもまた、第1講のテーマがそのまま顔を出す最前線なのです。</p>
+        </div>
+      </section>
+
+      <!-- よくある誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「データ量（バイト数）が多い＝情報量が多い」</p>
+          <p class="a">別物です。同じ内容でも、冗長な書き方をすればデータ量は増えますが、含まれる情報量（エントロピー）は変わりません。
+          だから圧縮ができる。データ量は"入れ物の大きさ"、情報量は"中身の本質的な量"だと考えてください。</p>
+          <p class="q">誤解②：「情報量が多い＝価値が高い・有益」</p>
+          <p class="a">情報理論の「情報量」は<strong>びっくり度（予測しにくさ）</strong>であって、有用性や意味の正しさとは無関係です。
+          でたらめなランダム文字列はエントロピー最大ですが、人間にとってはほぼ無価値。
+          「情報量が多い」と「役に立つ」は、きっぱり切り離して考えましょう。</p>
+          <p class="q">誤解③：「ランダムなものには情報がない」</p>
+          <p class="a">逆です。完全にランダム（予測不能）な情報源こそ、エントロピーが<strong>最大</strong>になります。
+          だからランダムなデータはほとんど圧縮できない。「規則的＝情報が少ない、ランダム＝情報が多い」が正しい向きです。</p>
+          <p class="q">誤解④：「ビット（bit）とバイト（Byte）は同じ」</p>
+          <p class="a">1バイト＝8ビットです。通信速度の「100Mbps」は1秒に1億"ビット"、ファイルサイズの「10MB」は"バイト"。
+          単位が b と B で8倍違うので、混同すると計算が8倍ずれます。
+          「光回線1Gbpsなのにダウンロードは毎秒125MBどまり」なのは故障ではなく、単位換算（÷8）の結果です。</p>
+          <p class="q">誤解⑤：「エントロピーは"情報の劣化・乱れ"という悪いものだ」</p>
+          <p class="a">物理（熱力学）のイメージから「散らかること＝悪」と捉えがちですが、
+          情報理論のエントロピーは中立的な<strong>「予測しにくさの量」</strong>で、高い・低いに善悪はありません。
+          暗号の鍵はエントロピーが高い（予測不能）ほど安全で"良い"し、圧縮したいデータはエントロピーが低い方が"ありがたい"。
+          場面によって、高い方が良いことも、低い方が良いこともあるのです。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <div class="summary">
+          <ul>
+            <li>情報量とは「びっくり度」。めったに起きないことほど情報が多い（毎晩カレーなら情報はほぼゼロ）。</li>
+            <li>1ビット＝はい／いいえの質問1回ぶん。N通りの特定には <code>log₂N</code> ビット必要。8ビット＝1バイト。</li>
+            <li>エントロピー＝平均のびっくり度＝予測しにくさ。天気予報を見る価値も、親密さも、これで説明できる。</li>
+            <li>符号化の鉄則は「頻出を短く」。平均符号長はエントロピーより短くできない＝圧縮の理論的な底。</li>
+            <li>この4つの概念が、圧縮・誤り訂正・暗号・AI・通信まで、以降すべての講の共通の土台になる。</li>
+          </ul>
+        </div>
+        <table class="tbl">
+          <caption>表1：この講の用語整理</caption>
+          <tr><th>用語</th><th>ひとことで言うと</th><th>つながる先</th></tr>
+          <tr><td>情報量</td><td>ある出来事の「びっくり度」 <code>log₂(1/p)</code></td><td>レアな出来事ほど大きい</td></tr>
+          <tr><td>ビット(bit)</td><td>はい/いいえ1回ぶんの情報。情報の単位</td><td>8ビット＝1バイト（第2講）</td></tr>
+          <tr><td>エントロピー</td><td>平均のびっくり度＝予測しにくさ</td><td>圧縮の理論的下限（第9講）</td></tr>
+          <tr><td>符号化</td><td>情報を記号列に変換すること</td><td>頻出を短く＝圧縮（第9講）</td></tr>
+          <tr><td>通信路容量</td><td>誤りなく送れる速度の上限</td><td>回線速度の天井（第13講）</td></tr>
+        </table>
+      </section>
+
+      <!-- 考えてみよう -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>1〜32の数を当てるには、最低何回のはい／いいえ質問が必要か。なぜか。</li>
+            <li>サイコロ（1〜6が等確率）1回の出目のエントロピーは約何ビットか。<code>log₂6</code> を見積もれ。</li>
+            <li>「毎日メニューが違う家」と「毎晩カレーの家」で、晩ごはんを伝えるのに平均的に長い符号が要るのはどちらか。エントロピーの観点で答えよ。</li>
+            <li>本文の4択天気（確率 1/2, 1/4, 1/8, 1/8）に、符号 <code>0 / 10 / 110 / 111</code> を割り当てた。1記号あたりの平均符号長を計算し、エントロピー1.75ビットと比べよ。</li>
+            <li>「光回線1Gbps」で、800MB（メガバイト）の動画は理論上最短で何秒かかるか。ビットとバイトの違いに注意して概算せよ。</li>
+            <li>同じ「晴れ・くもり・雨・雪」の4通りでも、A地点は確率が <code>1/2, 1/4, 1/8, 1/8</code>、B地点は <code>1/4, 1/4, 1/4, 1/4</code> だった。エントロピーが大きい（＝予報の価値が高い）のはどちらか。計算せずに理由から答えよ。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) 32 ＝ 2⁵ なので<strong>5回</strong>。毎回候補を半分に割れば、必ず5回で特定できる。<br>
+            (2) <code>log₂6 ≈ 2.58</code> ビット。2ビット（4通り）では足りず、3ビット（8通り）あれば足りる、その中間。<br>
+            (3) <strong>毎日メニューが違う家</strong>。予測しにくくエントロピーが高いので、平均符号長も長くなる。カレーの家はほぼ予測でき、短く（究極は沈黙で）済む。<br>
+            (4) 平均符号長 ＝ <code>1/2×1 + 1/4×2 + 1/8×3 + 1/8×3 ＝ 1.75</code> ビット。エントロピーとぴったり一致し、これがこの確率分布での<strong>最適な符号化</strong>になっている。<br>
+            (5) 800MB ＝ <code>800 × 8 ＝ 6400メガビット ＝ 6.4ギガビット</code>。1Gbps なら <strong>約6.4秒</strong>（実際は通信のオーバーヘッドでもう少しかかる）。バイト→ビットの「×8」を忘れると、8倍速く見積もってしまう。<br>
+            (6) <strong>B地点</strong>。選択肢の数が同じなら、確率が一様（どれも1/4）なときにエントロピーは最大になる。A地点は「だいたい晴れ」と予測しやすいぶんエントロピーが低く、予報の価値も相対的に小さい。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">クロード・E・シャノン／ワレン・ウィーバー『通信の数学的理論』</span>（ちくま学芸文庫）
+          ― 情報理論が生まれた歴史的原典。本文は難解だが、ウィーバーによる平易な解説章だけでも読む価値がある。</li>
+          <li><span class="bk">ジェイムズ・グリック『インフォメーション ― 情報技術の人類史』</span>（新潮社）
+          ― アフリカの太鼓からシャノンまで、「情報」という概念をめぐる壮大な物語。読み物として抜群に面白い。</li>
+          <li><span class="bk">高岡詠子『シャノンの情報理論入門』</span>（講談社ブルーバックス）
+          ― 図解中心で、エントロピーや符号化をやさしくたどれる新書。最初の一冊に。</li>
+          <li><span class="bk">甘利俊一『情報理論』</span>（ちくま学芸文庫）
+          ― 日本を代表する研究者による、コンパクトで信頼できる入門書。数式に一歩踏み込みたい人へ。</li>
+          <li><span class="bk">ジミー・ソニ／ロブ・グッドマン『クロード・シャノン ― 情報時代を発明した男』</span>（筑摩書房）
+          ― 一輪車やジャグリングの逸話も満載の、決定版とされる評伝。人物から入りたい人に。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="index.html"><span class="lab">← もどる</span>講義一覧（TOP）</a>
+        <a class="nx disabled" href="#"><span class="lab">次へ →</span>第2講 0と1で世界を表す（準備中）</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第1部 第1講「情報とは何か」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

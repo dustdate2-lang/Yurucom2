@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第1部 第9講 圧縮と誤り訂正 ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="ZIPもJPEGもMP3も、なぜデータは縮むのか。そしてQRコードはなぜ汚れても読めるのか。圧縮と誤り訂正の原理を身近に学ぶ。ゆるコンピュータ科学講義 第1部 第9講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#c8503a; --accent-soft:#f7e3dd;
+    --accent2:#2f6f6a; --accent2-soft:#dcebe9;
+    --code-bg:#2b2722; --code-ink:#f3ead9;
+    --sidebar:#262320; --sidebar-ink:#e9e2d4; --sidebar-muted:#a59c8a;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#16140f; --paper:#1f1c16; --ink:#ece6d8; --muted:#a79e8c;
+    --line:#332f27; --accent:#e8775f; --accent-soft:#3a221c;
+    --accent2:#6fb6ad; --accent2-soft:#1c2c2a;
+    --code-bg:#100e0a; --code-ink:#f3ead9;
+    --sidebar:#100e0a; --sidebar-ink:#e9e2d4; --sidebar-muted:#8d8472;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#a83c2c 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"ZIP JPG";position:absolute;right:6px;bottom:-6px;font-family:ui-monospace,monospace;font-size:3.8rem;font-weight:800;color:rgba(255,255,255,.08)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.9;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent2);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent2-soft);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent2)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:var(--accent2-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#2b2722}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent2-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent2-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent2);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent2-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent2);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第9講 圧縮と誤り訂正</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第1部 第9講</span><br>圧縮と誤り訂正</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-why">なぜデータは縮むのか</a></li>
+      <li><a href="#s-runlength">原理① 繰り返しをまとめる</a></li>
+      <li><a href="#s-huffman">原理② 頻出を短く</a></li>
+      <li><a href="#s-lossy">可逆と非可逆</a></li>
+      <li><a href="#s-limit">圧縮の限界</a></li>
+      <li><a href="#s-error">誤り訂正 ― ノイズに勝つ</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第1部 基礎教養編 ／ 第9講</div>
+        <h1>圧縮と誤り訂正<br>― 縮める技術と、守る技術</h1>
+        <p>なぜデータは縮むのか。どこまで縮められるのか。そして、QRコードはなぜ汚れても読めるのか。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― 縮める技術が、世界を回している</h2>
+        <p>私たちは毎日、知らないうちにデータの圧縮の恩恵を受けています。
+        スマホで撮った写真、ストリーミングで観る動画、聴く音楽、送り合うメッセージ――
+        これらが軽快にやり取りできるのは、データが裏で<strong>ぎゅっと小さく圧縮されている</strong>からです。
+        もし圧縮がなければ、1本の動画をダウンロードするのに何時間もかかり、
+        スマホの容量はあっという間に底をつくでしょう。</p>
+        <p>この講では、まず<strong>「なぜデータが縮むのか」「どこまで縮められるのか」</strong>という圧縮の原理を、
+        第1講のエントロピーと結びつけて解き明かします。
+        そして後半では、その裏返しともいえる技術――<strong>誤り訂正</strong>を扱います。
+        圧縮が「無駄を削る」技術なら、誤り訂正は「あえて無駄を足して、壊れても元に戻せるようにする」技術。
+        正反対に見えるこの2つが、じつは同じ情報理論の表と裏であることが、本講のクライマックスです。
+        QRコードが多少汚れても読めるのも、傷ついたCDが再生できるのも、すべてこの誤り訂正のおかげなのです。</p>
+        <p>面白いのは、圧縮と誤り訂正が、第1講で学んだ情報理論の<strong>「ちょうど反対側の応用」</strong>になっている点です。
+        第1講で、シャノンが情報理論で2つの大きな問いに答えたことに触れました。
+        ひとつは「データをどこまで短く表せるか（圧縮の限界＝エントロピー）」、
+        もうひとつは「ノイズがあってもどこまで正確に送れるか（通信の限界）」。
+        本講の前半は前者、後半は後者にあたります。
+        つまりこの第9講は、<span class="em">第1講で立てた2本の柱が、実用技術として地上に姿を現す回</span>なのです。
+        抽象的だったエントロピーが、スマホの中で、いままさに働いていることを実感してください。</p>
+        <p class="lead-in">なぜ縮むか → 繰り返しをまとめる → 頻出を短く → 可逆と非可逆 → 圧縮の限界 → 誤り訂正。
+        第1講の「情報量」が、ここで実用技術として花開きます。</p>
+        <p>圧縮と聞くと「ファイルを小さくするだけの、地味な機能」と思うかもしれません。
+        しかし、その背後には<span class="em">「情報の本質的な量とは何か」という、第1講以来の深い問い</span>が横たわっています。
+        どんなデータも無限には縮められない――その限界がどこにあるのか。
+        そして、なぜノイズだらけの世界で、データが壊れずに届くのか。
+        本講は、第1講で出会った抽象的なエントロピーが、ZIP・JPEG・QRコードといった、
+        手で触れられる技術として目の前に現れる回です。理論と実用が、ここで握手します。</p>
+      </section>
+
+      <!-- なぜ縮むか -->
+      <section id="s-why">
+        <h2>なぜデータは縮むのか ― 無駄を見つける</h2>
+        <p>圧縮の出発点は、第1講で学んだエントロピーです。
+        あのとき「予測しやすいデータは、情報量が少ない」と学びました。
+        裏を返せば、<span class="em">予測しやすい＝規則性がある＝無駄（冗長性）がある</span>ということ。
+        圧縮とは、その<strong>規則性を見つけ出して、表現をぎりぎりまで切り詰める</strong>作業にほかなりません。</p>
+        <p>たとえば「あいうえおあいうえおあいうえお」という文字列は、
+        「あいうえお」を3回くり返しているだけ。だから「『あいうえお』×3」と書けば、ずっと短くなります。
+        これは規則性（くり返し）という無駄を見つけて削った、立派な圧縮です。
+        一方、「さしすせそたちつてと」のように規則性のない文字列は、これ以上短く言い換えようがありません。
+        <strong>圧縮できる量は、データに潜む規則性の量で決まる</strong>のです。
+        だからこそ、まったくの無秩序（ランダムなノイズ）は、ほとんど圧縮できません。</p>
+        <p>言葉にも、たっぷり規則性が潜んでいます。
+        日本語でも英語でも、文字の出やすさには大きな偏りがあり（第1講のエントロピーの話です）、
+        「。」のあとには改行が来やすい、「th」のあとは「e」が来やすい、といった"クセ"が無数にあります。
+        こうした偏りやクセが、まさに圧縮で削れる「無駄」。
+        だから、ふつうの文章をZIPで固めると、半分以下に縮むことも珍しくありません。
+        一方、すでに圧縮済みのファイルや、暗号化されたデータは、見かけ上ランダムに近いので、
+        さらにZIPしてもほとんど縮まない。
+        <span class="em">「縮むかどうか」は、そのデータがどれだけ"予測しやすい"か（規則的か）で決まる</span>のです。</p>
+      </section>
+
+      <!-- ランレングス -->
+      <section id="s-runlength">
+        <h2>原理① 繰り返しをまとめる ― ランレングス符号化</h2>
+        <p>最も素朴で分かりやすい圧縮が<span class="term">ランレングス符号化</span>です。
+        やることはシンプルで、<strong>同じものが続いたら「何が・何個」と書く</strong>だけ。
+        たとえば白黒のFAX画像で、白い点がずっと続く行を考えます。</p>
+        <pre><code>元データ：白白白白白白白白白白黒黒白白白白
+圧縮後　：白×10 黒×2 白×4</code></pre>
+        <p>16個ぶんの情報が、ぐっと短い表現になりました。
+        同じ色がベタっと続くデータ――イラスト、アイコン、ロゴ、FAX、塗りつぶしの多い画像――に、絶大な効果を発揮します。
+        逆に、写真のように1点ごとに色が微妙に変化するデータには、ほとんど効きません
+        （「赤1個、ちょっと違う赤1個、また少し違う赤1個…」では、まとめようがないからです）。
+        単純ですが、「データの性質に合った圧縮を選ぶ」という、圧縮の本質を教えてくれる手法です。</p>
+      </section>
+
+      <!-- ハフマン -->
+      <section id="s-huffman">
+        <h2>原理② 頻出を短く ― ハフマン符号</h2>
+        <p>もうひとつの王道が、第1講のエントロピーを地で行く<span class="term">ハフマン符号</span>です。
+        モールス信号を思い出してください（第1講）。よく使うEは短点1つ、めったに使わないQは長い符号。
+        この<strong>「頻度の高いものに短い符号を、低いものに長い符号を割り当てる」</strong>という鉄則を、
+        数学的に最適な形で実現するのがハフマン符号です。</p>
+        <p>たとえば、ある文章で A が大量に、Z がたまにしか出ないなら、
+        A には1〜2ビットの短い符号を、Z には長い符号を割り当てる。
+        全部の文字を均等に8ビット（1バイト）で表すより、文章全体のビット数がぐっと減ります。
+        作り方は、第7講で学んだ<strong>木構造</strong>を使います。
+        出現頻度の低いものから2つずつまとめて枝にしていき、1本の木を組み上げる。
+        できた木を根からたどった経路（左を0、右を1）が、各文字の符号になります。
+        <span class="em">頻度の高い文字ほど根の近くに配置され、短い符号になる</span>という、美しい仕組みです。</p>
+        <p>ここで第1講のエントロピーが、再び主役として戻ってきます。
+        第1講で「平均符号長は、エントロピーより短くできない」と学びました。
+        ハフマン符号は、その理論的な限界にぐっと迫る圧縮を実現します。
+        <strong>「どこまで縮められるか」の答えは、すでに第1講で決まっていた</strong>のです。
+        私たちが日常的に使うZIPやPNG、通信の多くは、このハフマン符号と、
+        さきほどの繰り返し検出（LZ法と呼ばれる手法）を組み合わせて作られています。</p>
+        <p>ごく小さな例で、効果を確かめてみましょう。
+        4種類の文字 A, B, C, D が、それぞれ <code>出現回数 15, 7, 6, 5</code> 回あるとします。
+        全部を2ビット固定で表すと、合計 <code>(15+7+6+5)×2 ＝ 66ビット</code>。
+        ところが、いちばん多いAに短い符号（たとえば1ビット）、まれなC・Dに長め（3ビット）を割り当てると、
+        合計ビット数は <code>66ビットより明確に少なく</code> なります。
+        <span class="em">「よく出るものを短く」するだけで、同じ情報がより少ないビットに収まる</span>。
+        塵も積もれば山となり、文章や画像のように文字・パターンの偏りが大きいほど、効果は絶大です。</p>
+        <div class="history">
+          <p><strong>宿題から生まれた、ハフマン符号。</strong>
+          ハフマン符号は、1951年、当時まだ学生だったデビッド・ハフマンによって生み出されました。
+          授業で教授から「期末試験を受けるか、それとも"最も効率の良い符号の作り方"という難問を解くか、選んでよい」と言われ、
+          ハフマンは後者に挑みました。じつはこの問題、その教授自身を含む当時の研究者たちが解けずにいた難題でした。
+          ハフマンは何週間も悩んだ末、あきらめかけてノートを捨てようとした瞬間にひらめいた、と伝わります。
+          <span class="em">学生が、第一線の研究者でも解けなかった問題を、宿題として解いてしまった</span>のです。
+          その手法は70年以上たったいまも、世界中のあらゆる圧縮の中で現役で働いています。</p>
+        </div>
+      </section>
+
+      <!-- 可逆と非可逆 -->
+      <section id="s-lossy">
+        <h2>可逆と非可逆 ― 「捨てる」という大胆な選択</h2>
+        <p>ここまでは、解凍すると<strong>元と完全に一致</strong>する<span class="term">可逆圧縮</span>でした。
+        文書やプログラムは、1ビットでも狂うと壊れてしまうので、必ず可逆圧縮を使います。
+        しかし、写真・音楽・動画では、まったく別の大胆な手が使えます。
+        <span class="em">人間がどうせ気づかない情報は、いっそ捨ててしまう</span>――これが<span class="term">非可逆圧縮</span>です。</p>
+        <div class="def">
+          <p><b>非可逆圧縮の発想 ― 人間の"鈍さ"を逆手に取る</b></p>
+          <p style="margin-bottom:0">人間の目は、明るさの変化には敏感だが、細かい色の違いには鈍い → <b>JPEG</b>はその色情報を間引く。
+          人間の耳は、大きな音の陰に隠れた小さな音が聞こえない（マスキング効果） → <b>MP3</b>はその聞こえない音を消す。
+          失った情報は二度と戻らないが、見た目・聞こえはほとんど変わらないまま、データは劇的に小さくなる。</p>
+        </div>
+        <p>JPEG（写真）、MP3（音楽）、動画の各種方式は、人間の知覚の特性を巧みに利用して、
+        「捨てても気づかれにくいところ」から優先的にデータを削ります。
+        だからこそ写真は数十分の一、音楽は十分の一ほどにまで縮むのです。
+        ただし、非可逆なので、保存を繰り返すと劣化が蓄積します。
+        画像を何度も保存し直すと、だんだんノイズっぽく、汚くなっていく「劣化コピー」現象は、これが原因です。
+        <strong>「サイズ」と「画質・音質」のあいだのトレードオフ</strong>――どこまで捨てるかは、用途しだいの判断になります。</p>
+        <p>動画は、非可逆圧縮の極みです。
+        動画は1秒間に何十枚もの静止画（コマ）の連続ですが、隣り合うコマはほとんど同じ絵であることが多い。
+        そこで動画圧縮は、毎コマを丸ごと保存する代わりに、
+        <strong>「前のコマからの"変化した部分"だけ」を記録</strong>します。
+        止まっている背景は使い回し、動いた部分だけを更新するのです。
+        さらに、人間の目の鈍さを利用した色情報の間引き（JPEGと同じ発想）も組み合わせる。
+        こうした幾重もの工夫の積み重ねで、動画は何十分の一にも圧縮され、ようやくストリーミングが成り立っています。
+        通信が乱れたとき、動画の一部がブロック状に乱れる"モザイク崩れ"が起きるのは、
+        この「差分で送る」仕組みの裏返しなのです。</p>
+      </section>
+
+      <!-- 限界 -->
+      <section id="s-limit">
+        <h2>圧縮の限界 ― エントロピーという底</h2>
+        <p>「圧縮ソフトを2回、3回とかければ、どんどん小さくなるのでは？」と思ったことはないでしょうか。
+        残念ながら、そうはいきません。一度しっかり圧縮したデータは、規則性（無駄）がほぼ削り取られて、
+        見かけ上ランダムに近づきます。すると、もう削るべき無駄が残っていないので、
+        2回目以降の圧縮では、ほとんど縮まない（むしろ管理情報のぶん少し増えることさえある）。</p>
+        <p>この「これ以上は縮められない」という底こそ、第1講の<strong>エントロピー</strong>です。
+        どんなに賢い圧縮アルゴリズムを持ってきても、データのエントロピーより小さくはできない。
+        <span class="em">圧縮の限界は、技術の問題ではなく、データそのものが持つ情報量で決まっている</span>のです。
+        「魔法の超圧縮ソフトで、どんな大容量も数KBに！」といった話が原理的にありえないのは、このためです。</p>
+        <p>もう少し踏み込むと、「あらゆるデータを必ず縮められる魔法の圧縮法」は、論理的に存在しえません。
+        もしそんな方法があれば、縮めて、また縮めて…を繰り返すと、最後はどんなデータも1ビットになってしまう。
+        しかし1ビットでは2通りしか表せないのに、元のデータは無数にあった――これは矛盾です。
+        だから現実の圧縮は「規則性のあるデータはよく縮むが、ランダムなデータはむしろわずかに増える」という、
+        トレードオフを抱えています。
+        ふだん私たちのファイルがよく縮むのは、世の中のデータ（文章・画像・音）に、たっぷり規則性があるからにすぎません。
+        <span class="em">圧縮は万能の魔法ではなく、規則性という"地金"があってこそ効く技術</span>なのです。</p>
+        <div class="trivia">
+          <p>この「情報は無から増やせない」という鉄則は、現代のAIで奇妙なねじれを生んでいます。
+          画像生成AIは、ぼやけた低画質の写真を「それっぽく」高精細にできますが、
+          それは<strong>失われた情報を復元しているのではなく、もっともらしい細部を"でっち上げて"いる</strong>だけ。
+          防犯カメラの粗い映像をAIで「鮮明化」して人物を特定する、という捜査ドラマ的な演出は、
+          原理的にはかなり危ういのです。
+          存在しない情報は、どんな技術でも生み出せない――第1講・第9講で繰り返してきたこの鉄則は、
+          AI時代にこそ思い出す価値があります。</p>
+        </div>
+      </section>
+
+      <!-- 誤り訂正 -->
+      <section id="s-error">
+        <h2>誤り訂正 ― あえて無駄を足して、壊れても直す</h2>
+        <p>さて、ここからが本講の裏テーマです。圧縮が「無駄をそぎ落とす」技術だったのに対し、
+        <span class="term">誤り訂正</span>は<strong>「あえて無駄を少し足しておく」</strong>技術です。
+        なぜそんなことをするのか。理由は、現実の通信や記録には<strong>ノイズ（誤り）</strong>がつきものだからです。
+        電波は乱れ、ディスクは傷つき、QRコードは汚れる。何もしなければ、データは簡単に壊れてしまいます。</p>
+        <p>第1講で、シャノンが「ノイズだらけの通信路でも、適切に符号化すれば誤りをいくらでも小さくできる」と
+        証明したことに触れました。その魔法の正体が、誤り訂正符号です。
+        いちばん簡単な例が<strong>パリティ（偶奇）チェック</strong>。
+        データに「1の個数が偶数になるよう調整する1ビット」を付け足しておくと、
+        受け取った側で1の個数を数えるだけで「どこか1ビット壊れた」と気づけます。
+        さらに賢い符号を使えば、<span class="em">壊れた箇所を特定して、自動的に正しく直す</span>ことまでできます。</p>
+        <p>仕組みのイメージは「念のための予備を持たせる」こと。
+        大事な書類をコピーして2部持っておけば、片方が破れても内容は分かりますね。
+        ただ丸ごと2倍にするのは無駄が多いので、誤り訂正符号は、
+        <strong>最小限の"添え物"で、最大限の復元力を得る</strong>よう、数学的に工夫されています。
+        この「どれだけ無駄を足せば、どれだけの誤りに耐えられるか」のせめぎ合いが、誤り訂正の設計の肝です。</p>
+        <p>パリティチェックを、簡単な例で見てみましょう。
+        <code>1011</code> という4ビットを送りたいとします。1の個数は3個（奇数）。
+        そこで「全体の1の個数が偶数になるように」末尾に1ビット足して <code>10111</code> として送ります（1が4個＝偶数に）。
+        受け手は、届いた5ビットの1の個数を数えるだけ。偶数なら「たぶん無事」、奇数なら「どこか1ビット壊れた」と分かります。
+        ただしパリティは「壊れたと気づく」までで、どこが壊れたかまでは分かりません。
+        そこを一歩進め、複数のパリティを縦横に組み合わせて<strong>「壊れた場所を特定し、自動で直す」</strong>のが、
+        ハミング符号など本格的な誤り訂正符号です。
+        <span class="em">「気づく」だけの誤り検出と、「直す」誤り訂正は、足す無駄の量が違う</span>――
+        ここにも、コストと性能のトレードオフがあります。</p>
+        <h3>QRコードは、なぜ汚れても読めるのか</h3>
+        <p>誤り訂正の身近なチャンピオンが<strong>QRコード</strong>です。
+        QRコードには、もともと誤り訂正符号がたっぷり組み込まれていて、
+        <span class="em">コードの一部が汚れたり、破れたり、ロゴで隠れたりしても、正しく読み取れる</span>ように作られています。
+        水準にもよりますが、面積の最大3割ほどが欠けても復元できるほどの強さを持っています。
+        だからこそ、店頭のQRコードに小さなイラストやロゴを重ねても、ちゃんと機能するのです。
+        汚れやすい工場や屋外で使われることを最初から想定して、頑丈さが設計に織り込まれている――
+        これは、シャノンの理論が日常で働いている、最も身近な例のひとつです。</p>
+        <div class="history">
+          <p><strong>QRコードは、日本生まれ。</strong>
+          QRコードは1994年、自動車部品メーカーの関連会社（デンソーの一部門）で、原昌宏さんらによって発明されました。
+          きっかけは、工場でバーコードを大量に読む現場の苦労。
+          従来のバーコードは情報量が少なく、何本も貼る必要があって不便でした。
+          そこで「縦横の二次元に情報を詰め込み、たくさんの情報を、汚れに強く、速く読めるコード」が求められたのです。
+          コードの三隅にある四角い目印は、どの角度・向きから読んでも一瞬で位置を合わせられるようにする工夫。
+          開発者が囲碁盤を眺めていてヒントを得た、という逸話も残っています。
+          そして本講の主役・誤り訂正が組み込まれているからこそ、油や傷に強い。
+          <span class="em">現場の切実な困りごとが、世界中で使われる発明を生んだ</span>好例であり、
+          発明者が特許を広く開放したことも、爆発的な普及を後押ししました。</p>
+        </div>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用</h2>
+        <h3>圧縮なしに、いまのネットは成り立たない</h3>
+        <p>圧縮の威力を、具体的な数字で実感してみましょう。
+        第2講で学んだとおり、フルカラー写真は1ピクセルに3バイト。
+        スマホのよくある画素数（たとえば1200万画素）だと、無圧縮では <code>1200万×3 ＝ 約36メガバイト</code>にもなります。
+        ところがJPEGで圧縮すると、数メガバイト程度に――およそ<strong>10分の1以下</strong>に縮む。
+        この差があるからこそ、私たちは何千枚もの写真をスマホに保存し、一瞬で送り合えるのです。
+        もし無圧縮のままだったら、スマホの容量も通信量も、たちまちパンクしていたでしょう。</p>
+        <p>動画ストリーミングは、さらに圧縮技術の塊です。
+        もし無圧縮で動画を配信したら、必要な通信量は数十倍にもなり、いまのインターネットでは到底さばけません。
+        動画圧縮は、「隣り合うコマは、ほとんど同じ絵」という時間的な規則性まで利用して
+        （前のコマとの"差分"だけを送る）、桁違いの圧縮を実現しています。
+        音楽配信、ビデオ通話、Webページの画像――どれも圧縮なしには成立しません。
+        <span class="em">私たちが享受している「速い・軽い」デジタル体験は、圧縮技術の上に乗っている</span>のです。</p>
+        <h3>誤り訂正は、過酷な環境の生命線</h3>
+        <p>誤り訂正は、ノイズの多い過酷な場所ほど重要になります。
+        宇宙探査機が、何億kmもの彼方から、ノイズだらけの微弱な電波で鮮明な画像を送れるのは、
+        強力な誤り訂正符号のおかげ。
+        スマホの通信、Wi-Fi、SSDやハードディスクの中、CD・DVD・ブルーレイ――
+        私たちのデータが多少の乱れで壊れないのは、いたるところに誤り訂正が仕込まれているからです。
+        ふだんはまったく意識しませんが、誤り訂正は、デジタル社会の見えない安全網なのです。</p>
+        <h3>圧縮と誤り訂正は、セットで使われる</h3>
+        <p>最後に、本講の2つの技術がどう協力しているかを見ておきましょう。
+        データを送るとき、私たちはまず<strong>圧縮で無駄を削って小さくし</strong>、
+        次に<strong>誤り訂正符号という"必要な無駄"を足して頑丈にして</strong>から送り出します。
+        一見、削っては足すのは矛盾しているようですが、削るのは「意味のない冗長さ」、
+        足すのは「壊れたときに効く、計算された冗長さ」。まったく質が違うのです。
+        無駄なぜい肉を落としてから、要所に筋肉という"守り"をつける、と考えると分かりやすいかもしれません。
+        <span class="em">小さく、かつ、壊れにくく</span>。
+        相反する2つの願いを、情報理論は同時にかなえてくれる。
+        スマホの通信から宇宙探査まで、現代のデータのやり取りは、この圧縮と誤り訂正の二人三脚で成り立っています。</p>
+        <h3>圧縮が生んだ、新しい文化</h3>
+        <p>圧縮技術は、ただ便利なだけでなく、新しい文化そのものを生み出してきました。
+        音楽がCDからダウンロード・ストリーミングへ移り、いつでもどこでも何万曲も持ち歩けるようになったのは、
+        MP3に代表される音声圧縮があったから。
+        動画圧縮の進歩がなければ、動画共有サイトも、ビデオ通話も、配信文化も生まれませんでした。
+        スマホで気軽に写真を撮り、SNSで送り合える日常も、画像圧縮が支えています。
+        <span class="em">「データを小さくする」という地味な技術が、私たちのコミュニケーションや娯楽のかたちを、根本から変えてきた</span>のです。
+        技術の進歩が、単なる効率化にとどまらず、文化や暮らしのスタイルまで作り変える――
+        これは、第2部で繰り返し出会うことになるテーマでもあります。</p>
+        <p>そして、その源流をたどれば、すべては第1講のシャノンに行き着きます。
+        「情報を量として測る」という一つの発想が、圧縮の限界（エントロピー）と、
+        ノイズに勝つ符号化（誤り訂正）という、現代デジタル社会の二本柱を生み出した。
+        本講は、その抽象的だった理論が、私たちの手のひらの中で、いままさに働いていることを確かめる回でした。
+        次の第10講では、同じ「符号化」の発想が、こんどは"秘密を守る"暗号として姿を現します。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「圧縮ソフトを何回もかければ、どんどん小さくなる」</p>
+          <p class="a">なりません。一度圧縮すると無駄（規則性）が削られ、見かけ上ランダムに近づくため、2回目以降はほぼ縮みません。
+          限界はデータのエントロピー（第1講）で決まっています。</p>
+          <p class="q">誤解②：「非可逆圧縮（JPEG等）でも、元に戻せる」</p>
+          <p class="a">戻せません。捨てた情報は二度と戻りません。だから大切な原本や、何度も編集する画像には、可逆圧縮（PNGなど）が向きます。
+          写真の共有など"見た目が保てればよい"場面でJPEGを使う、という使い分けが大事です。</p>
+          <p class="q">誤解③：「誤り訂正は、データを2倍3倍にコピーしているだけ」</p>
+          <p class="a">単純な多重コピーは無駄が多すぎます。実際の誤り訂正符号は、最小限の"添え物"で最大限の復元力を得るよう、
+          数学的に設計されています。だから、わずかな容量増で高い頑丈さを実現できます。</p>
+          <p class="q">誤解④：「ぼやけた写真や映像は、AIを使えば元の鮮明な姿に復元できる」</p>
+          <p class="a">原理的に不可能です。失われた情報は戻りません。AIがやっているのは「もっともらしい細部の創作」であって復元ではない。
+          生み出された顔や文字が、本物である保証はありません。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <div class="summary">
+          <ul>
+            <li>圧縮とは、データに潜む規則性（冗長性）を見つけて表現を切り詰めること。規則性のないランダムなデータは、原理的にほとんど縮まない。</li>
+            <li>ランレングス＝同じものの繰り返しをまとめる。ハフマン符号＝頻出のものに短い符号を割り当てる（第7講の木構造を使って最適に作る）。</li>
+            <li>可逆圧縮（ZIP・PNG）は元と完全に一致する復元が可能。非可逆圧縮（JPEG・MP3）は人間が気づきにくい情報を思い切って捨て、大幅に縮める。</li>
+            <li>圧縮の限界はエントロピー（第1講）。どんなに賢い方法でも、それより小さくはできない。「どんなデータも数KBにする魔法の超圧縮」は、論理的にありえない。</li>
+            <li>誤り訂正は「あえて無駄を足して、壊れても直せる」技術。QRコードが汚れても読めるのも、CDが傷ついても再生できるのも、宇宙探査機が遠方から画像を送れるのも、このおかげ。</li>
+            <li>圧縮（無駄を削る）と誤り訂正（無駄を足す）は、情報理論の表と裏。どちらも第1講のシャノンの理論から生まれた子孫であり、現代のデジタル社会を静かに支えている。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>「AAAAAAAABBBCDDDD」をランレングス符号化すると、どう表せるか。</li>
+            <li>真っ白な画像と、砂嵐ノイズの画像。よく圧縮できるのはどちらか。エントロピーの観点で答えよ。</li>
+            <li>大切な契約書のスキャンを保存するとき、JPEG（非可逆）とPNG（可逆）のどちらが適切か。理由とともに。</li>
+            <li>圧縮（無駄を削る）と誤り訂正（無駄を足す）は正反対に見えるが、なぜ両方とも必要なのか。</li>
+            <li>「AIで防犯カメラのぼやけた顔を鮮明にして犯人を特定」という話の、原理的な問題点は何か。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) 「A×8 B×3 C×1 D×4」のように表せる。<br>
+            (2) <strong>真っ白な画像</strong>。規則性が高くエントロピーが低い＝冗長性が大きいのでよく縮む。砂嵐は規則性がなくほぼ縮まない。<br>
+            (3) <strong>PNG（可逆）</strong>。文字の判読性が重要で、非可逆圧縮の劣化で細部が崩れると困るため。写真ならJPEGでよい。<br>
+            (4) 目的が逆だから。圧縮は「保存・伝送のコストを下げる」ため、誤り訂正は「ノイズで壊れても元に戻す」ため。実際は圧縮してから誤り訂正符号を付けて送る、と両方を組み合わせて使う。<br>
+            (5) 失われた情報は復元できない（エントロピーの鉄則）。AIは「もっともらしい顔」を創作しているだけで、それが本物の犯人である保証はなく、冤罪の危険がある。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">高岡詠子『シャノンの情報理論入門』</span>（講談社ブルーバックス）
+          ― エントロピーから符号化・圧縮・誤り訂正までを、図解でやさしくたどれる新書。第1講・第9講の橋渡しに最適。</li>
+          <li><span class="bk">ジェイムズ・グリック『インフォメーション ― 情報技術の人類史』</span>（新潮社）
+          ― 情報という概念の壮大な物語。圧縮・通信・符号化の意味がより深く味わえる読み物。</li>
+          <li><span class="bk">ジョン・マコーミック『世界でもっとも強力な9のアルゴリズム』</span>（日経BP）
+          ― データ圧縮や誤り検出を、平易な言葉で解説。本講の技術の実像が見える。</li>
+          <li><span class="bk">今井秀樹『符号理論』</span>（電子情報通信学会／オーム社）
+          ― 誤り訂正符号を本格的に学びたい人へ。QRコードやCDを支える符号理論の標準的な教科書。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part1_lecture8.html"><span class="lab">← 前の講</span>第8講 グラフとネットワーク構造</a>
+        <a class="nx" href="part1_lecture10.html"><span class="lab">次の講 →</span>第10講 暗号とハッシュ</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第1部 第9講「圧縮と誤り訂正」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第1部 第2講 0と1で世界を表す ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="なぜコンピュータは2進法なのか。二進数、バイト、補数、文字コード、文字化けの正体までを身近な例から体系的に学ぶ。ゆるコンピュータ科学講義 第1部 第2講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#c8503a; --accent-soft:#f7e3dd;
+    --accent2:#2f6f6a; --accent2-soft:#dcebe9;
+    --code-bg:#2b2722; --code-ink:#f3ead9;
+    --sidebar:#262320; --sidebar-ink:#e9e2d4; --sidebar-muted:#a59c8a;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#16140f; --paper:#1f1c16; --ink:#ece6d8; --muted:#a79e8c;
+    --line:#332f27; --accent:#e8775f; --accent-soft:#3a221c;
+    --accent2:#6fb6ad; --accent2-soft:#1c2c2a;
+    --code-bg:#100e0a; --code-ink:#f3ead9;
+    --sidebar:#100e0a; --sidebar-ink:#e9e2d4; --sidebar-muted:#8d8472;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#a83c2c 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"01 10 11";position:absolute;right:-6px;bottom:-14px;font-family:ui-monospace,monospace;font-size:4.6rem;font-weight:800;color:rgba(255,255,255,.08)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.9;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent2);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent2-soft);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent2)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:var(--accent2-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#2b2722}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent2-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent2-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent2);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent2-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent2);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .lab{display:block;font-size:.72rem;color:var(--muted);margin-bottom:2px}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第2講 0と1で世界を表す</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第1部 第2講</span><br>0と1で世界を表す</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-binary">二進数のしくみ</a></li>
+      <li><a href="#s-byte">ビットとバイト</a></li>
+      <li><a href="#s-hex">十六進数という近道</a></li>
+      <li><a href="#s-minus">負の数を表す ― 補数</a></li>
+      <li><a href="#s-char">文字を数で表す ― 文字コード</a></li>
+      <li><a href="#s-mojibake">文字化けの正体</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第1部 基礎教養編 ／ 第2講</div>
+        <h1>0と1で世界を表す<br>― 二進数・バイト・文字コード</h1>
+        <p>なぜコンピュータは0と1しか使わないのか。そして、あの「文字化け」は、いったいなぜ起きるのか。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― なぜ「0と1」だけなのか</h2>
+        <p>第1講で、情報の単位「ビット」を学びました。1ビットは「はい／いいえ」1回ぶん、
+        すなわち<strong>0か1か</strong>の2択でした。
+        では、たった2種類の記号しか持たないコンピュータが、どうやって
+        大きな数や、漢字や、写真や、音楽までも表しているのでしょう。
+        この第2講のテーマは、まさにそこ――<span class="em">「0と1だけで、世界をどう表現するか」</span>です。</p>
+        <p>私たちは普段、0〜9の10個の数字を使って数を書きます。これが<span class="term">10進法</span>です。
+        ではなぜ10なのか。理由はおそらく、ロマンも必然もなく、ただ<strong>人間の指が10本だから</strong>。
+        古代バビロニアは60進法を使い、その名残で今も1時間は60分、円は360度です。
+        要するに記数法は、たまたまの事情で決まった「ローカルルール」にすぎません。</p>
+        <p>コンピュータには指がありません。あるのは<strong>電気が「流れている／いない」</strong>という2つの状態だけ。
+        スイッチのオン・オフ、電圧の高・低。この2状態をそのまま 1 と 0 に割り当てれば、
+        部品はいちばん単純で、ノイズに強く、安く大量に作れます。
+        だからコンピュータは2進法を選びました。第1講の最後で見た「デジタルの強さ」――
+        値を2択にきっぱり分けることでノイズに勝つ――が、ここでも効いているのです。</p>
+        <p class="lead-in">この講では、二進数で数を表す方法から始め、ビットとバイト、
+        マイナスの数を表す巧妙なトリック、そして文字コードと文字化けの正体までを順にたどります。</p>
+      </section>
+
+      <!-- 二進数 -->
+      <section id="s-binary">
+        <h2>二進数のしくみ ― 位が2倍ずつ増えていく</h2>
+        <p>身構える必要はありません。二進数は、いつもの10進法の「10倍ずつ」を「2倍ずつ」に変えただけです。</p>
+        <p>10進法では、位が右から 1, 10, 100, 1000…と<strong>10倍ずつ</strong>増えます。
+        たとえば「365」は「100が3個、10が6個、1が5個」という意味でした。
+        二進法は、この位の重みが右から 1, 2, 4, 8, 16, 32, 64…と<strong>2倍ずつ</strong>になります。
+        各桁には「その位の重みを使う（1）か、使わない（0）か」だけを書きます。
+        たとえば二進数 <code>1011</code> は――</p>
+        <pre><code>  1     0     1     1
+  ↓     ↓     ↓     ↓
+  8  +  0  +  2  +  1  =  11（十進）
+(8の位)(4の位)(2の位)(1の位)</code></pre>
+        <p>「8を使い、4は使わず、2を使い、1を使う」＝ 8＋2＋1 ＝ 11、というわけです。
+        この1桁ぶんが、第1講の<strong>1ビット</strong>そのもの。
+        逆向きの変換（十進→二進）も、同じ重みで考えれば手で解けます。
+        たとえば「13」を二進にするには、使える重み（…8,4,2,1）から13を作ればよい。
+        8＋4＋1＝13 なので、8と4と1を使い、2は使わない。よって <code>1101</code> です。</p>
+        <div class="note">
+          <span class="lbl">コツ</span>
+          十進→二進は「2で割った余りを下から並べる」方法でも求められます。
+          13 ÷ 2 ＝ 6 余り <strong>1</strong>、6 ÷ 2 ＝ 3 余り <strong>0</strong>、3 ÷ 2 ＝ 1 余り <strong>1</strong>、1 ÷ 2 ＝ 0 余り <strong>1</strong>。
+          余りを下から読むと <code>1101</code>。重みの足し算と同じ答えになります。
+        </div>
+
+        <h3>二進数の足し算 ― 繰り上がりは「2」で起きる</h3>
+        <p>二進数どうしの足し算も、10進と考え方は同じです。
+        10進では「9 + 1」で桁が繰り上がりましたが、二進では数字が0と1しかないので、
+        <strong>「1 + 1」でもう繰り上がり</strong>ます（1 + 1 ＝ 2 ＝ 二進で <code>10</code>）。
+        ルールはたった4つだけ。</p>
+        <pre><code>0 + 0 = 0
+0 + 1 = 1
+1 + 0 = 1
+1 + 1 = 10  ← その桁は0、上の桁へ繰り上がり1
+
+   1 0 1 1   （十進11）
++  0 1 1 0   （十進 6）
+---------
+ 1 0 0 0 1   （十進17）✓</code></pre>
+        <p>けた上がりを律儀に処理していくだけ。
+        おどろくべきは、コンピュータがやっている計算も、煎じ詰めればこの単純な足し算の繰り返しだ、という点です
+        （引き算・掛け算・割り算も、すべて足し算に還元できます。
+        その仕組みは次の第3講「論理回路」で、回路として組み立てます）。</p>
+
+        <h3>なぜ「2」なのか ― 中途半端を許さない強さ</h3>
+        <p>「10段階の電圧を使えば、もっと効率がいいのでは？」と思うかもしれません。
+        理屈の上ではそうですが、現実には<strong>2状態が圧倒的に頑丈</strong>です。
+        電気回路では、電圧はノイズで常に揺らいでいます。
+        「高い／低い」の2択なら、多少揺らいでも「どちら寄りか」できっぱり判定できる。
+        ところが10段階だと、隣の段階との境目があいまいになり、誤読が激増します。
+        第1講で学んだ「デジタルはノイズに強い」が、まさにこの2状態に支えられているのです。
+        単純な部品を大量に正確に並べられる――この製造のしやすさが、2進法を不動の標準にしました。</p>
+      </section>
+
+      <!-- ビットとバイト -->
+      <section id="s-byte">
+        <h2>ビットとバイト ― 情報の「かさ」の単位</h2>
+        <p>二進数の1桁が1ビット。そして、<strong>8桁（8ビット）をひとまとめにした単位が「1バイト」</strong>です。
+        なぜ8でまとめるのか。8ビットあれば <code>2⁸ ＝ 256通り</code>を表せて、
+        アルファベット・数字・記号をひととおり区別するのにちょうどよかった、という歴史的な事情があります
+        （文字コードの話で再登場します）。</p>
+        <div class="def">
+          <p><b>ビットとバイトの関係</b></p>
+          <p style="margin-bottom:0">1バイト ＝ 8ビット ＝ <code>2⁸</code> ＝ 256通り（0〜255）を表せる。
+          以降は1000倍（正確には1024倍）ごとに、キロバイト(KB)・メガバイト(MB)・ギガバイト(GB)・テラバイト(TB)と桁が上がる。</p>
+        </div>
+        <p>「メガ」「ギガ」という言葉は日常になじんでいても、その"かさ"の感覚は意外とあいまいです。
+        ざっくりした目安を持っておくと、ファイルやデータ通信の話がぐっと身近になります。</p>
+        <table class="tbl">
+          <caption>表1：データサイズのざっくり感覚（おおよその目安）</caption>
+          <tr><th>サイズ</th><th>だいたいの中身</th></tr>
+          <tr><td>1バイト</td><td>半角文字1つ（"A" など）</td></tr>
+          <tr><td>数KB</td><td>短いテキストメール1通</td></tr>
+          <tr><td>数MB</td><td>スマホ写真1枚、楽曲1曲（圧縮済み）</td></tr>
+          <tr><td>数百MB〜数GB</td><td>映画1本、マンガ全巻、ゲーム1本</td></tr>
+          <tr><td>1TB</td><td>スマホ写真 数十万枚ぶん</td></tr>
+        </table>
+        <p>ここで第1講の「よくある誤解」を思い出してください。
+        <strong>ビット(bit, 小文字b)とバイト(Byte, 大文字B)は8倍違います。</strong>
+        通信速度は「ビット毎秒（bps）」、ファイルサイズは「バイト（B）」で表すのが慣習。
+        だから「1Gbpsの光回線なのに、ダウンロードは毎秒125MBどまり」は、故障ではなく <code>÷8</code> の結果です。
+        ここを取り違えると、見積もりが8倍ずれます。</p>
+
+        <h3>CPUがひとくちで扱う量 ― 32ビットと64ビット</h3>
+        <p>「64ビットパソコン」「32ビットアプリ」という言葉を聞いたことがあるでしょう。
+        これは、CPUが<strong>一度にまとめて扱えるビット数（語長、ワード）</strong>を指します。
+        32ビットなら一度に <code>2³²</code>＝約43億までの数を、64ビットなら <code>2⁶⁴</code>＝約1844京までの数を扱えます。
+        昔のPCが「メモリは4GBまで」と制限されていたのは、32ビットでは指せる番地が約43億通り（＝約4GB）どまりだったから。
+        より大きなメモリを扱うために、世の中は64ビットへ移行しました。
+        桁数の限界が、そのまま製品の仕様を決めている好例です。</p>
+
+        <div class="trivia">
+          <p>ちなみに、容量表示には昔から"1000か1024か"問題があります。
+          コンピュータは2進法なので、本来キリがいいのは <code>2¹⁰ ＝ 1024</code>。
+          そこで「1キロバイト＝1024バイト」と数える流儀が長く使われてきました。
+          ところがメーカーは「1キロ＝1000」で容量を表示することが多い。
+          この食い違いのせいで、「1TBのはずのディスクが、PC上では約931GBしかない」と感じる現象が起きます。
+          故障でも誇大広告でもなく、<strong>1000で数えるか1024で数えるかのズレ</strong>。
+          今は混乱を避けるため、1024系を KiB・MiB（キビ・メビ）と別表記する規格もあります。</p>
+        </div>
+      </section>
+
+      <!-- 十六進数 -->
+      <section id="s-hex">
+        <h2>十六進数という近道 ― なぜ #FF0000 は赤なのか</h2>
+        <p>二進数には弱点があります。<strong>人間にとって、桁が長すぎて読みにくい</strong>のです。
+        たとえば <code>11111111</code> と書かれて、ぱっと「255」とは分かりません。
+        そこで、人間が二進数を扱うときの"近道"として使われるのが<span class="term">十六進数（16進法）</span>です。</p>
+        <p>16進法は、0〜9の数字に加えて A・B・C・D・E・F の6文字を使い、16種類で1桁を表します
+        （A＝10、B＝11、… F＝15）。なぜ16かというと、<strong>16 ＝ <code>2⁴</code></strong> だから。
+        つまり<span class="em">二進数のちょうど4桁が、十六進数の1桁に対応する</span>のです。
+        この相性のよさのおかげで、長い二進数を機械的に短く書き換えられます。</p>
+        <table class="tbl">
+          <caption>表2：同じ数を3つの記数法で書き比べる</caption>
+          <tr><th>十進</th><th>二進（4桁区切り）</th><th>十六進</th></tr>
+          <tr><td>10</td><td>1010</td><td>A</td></tr>
+          <tr><td>15</td><td>1111</td><td>F</td></tr>
+          <tr><td>16</td><td>0001 0000</td><td>10</td></tr>
+          <tr><td>202</td><td>1100 1010</td><td>CA</td></tr>
+          <tr><td>255</td><td>1111 1111</td><td>FF</td></tr>
+        </table>
+        <p>Webページで色を <code>#FF0000</code>（赤）のように指定するあれは、十六進数です。
+        2桁ずつで「赤・緑・青」の強さ（各 0〜255）を表していて、
+        <code>FF</code>＝255（最強）、<code>00</code>＝0（なし）。
+        だから <code>#FF0000</code> は「赤だけ全開、緑と青はゼロ」＝真っ赤、というわけです。
+        <code>#FFFFFF</code> は全色全開で白、<code>#000000</code> は全色ゼロで黒。
+        一見おまじないめいた色コードも、中身はただの二進数（をまとめた十六進数）なのです。</p>
+        <p>色コード以外にも、十六進はあちこちで顔を出します。
+        プログラマがデータの中身を生で確認する「メモリダンプ」、文字コードの番号（例：「あ」は U+3042）、
+        ネットワーク機器のMACアドレス（例：<code>3C:5A:B4:…</code>）など、
+        <strong>「二進数を人間が読み書きしたい」場面では、たいてい十六進が選ばれます</strong>。
+        二進のまま書くと長すぎ、十進だと二進との変換が面倒。
+        その"ちょうどいい中間"が、二進4桁とぴたり対応する十六進なのです。</p>
+      </section>
+
+      <!-- 補数 -->
+      <section id="s-minus">
+        <h2>負の数を表す ― 補数というウルトラC</h2>
+        <p>ここまでで、0以上の数（正の整数）は表せるようになりました。
+        では、<strong>マイナスの数</strong>はどう表せばいいでしょう。0と1しかないのに、です。</p>
+        <p>素直に思いつくのは「いちばん左の1桁を符号（＋／−）の印にする」方法です。
+        しかしこれには困った副作用が2つあります。
+        ひとつは「＋0」と「−0」という<strong>ゼロが2つ</strong>できてしまうこと。
+        もうひとつは、足し算と引き算で回路を別々に作らねばならず、ハードが複雑になること。
+        そこでコンピュータが採用したのが、<span class="term">2の補数</span>という、ちょっと感動的なトリックです。</p>
+        <h3>時計で考えるとわかる</h3>
+        <p>アイデアの核心は「時計」です。アナログ時計で、針を3時間<strong>戻す</strong>のは、
+        9時間<strong>進める</strong>のと同じ位置に来ますね（12時間で1周するから）。
+        「−3」を「＋9」で代用できているわけです。
+        同じことを、決まった桁数（たとえば8ビット＝256で1周する世界）でやります。
+        <span class="em">「−3」を「256 − 3 ＝ 253」で代用する</span>のです。
+        すると、びっくりすることに、引き算が<strong>ただの足し算</strong>に化けます。</p>
+        <pre><code>  5 − 3 を計算したい（8ビットの世界）
+= 5 + (−3)
+= 5 + 253     ← −3 の代わりに 253 を足す
+= 258
+= 256 + 2     ← 256はあふれて消える（時計が1周）
+= 2           ← 正しい答え！</code></pre>
+        <p>引き算専用の回路をわざわざ作らなくても、<strong>足し算回路だけで引き算までできてしまう</strong>。
+        おまけにゼロもひとつだけ。この美しさから、ほぼすべてのコンピュータが2の補数を採用しています。
+        「マイナスを足し算で処理する」という発想の転換が、ハードウェアを大きく単純にしているのです。</p>
+        <h3>2の補数の作り方 ― 「ひっくり返して1を足す」</h3>
+        <p>「256 − 3 を計算するの？ 大変そう」と思うかもしれませんが、実際の作り方はもっと簡単です。
+        <strong>「全ビットを反転させて（0↔1）、最後に1を足す」</strong>だけ。
+        8ビットで「−3」を作ってみましょう。</p>
+        <pre><code>  3 を8ビットで    : 0000 0011
+  全ビット反転     : 1111 1100   （0と1を入れ替える）
+  1 を足す         : 1111 1101   ← これが「−3」（＝十進253）</code></pre>
+        <p>確かめに <code>3 + (−3)</code> をやると、<code>0000 0011 + 1111 1101 ＝ 1 0000 0000</code>。
+        9桁目（256）はあふれて消え、残るのは <code>0000 0000</code>＝0。きちんと打ち消し合いました。
+        ちなみに2の補数では、いちばん左のビットが「符号ビット」の役割を兼ね、
+        1なら負・0なら正、と一目で分かるようになっています。
+        「反転して1を足す」――この一手で負の数が手に入る手軽さが、2の補数が愛される理由です。</p>
+        <div class="trivia">
+          <p>この「あふれた桁が消える（桁あふれ）」性質は、ときに現実のバグを生みます。
+          ゲームで点数を稼ぎすぎると、スコアが突然マイナスになったり0に戻ったりする
+          「<strong>カンスト</strong>（カウンターストップ）」現象は、これが原因のひとつ。
+          有名な例では、初代『パックマン』の256面で画面が文字化け状態になる「キルスクリーン」も、
+          面数を1バイト（255まで）で数えていたためとされます。
+          さらに深刻なのが<strong>2038年問題</strong>。多くのシステムが時刻を「1970年からの経過秒数」を
+          32ビットで持っており、2038年にこの値が上限を超えて一周し、時刻が大きく狂う恐れがあります。
+          桁数の限界は、思わぬところで牙をむくのです。</p>
+        </div>
+        <p>なお、小数（0.5 や 3.14 など）の表し方は、整数よりずっと厄介で、
+        「0.1 + 0.2 が 0.3 にならない」という不思議まで引き起こします。
+        これは第14講「数値計算と誤差」でじっくり扱います。</p>
+      </section>
+
+      <!-- 文字コード -->
+      <section id="s-char">
+        <h2>文字を数で表す ― 文字コード</h2>
+        <p>数が表せたら、次は文字です。やり方は、拍子抜けするほど単純。
+        <strong>「文字に背番号（数値）を割り振る」</strong>だけです。
+        どの文字をどの番号にするかを決めた対応表を、<span class="term">文字コード</span>と呼びます。
+        文字そのものが0と1でできているわけではなく、
+        「この番号はこの文字」という<strong>約束（対応表）</strong>を介して表しているのがポイントです。</p>
+        <h3>最初の世界標準 ― ASCII</h3>
+        <p>最初に広く普及したのが、1960年代アメリカ生まれの<span class="term">ASCII（アスキー）</span>です。
+        7ビット（128通り）で、アルファベットの大文字小文字・数字・記号・改行などの制御文字を割り当てました。
+        たとえば <code>A</code>＝65、<code>a</code>＝97、<code>0</code>（文字のゼロ）＝48。
+        英語圏はこれで足りました。1文字を1バイト（8ビット）にちょうど収められたのも好都合でした。</p>
+        <p>しかし世界には、日本語の漢字・ひらがな・カタカナ、中国語、アラビア文字…と、
+        128通りでは到底足りない文字が無数にあります。
+        そこで各国が、自国の文字を表すための文字コードを<strong>てんでバラバラに</strong>作りはじめました。
+        日本語だけでも Shift_JIS、EUC-JP、JIS と複数の方式が乱立します。
+        この「方式の乱立」こそが、次に説明する文字化けの温床になりました。</p>
+        <div class="history">
+          <p><strong>ASCIIの父・ボブ・ビーマー。</strong>
+          ASCIIは1963年、アメリカの規格委員会で標準化されました。
+          その推進に大きく貢献し「ASCIIの父」と呼ばれるのが、技術者ボブ・ビーマーです。
+          彼は、いまもキーボードの隅に残る<strong>エスケープ（Esc）キー</strong>や、
+          ファイルのパス区切りでおなじみの<strong>バックスラッシュ（\）</strong>を、
+          文字セットに加えることを提案した人物でもあります。
+          さらに彼は早くから「西暦を下2桁で表すと2000年に問題が起きる」と<strong>2000年問題</strong>を警告し続けました。
+          普段なにげなく押しているキーや、年末に騒がれた古い問題の背後にも、ちゃんと名前のある人がいるのです。</p>
+        </div>
+        <h3>世界を1つの表に ― Unicode と UTF-8</h3>
+        <div class="def">
+          <p><b>Unicode（ユニコード）</b></p>
+          <p style="margin-bottom:0">世界中の文字を<strong>たった1つの巨大な対応表</strong>に統合しようという国際プロジェクト。
+          各文字に「コードポイント」という世界共通の背番号を与える。
+          それを実際のバイト列にする代表的な方式が <b>UTF-8</b> で、ASCIIと互換を保ちつつ、
+          1〜4バイトの可変長で全世界の文字を表せる。現在のWebの大半はこのUTF-8で動いている。</p>
+        </div>
+        <p>Unicodeの賢いところは、「英語の文字は1バイト、漢字などは複数バイト」と
+        <strong>必要に応じて長さを変える</strong>点です（UTF-8の場合）。
+        これにより、英語中心のデータは無駄に太らず、かつ世界中の文字も表せる。
+        第1講の「頻出は短く」という符号化の精神が、ここにも顔を出しています。
+        Unicodeの普及で、長年悩みの種だった文字化けは劇的に減りました。</p>
+
+        <div class="history">
+          <p><strong>ASCIIの「8ビット目」が混乱を生んだ。</strong>
+          ASCIIは7ビット（128種類）の規格でしたが、コンピュータは1文字を8ビット（1バイト）で扱います。
+          つまり<strong>1ビット余る</strong>。この余った128種類分を、各国・各社が好き勝手に
+          「自国の文字や記号」で埋めたことが、文字コード乱立の出発点でした。
+          日本では、この余白を使ってカタカナを詰め込んだ「半角カナ」が生まれ、
+          のちのちメールやWebで化けまくる厄介者になります。
+          「とりあえず空いてるから使っちゃえ」が、数十年の混乱を生んだわけです。</p>
+        </div>
+
+        <h3>幽霊文字 ― 誰も知らない漢字が、なぜ入力できるのか</h3>
+        <p>日本の文字コード規格には、出どころ不明の「<strong>幽霊文字</strong>」と呼ばれる漢字が紛れ込んでいます。
+        規格を作る際、全国の地名などから漢字を集めたところ、
+        <strong>典拠が見つからない（実在が確認できない）字</strong>がいくつも混入してしまったのです。
+        原因は、資料の転記ミスや、手書き文字の読み取り間違いだったと考えられています。
+        ところが一度規格に載ってしまうと、互換性のために削除できず、
+        いまも私たちのパソコンやスマホには、<span class="em">由来のわからない漢字が"入力できてしまう"</span>。
+        規格とは、いったん決めると簡単には直せない――この「直せなさ」は、
+        コンピュータの世界でくり返し登場する重い宿題（技術的負債）の典型例です。</p>
+        <p>同じ理由で、本や辞書を作る現場でも文字は悩みの種です。
+        人名や地名には「規格にない字」が多く、出版や行政のシステムでは、
+        足りない文字を個別に作り足す「外字（がいじ）」でしのいできました。
+        文字コードの統一は、いまも完全には終わっていない、地道で巨大な事業なのです。</p>
+      </section>
+
+      <!-- 文字化け -->
+      <section id="s-mojibake">
+        <h2>文字化けの正体 ― 「表の取り違え」事故</h2>
+        <p>「譁・喧縺・¢」――こんな謎の記号の羅列を、一度は見たことがあるはずです。
+        悪名高い<span class="term">文字化け</span>。その正体は、実はとてもシンプルです。</p>
+        <p class="lead-in">文字化けとは、<strong>「ある対応表で書かれた番号を、別の対応表で読んでしまう」取り違え事故</strong>である。</p>
+        <p>たとえば、ある文字コードで「あ」を表す番号があるとします。
+        その番号を、別の文字コードの対応表で読むと、まったく違う文字や記号として解釈されてしまう。
+        書いた人と読む人が「どの表を使うか」で食い違うと、こうなるのです。
+        外国語にたとえるなら、同じ「アルファベットの並び」が、英語とフランス語で違う意味になるようなもの。
+        <strong>データ（番号）自体は壊れていない</strong>のに、解釈の枠組みがズレるだけで、意味が崩壊する。
+        これが文字化けの本質です。</p>
+        <p>もう少し具体的に見てみましょう。
+        ある日本語の1文字が、ある文字コードでは「2バイトの番号」で表されていたとします。
+        受け取った側が、それを<strong>「1バイト＝1文字」のつもりの別の表</strong>で読むと、
+        2バイトが2つの別々の文字としてバラバラに解釈され、見慣れない記号が2つ並ぶ。
+        これが積み重なって、あの「譁・喧」のような記号の洪水になります。
+        <span class="em">バイトの並びは1ビットも変わっていない</span>のに、
+        「どこで区切り、どの表で引くか」がズレただけで、意味がまるごと崩れる。
+        逆に言えば、区切り方と表さえ合わせれば、たいてい元どおりに読めます。</p>
+        <p>だから対処法も明快で、「正しい文字コードを指定して読み直す」だけ。
+        ブラウザやエディタの「エンコードを変更」で直ることが多いのは、このためです。
+        Webページが文字コードを宣言しているのも（<code>&lt;meta charset="utf-8"&gt;</code>）、
+        読み手に「この表で読んでね」と伝えて、取り違えを防ぐためなのです。</p>
+        <div class="trivia">
+          <p>文字コードの世界には、もっと根深い「沼」もあります。
+          たとえば、見た目はそっくりでも別物の文字（半角と全角、ハイフンに似た複数の記号、
+          環境依存文字など）が無数に存在し、検索やパスワード照合で思わぬtrouble を起こします。
+          また、人名の漢字には「コンピュータの標準にない字」も多く、
+          役所のシステムでは外字（がいじ）として個別に作り足す、という綱渡りが続いてきました。
+          「たかが文字、されど文字」。私たちが普段あたりまえに打っている一文字一文字の裏に、
+          膨大な規格と、関係者の苦労の歴史が積もっているのです。</p>
+        </div>
+      </section>
+
+      <!-- 現代への応用 -->
+      <section id="s-apply">
+        <h2>現代への応用</h2>
+        <h3>絵文字も「番号」で世界共通になった</h3>
+        <p>いまや世界中で使われる絵文字（emoji）は、もともと日本の携帯電話文化で生まれました。
+        それがUnicodeに取り込まれ、🍣 や 😂 にも世界共通の背番号が与えられたことで、
+        機種が違っても（だいたい）同じ意味で届くようになりました。
+        ただし<strong>見た目のデザインは各社まかせ</strong>なので、送った絵文字と相手に見える絵文字の
+        ニュアンスがズレる、という新種の"半・文字化け"も起きています。
+        「番号は共通、デザインは自由」という設計の、面白い副作用です。</p>
+        <h3>すべては結局、バイト列</h3>
+        <p>文字も、数も、そして第9講で扱う画像・音声も、コンピュータの中ではすべて
+        <strong>バイト（0と1）の列</strong>として扱われます。
+        同じバイト列でも「テキストとして読むか」「画像として読むか」で意味が変わる。
+        だからファイルには「拡張子」がついていて、「これはこの種類のデータですよ」と示すのです
+        （拡張子の話は第2部でじっくり扱います）。
+        <span class="em">中身は同じ0と1。違うのは"どの表・どの規則で解釈するか"だけ</span>――
+        この視点は、コンピュータを理解するうえで何度も効いてくる、強力なメガネです。</p>
+        <h3>画像を「文字」に化けさせる ― Base64</h3>
+        <p>面白い応用をひとつ。メールやWebの仕組みには、もともと「文字（テキスト）しか通せない」場所があります。
+        では、そこに画像のような<strong>バイナリ（生の0と1の塊）</strong>を通したいときはどうするか。
+        答えは「<strong>むりやり文字に変換してしまう</strong>」。
+        この変換方式が<span class="term">Base64</span>です。
+        バイト列を、英数字と記号だけ（A〜Z, a〜z, 0〜9 と +/）の64種類に置き換えて表現します。
+        メールに添付した写真が、通信の途中では <code>iVBORw0KGgoAAAANSUhEUg…</code> のような
+        呪文めいた文字列になっているのは、このBase64のしわざ。
+        「数も文字も画像も、結局はバイト列。だから相互に化けさせられる」――
+        本講で繰り返してきた視点が、ここでも生きています。</p>
+
+        <h3>写真の色も、ただの数値 ― フルカラー1677万色</h3>
+        <p>十六進の色コード <code>#RRGGBB</code> の話を、画像に広げてみましょう。
+        デジタル写真は、細かい点（ピクセル）の集まりです。
+        各ピクセルは「赤・緑・青」の光の強さを、それぞれ1バイト（0〜255の256段階）で持っています。
+        合わせて3バイト＝24ビット。組み合わせは <code>256 × 256 × 256 ＝ 約1677万通り</code>。
+        これが「フルカラー（約1677万色）」「24ビットカラー」と呼ばれるものの正体です。
+        <span class="em">なめらかなグラデーションの写真も、突き詰めれば膨大な数値の表</span>にすぎません。
+        この「画像＝数値の巨大な表」という理解が、第9講のデータ圧縮（JPEGなど）を理解する土台になります。</p>
+
+        <h3>なぜ容量は 256GB・512GB と"中途半端"なのか</h3>
+        <p>スマホやメモリーカードの容量は、64GB・128GB・256GB・512GB…と、
+        やけにキリの悪い数が並びます。これも二進法の名残です。
+        コンピュータにとってキリのいい数は <code>2のべき乗</code>（2, 4, 8, 16, 32, 64, 128, 256…）。
+        メモリは構造上この単位で作るのが効率的なので、容量も自然と2のべき乗に寄っていくのです。
+        「なんで500GBじゃなくて512GBなの？」という素朴な疑問の答えも、
+        <strong>「中の世界が2進法でできているから」</strong>。日常の数字のあちこちに、0と1の世界が顔を出しています。</p>
+      </section>
+
+      <!-- よくある誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「コンピュータの中に、文字や絵そのものが入っている」</p>
+          <p class="a">入っているのは0と1の番号だけです。文字も色も、すべて「番号」と「対応表（解釈の約束）」の組み合わせで表されています。
+          文字化けが起きるのは、まさにこの"中身は番号にすぎない"という事実の裏返しです。</p>
+          <p class="q">誤解②：「文字化けは、データが壊れている」</p>
+          <p class="a">多くの場合、データ（番号）自体は無傷です。壊れているのではなく、<strong>読むときの対応表を取り違えている</strong>だけ。
+          だから正しい文字コードで読み直せば、たいてい元に戻ります。</p>
+          <p class="q">誤解③：「2進法は10進法より劣った、原始的な方法だ」</p>
+          <p class="a">優劣ではなく適材適所です。人間には桁の少ない10進が便利ですが、
+          機械にとっては「2状態」が圧倒的に作りやすく、ノイズにも強い。
+          表せる数の範囲や値そのものは、どの記数法でも同じです（書き方が違うだけ）。</p>
+          <p class="q">誤解④：「全角の"Ａ"と半角の"A"は同じ文字」</p>
+          <p class="a">見た目は似ていても、コンピュータ内では<strong>別の番号</strong>の、別の文字です。
+          だからパスワードや検索で「打ったのに一致しない」事故が起きます。
+          見た目が同じ＝同じデータ、とは限らない好例です。</p>
+          <p class="q">誤解⑤：「ファイルの"拡張子"を変えれば、中身の種類も変わる」</p>
+          <p class="a">拡張子（<code>.jpg</code> や <code>.txt</code>）は、あくまで「この表で読んでね」という<strong>ラベルの付け替え</strong>にすぎません。
+          中のバイト列そのものは変わらないので、画像ファイルの拡張子を <code>.txt</code> にしても、テキストとしては意味不明なまま。
+          文字化けと同じで、「データ本体」と「解釈の指定」は別物だ、という話です。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <div class="summary">
+          <ul>
+            <li>10進法は「指が10本」という偶然の産物。コンピュータは2状態が頑丈なので2進法を選んだ。</li>
+            <li>二進数は位の重みが右から 1,2,4,8…と2倍ずつ。1桁＝1ビット、8桁＝1バイト（256通り）。</li>
+            <li>十六進数は二進4桁＝1桁で対応し、長い二進数を読みやすくする近道。色コード #RRGGBB もこれ。</li>
+            <li>マイナスは「2の補数」で表すと、引き算が足し算に化けて回路が単純になる。桁あふれは時計の一周。</li>
+            <li>文字は「背番号＝文字コード」で表す。文字化けは対応表の取り違え事故。Unicode/UTF-8が統一を進めた。</li>
+            <li>文字も数も画像も、中身はすべて同じバイト列。違うのは「どの規則で解釈するか」だけ。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 考えてみよう -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>二進数 <code>110010</code> は十進でいくつか。各位の重み（…32,16,8,4,2,1）を足して求めよ。</li>
+            <li>十進の <code>25</code> を二進数で書け。使う重みを考える方法と、2で割る方法、どちらでもよい。</li>
+            <li>二進数 <code>1100 1010</code> を十六進数に直せ。なぜ4桁ずつ区切れば変換できるのか。</li>
+            <li>色コード <code>#00FF00</code> は何色か。RGBそれぞれの強さ（0〜255）で考えよ。</li>
+            <li>「あるサイトで日本語が全部記号の羅列になった」。データは壊れているのか。直すには何をすればよいか。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) 32＋16＋0＋0＋2＋0 ＝ <strong>50</strong>。<br>
+            (2) 16＋8＋1 ＝ 25 なので <code>11001</code>。（2で割る方法：25→12余1, 12→6余0, 6→3余0, 3→1余1, 1→0余1。下から読んで11001）<br>
+            (3) <code>1100</code>＝C、<code>1010</code>＝A なので <strong>CA</strong>。十六進1桁は16通り＝<code>2⁴</code>で、ちょうど二進4桁に対応するから機械的に変換できる。<br>
+            (4) 緑だけ全開（緑255、赤0、青0）なので<strong>緑</strong>。<br>
+            (5) たいていデータは壊れていない。<strong>文字コードの取り違え</strong>が原因なので、ブラウザ/エディタで正しいエンコード（多くはUTF-8）に変更して読み直せばよい。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">矢沢久雄『プログラムはなぜ動くのか（第3版）』</span>（日経BP）
+          ― 二進数・浮動小数点・メモリなど、コンピュータの内部表現を平易に解説する定番書。第2講の話の続きが満載。</li>
+          <li><span class="bk">結城浩『プログラマの数学（第2版）』</span>（SBクリエイティブ）
+          ― 2進法・位取り・論理を、数学が苦手な人向けにやさしく語る一冊。次の第3講にもつながる。</li>
+          <li><span class="bk">矢野啓介『プログラマのための文字コード技術入門（改訂新版）』</span>（技術評論社）
+          ― ASCIIからUnicode・UTF-8まで、文字コードを本格的に学べる決定版。文字化けの仕組みもすっきり理解できる。</li>
+          <li><span class="bk">Noam Nisan, Shimon Schocken『コンピュータシステムの理論と実装（Nand2Tetris）』</span>（オライリー・ジャパン）
+          ― 論理ゲートから二進演算、CPUまで、手を動かして"ゼロからコンピュータを作る"名著。第2〜4講を貫いて読める。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part1_lecture1.html"><span class="lab">← 前の講</span>第1講 情報とは何か</a>
+        <a class="nx" href="part1_lecture3.html"><span class="lab">次の講 →</span>第3講 論理回路と計算の素材</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第1部 第2講「0と1で世界を表す」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

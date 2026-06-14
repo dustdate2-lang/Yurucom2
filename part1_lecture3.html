@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第1部 第3講 論理回路と計算の素材 ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="哲学だったブール代数が、なぜ電気回路になり、足し算する機械になったのか。論理ゲートから加算器・記憶素子までを身近に学ぶ。ゆるコンピュータ科学講義 第1部 第3講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#c8503a; --accent-soft:#f7e3dd;
+    --accent2:#2f6f6a; --accent2-soft:#dcebe9;
+    --code-bg:#2b2722; --code-ink:#f3ead9;
+    --sidebar:#262320; --sidebar-ink:#e9e2d4; --sidebar-muted:#a59c8a;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#16140f; --paper:#1f1c16; --ink:#ece6d8; --muted:#a79e8c;
+    --line:#332f27; --accent:#e8775f; --accent-soft:#3a221c;
+    --accent2:#6fb6ad; --accent2-soft:#1c2c2a;
+    --code-bg:#100e0a; --code-ink:#f3ead9;
+    --sidebar:#100e0a; --sidebar-ink:#e9e2d4; --sidebar-muted:#8d8472;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#a83c2c 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"AND OR NOT";position:absolute;right:-6px;bottom:-10px;font-family:ui-monospace,monospace;font-size:3.6rem;font-weight:800;color:rgba(255,255,255,.08)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.9;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent2);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent2-soft);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent2)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:var(--accent2-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#2b2722}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent2-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:center;vertical-align:top}
+  .tbl th{background:var(--accent2-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent2);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent2-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent2);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第3講 論理回路と計算の素材</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第1部 第3講</span><br>論理回路と計算の素材</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-boole">ブール代数 ― 真と偽の計算</a></li>
+      <li><a href="#s-gate">論理ゲート ― AND・OR・NOT</a></li>
+      <li><a href="#s-adder">ゲートで足し算する</a></li>
+      <li><a href="#s-allops">四則演算はすべてゲートに</a></li>
+      <li><a href="#s-memory">記憶を作る ― フリップフロップ</a></li>
+      <li><a href="#s-history">歴史 ― 哲学から半導体へ</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第1部 基礎教養編 ／ 第3講</div>
+        <h1>論理回路と計算の素材<br>― ブール代数・ゲート・加算器</h1>
+        <p>「真か、偽か」という哲学が、なぜか電気のスイッチになり、足し算する機械になった。その不思議をたどる。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― 計算する機械は、何でできているのか</h2>
+        <p>第1講で「情報とは何か」を、第2講で「その情報を0と1でどう表すか」を学びました。
+        数も文字も画像も、すべて0と1の列で表せる――そこまでは分かりました。
+        では、いよいよ本丸です。<span class="em">その0と1を、どうやって"計算"するのか。</span>
+        足し算する機械は、いったい何を素材にして作られているのでしょう。</p>
+        <p>答えは、ちょっと意外です。コンピュータの計算の心臓部は、
+        <strong>19世紀の哲学者が考えた「論理」</strong>でできています。
+        「AかつB」「AまたはB」「Aでない」――そんな、理屈っぽい言葉の操作。
+        それが電気のスイッチに姿を変え、足し算をこなし、やがてCPUになる。
+        「コンピュータは計算しかしていないのか、それとも論理を扱っているのか」と問われたら、
+        答えは<strong>「同じことだ」</strong>。計算と論理は、根っこで一つにつながっているのです。
+        この講では、その驚きの橋渡しを、一歩ずつ組み立てていきます。</p>
+        <p>少し先回りして全体像を示しておきます。
+        私たちはこれから、<strong>たった3種類（究極には1種類）の単純なスイッチ</strong>から出発して、
+        足し算をこなす機械を組み立て、さらに「覚える」力まで手に入れます。
+        ここで作る部品が、第4講で扱うコンピュータ本体の、いちばん底の土台になります。
+        つまり本講は、<span class="em">「コンピュータを下から1階ずつ建てていく」その最初の地下基礎</span>にあたります。
+        途中の図や真理値表は、眺めるだけでなく、ぜひ自分で1行ずつ指でなぞってみてください。
+        手を動かすと、「なんだ、そういうことか」と腑に落ちる瞬間が必ず来ます。</p>
+        <p class="lead-in">ブール代数（真と偽の計算）→ 論理ゲート（その回路化）→ 加算器（足し算機）→ 記憶素子。
+        この順で積み上げると、最後には「計算し、覚える機械」の芽が手の中に残ります。</p>
+      </section>
+
+      <!-- ブール代数 -->
+      <section id="s-boole">
+        <h2>ブール代数 ― 「真・偽」を計算する</h2>
+        <p>19世紀イギリスの数学者<span class="term">ジョージ・ブール</span>は、
+        とんでもないことを考えました。<strong>「人間の思考の法則を、数式で書けないか」</strong>。
+        私たちが頭の中でやっている「AならばB」「AかつB」といった論理の操作を、
+        まるで算数のように計算できる体系にしようとしたのです。</p>
+        <p>そのために彼が置いた約束は、たった2つの値でした。<strong>真を 1、偽を 0</strong>。
+        そして、この1と0に対して3つの基本操作を定めます。</p>
+        <ul>
+          <li><strong>AND（かつ）</strong>：AもBも真のときだけ、真。</li>
+          <li><strong>OR（または）</strong>：AかBのどちらかが真なら、真。</li>
+          <li><strong>NOT（でない）</strong>：真と偽をひっくり返す。</li>
+        </ul>
+        <p>これが<span class="term">ブール代数</span>です。
+        たとえば「傘を持っていく＝（雨が降る AND 外出する）」のように、
+        日常の条件判断は、たいていこの3つの組み合わせで書けてしまう。
+        たとえば「遠足に行く」条件を考えてみましょう。
+        「（晴れ <strong>または</strong> くもり）<strong>かつ</strong>（台風が来ていない）」。
+        これをブール代数で書けば、各条件を1（真）か0（偽）にして、AND・OR・NOTでつなぐだけ。
+        人間が頭の中で何気なくやっている「条件を組み合わせた判断」が、そっくりそのまま式になるのです。
+        当時はしかし、これは「論理を数式で遊ぶ、面白い知的ゲーム」くらいの扱いでした。
+        まさかこれが、100年後に世界中の機械を動かす動力になるとは、ブール自身も想像しなかったでしょう。</p>
+        <h3>ド・モルガンの法則 ― 「かつ」と「または」は裏返せる</h3>
+        <p>ブール代数には、知っておくと世界の見え方が変わる、美しい関係があります。
+        <span class="term">ド・モルガンの法則</span>です。言葉で書くとこうなります。</p>
+        <div class="def">
+          <p><b>ド・モルガンの法則</b></p>
+          <p style="margin:.3em 0">「AかつB」<strong>でない</strong> ＝ 「Aでない」<strong>または</strong>「Bでない」</p>
+          <p style="margin-bottom:0">「AまたはB」<strong>でない</strong> ＝ 「Aでない」<strong>かつ</strong>「Bでない」</p>
+        </div>
+        <p>日常語で確かめてみましょう。「コーヒー<strong>も</strong>紅茶<strong>も</strong>ない（両方ない）」は、
+        「コーヒーがない<strong>かつ</strong>紅茶がない」と同じこと。
+        「ピザ<strong>かつ</strong>寿司、の両方そろってはいない」は、
+        「ピザがない<strong>または</strong>寿司がない」と同じ。
+        ―― このように、<span class="em">否定を内側に入れると、ANDとORが入れ替わる</span>のです。
+        これは単なる言葉遊びではありません。回路を設計するとき、
+        「ANDで作りにくい部分を、ORとNOTで作り直す」といった<strong>変形の自由</strong>を与えてくれる、実用的な道具です。
+        そしてこの法則こそ、次に述べる「1種類のゲートで全部作れる」という魔法の裏づけにもなっています。</p>
+
+        <div class="history">
+          <p><strong>哲学を、電気に翻訳した若者。</strong>
+          ブール代数を眠りから覚ましたのは、第1講にも登場した<strong>クロード・シャノン</strong>です。
+          彼は1937年、21歳の修士論文で、<span class="em">電気スイッチのオン・オフが、ブール代数の1・0とぴったり対応する</span>
+          ことを示しました。スイッチを<strong>直列</strong>につなぐと「両方オンのときだけ電気が流れる」＝AND。
+          <strong>並列</strong>につなぐと「どちらかオンなら流れる」＝OR。
+          紙の上の哲学だった論理が、そのまま配線図に翻訳できてしまったのです。
+          この論文は「20世紀で最も重要な修士論文」とも呼ばれ、
+          コンピュータの計算の心臓は、ここで理論的に産声をあげました。</p>
+        </div>
+      </section>
+
+      <!-- 論理ゲート -->
+      <section id="s-gate">
+        <h2>論理ゲート ― AND・OR・NOT という部品</h2>
+        <p>シャノンのおかげで、論理は「部品」になりました。
+        ブール代数の各操作を行う電子部品を<span class="term">論理ゲート</span>と呼びます。
+        基本は、さきほどの3種類です。</p>
+        <p>ゲートのふるまいは、<strong>「入力に対して出力がどうなるか」を全部書き出した表</strong>で
+        きっちり定義できます。これを<span class="term">真理値表</span>といいます（1＝真、0＝偽）。</p>
+        <table class="tbl">
+          <caption>表1：基本ゲートの真理値表</caption>
+          <tr><th>A</th><th>B</th><th>AND<br>(AかつB)</th><th>OR<br>(AまたはB)</th><th>NOT A<br>(Aでない)</th></tr>
+          <tr><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td></tr>
+          <tr><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td></tr>
+          <tr><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td></tr>
+          <tr><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td></tr>
+        </table>
+        <figure>
+          <svg viewBox="0 0 540 150" role="img" aria-label="AND・OR・NOTゲートの記号">
+            <style>.g{fill:var(--accent2-soft);stroke:var(--accent2);stroke-width:2}.w{stroke:var(--ink);stroke-width:2;fill:none}.t{font:13px sans-serif;fill:var(--ink);text-anchor:middle;font-weight:700}</style>
+            <path class="g" d="M60 40 H95 a30 30 0 0 1 0 60 H60 Z"/>
+            <line class="w" x1="40" y1="55" x2="60" y2="55"/><line class="w" x1="40" y1="85" x2="60" y2="85"/>
+            <line class="w" x1="125" y1="70" x2="148" y2="70"/><text class="t" x="92" y="128">AND</text>
+            <path class="g" d="M230 40 q30 30 0 60 q35 -5 55 -30 q-20 -25 -55 -30 Z"/>
+            <line class="w" x1="210" y1="55" x2="238" y2="55"/><line class="w" x1="210" y1="85" x2="238" y2="85"/>
+            <line class="w" x1="285" y1="70" x2="308" y2="70"/><text class="t" x="258" y="128">OR</text>
+            <path class="g" d="M410 45 L410 95 L455 70 Z"/><circle class="g" cx="462" cy="70" r="6"/>
+            <line class="w" x1="388" y1="70" x2="410" y2="70"/><line class="w" x1="468" y1="70" x2="492" y2="70"/><text class="t" x="440" y="128">NOT</text>
+          </svg>
+          <figcaption>図1：基本3ゲートの回路記号。これらの組み合わせがCPUを作る。</figcaption>
+        </figure>
+        <p>ここで驚くべき事実があります。
+        <span class="em">この3種類（さらに言えば、ANDの出力を反転した「NAND」というたった1種類）さえあれば、
+        どんなに複雑な論理回路でも作れる</span>ことが、数学的に証明されているのです。
+        コンピュータの中で起きていることは、煎じ詰めれば、
+        この単純なゲートを<strong>気が遠くなるほど大量に組み合わせただけ</strong>。
+        最新のCPUには、こうしたスイッチ（トランジスタ）が数百億個も敷き詰められています。</p>
+        <div class="note">
+          <span class="lbl">なぜ少ない種類でいいのか</span>
+          「1種類のゲートだけで全部作れる」性質を<strong>万能性</strong>と呼びます。
+          同じ部品を超大量に、同じ製法で作るほど、設計も製造も検査も安く確実になる。
+          だから現代のチップは、少種類のゲートを規格化して敷き詰める方式をとります。
+          多種類の特注部品を集めるより、はるかに効率的なのです。
+        </div>
+        <h3>NAND だけで、本当に全部作れるのか</h3>
+        <p>「NAND（ナンド）1種類で全部作れる」は、にわかには信じがたい主張です。
+        少しだけ確かめてみましょう。NANDは「AかつB、の否定」。
+        まず、両方の入力に<strong>同じ信号Aを入れる</strong>と、
+        「AかつA、の否定」＝「Aの否定」になり、<strong>NOT</strong>が手に入ります。
+        NOTが作れれば、NANDの出力をそのNOTで反転して<strong>AND</strong>が作れる。
+        さらにド・モルガンの法則を使えば、NANDの組み合わせから<strong>OR</strong>も作れる。
+        こうしてAND・OR・NOTがすべてNANDから生まれ、
+        それらの組み合わせでXORも加算器も、最終的にはCPU全体までもが作れてしまうのです。
+        <span class="em">たった1種類のスイッチの繰り返しが、コンピュータのすべて</span>――
+        この事実は、何度味わっても少し鳥肌が立ちます。</p>
+      </section>
+
+      <!-- 加算器 -->
+      <section id="s-adder">
+        <h2>ゲートで足し算する ― 半加算器</h2>
+        <p>「論理が分かるのはいいけど、それで本当に<strong>計算</strong>ができるの？」
+        ――もっともな疑問です。実際にやってみましょう。
+        第2講で学んだ、二進数1桁どうしの足し算を思い出します。起こりうるのは4通りだけでした。</p>
+        <pre><code>0 + 0 = 0    （答え0、繰り上がりなし）
+0 + 1 = 1    （答え1、繰り上がりなし）
+1 + 0 = 1    （答え1、繰り上がりなし）
+1 + 1 = 10   （答え0、繰り上がり1！）</code></pre>
+        <p>出力を「その桁の答え（S）」と「繰り上がり（C）」の2つに分けて、真理値表にしてみます。</p>
+        <table class="tbl">
+          <caption>表2：1桁の足し算の真理値表</caption>
+          <tr><th>A</th><th>B</th><th>答え S</th><th>繰り上がり C</th></tr>
+          <tr><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+          <tr><td>0</td><td>1</td><td>1</td><td>0</td></tr>
+          <tr><td>1</td><td>0</td><td>1</td><td>0</td></tr>
+          <tr><td>1</td><td>1</td><td>0</td><td>1</td></tr>
+        </table>
+        <p>よく見比べてください。<span class="em">答え S は「2つが違うときだけ1」、繰り上がり C は「2つとも1のときだけ1」</span>。
+        Cは、まさに<strong>AND</strong>そのものです。
+        そしてSのほうは、「違うとき1・同じとき0」という、ANDでもORでもない第4のゲート
+        <span class="term">XOR（排他的論理和）</span>に一致します。
+        つまり、<strong>XORゲートとANDゲートを1個ずつ並べるだけで、1桁の足し算機が完成する</strong>。
+        これを<span class="term">半加算器（half adder）</span>と呼びます。</p>
+        <figure>
+          <svg viewBox="0 0 420 170" role="img" aria-label="半加算器の構成">
+            <style>.g2{fill:var(--accent2-soft);stroke:var(--accent2);stroke-width:1.8}.gx{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.8}.w2{stroke:var(--ink);stroke-width:1.6;fill:none}.t2{font:12px sans-serif;fill:var(--ink);font-weight:700}</style>
+            <text class="t2" x="14" y="50">A</text><text class="t2" x="14" y="110">B</text>
+            <line class="w2" x1="28" y1="46" x2="120" y2="46"/><line class="w2" x1="28" y1="106" x2="120" y2="106"/>
+            <!-- XOR -->
+            <path class="gx" d="M150 30 q26 28 0 56 q34 -4 52 -28 q-18 -24 -52 -28 Z"/>
+            <path class="gx" d="M144 30 q26 28 0 56" fill="none"/>
+            <line class="w2" x1="120" y1="40" x2="150" y2="40"/><line class="w2" x1="120" y1="76" x2="150" y2="76"/>
+            <line class="w2" x1="204" y1="58" x2="260" y2="58"/><text class="t2" x="268" y="62">S（答え）</text>
+            <!-- AND -->
+            <path class="g2" d="M150 110 H180 a24 24 0 0 1 0 48 H150 Z"/>
+            <line class="w2" x1="120" y1="120" x2="150" y2="120"/><line class="w2" x1="120" y1="148" x2="150" y2="148"/>
+            <line class="w2" x1="204" y1="134" x2="260" y2="134"/><text class="t2" x="268" y="138">C（繰り上がり）</text>
+            <text class="t2" x="158" y="62" style="fill:var(--accent)">XOR</text><text class="t2" x="156" y="138" style="fill:var(--accent2)">AND</text>
+          </svg>
+          <figcaption>図2：半加算器。XORが「答え」を、ANDが「繰り上がり」を出す。</figcaption>
+        </figure>
+        <p>ただし半加算器には、ひとつ足りないものがあります。
+        2桁以上の足し算では、<strong>下の桁からの繰り上がり</strong>も受け取らなければなりません
+        （第2講の <code>1011 + 0110</code> を思い出してください）。
+        そこで、入力を「A・B・下の桁からの繰り上がり」の3つに増やしたものが<span class="term">全加算器（full adder）</span>です。
+        全加算器を、桁の数だけ横にずらりと並べ、各桁の「繰り上がり出力」を隣の桁の「繰り上がり入力」へつないでいく。
+        こうして、何桁でも足せる加算器が完成します。
+        繰り上がりがバケツリレーのように左へ伝わっていくこの方式を、リップルキャリー（さざ波の桁上げ）と呼びます。</p>
+        <p><strong>哲学だったブール代数が、ここでついに本物の「計算する機械」になりました。</strong>
+        第2講で「コンピュータの計算は足し算の繰り返し」と書きましたが、
+        その足し算の正体が、いまや手の中にあるわけです。
+        ちなみに、繰り上がりが端から端まで伝わるのを待つと時間がかかるため、
+        実際のCPUでは「繰り上がりを先読みする」高速化の工夫も施されています。
+        ―― 単純な原理を、いかに速くするか。この工夫の積み重ねが、性能競争の歴史でもあります。</p>
+        <p>具体例で流れを追ってみましょう。<code>0011（3）＋ 0101（5）</code>を4つの全加算器で計算します。
+        いちばん右の桁から、1+1＝0（繰り上がり1）、次の桁は1+0+繰り上がり1＝0（繰り上がり1）、
+        次は0+1+繰り上がり1＝0（繰り上がり1）、いちばん左は0+0+繰り上がり1＝1。
+        並べると <code>1000</code>＝8。ちゃんと <code>3＋5＝8</code> になりました。
+        人間が筆算でやる繰り上がりを、ゲートがそのまま電気でこなしているだけ――そう思うと、急に親しみがわいてきます。</p>
+        <div class="trivia">
+          <p>「スイッチで計算する」アイデアは、トランジスタより前から実機になっていました。
+          1940年前後には、電磁石でカチカチ動く機械式スイッチ「<strong>リレー</strong>」を大量に使った計算機が作られています。
+          リレーは動作が遅く、うるさく、故障も多い代物でしたが、それでも論理回路としては立派に働きました。
+          やがてリレーは、より速い「真空管」に、そして小さく頑丈な「トランジスタ」に置き換わっていきます。
+          <strong>素材は変わっても、やっている論理（AND・OR・NOT）はずっと同じ</strong>。
+          ここにも、第1講以来の「中身が変わっても、上の論理は不変」という抽象化の思想が効いています。</p>
+        </div>
+      </section>
+
+      <!-- 四則演算 -->
+      <section id="s-allops">
+        <h2>四則演算は、すべてゲートに還元できる</h2>
+        <p>足し算ができれば、残りの計算もすべて手に入ります。種明かしはこうです。</p>
+        <ul>
+          <li><strong>引き算</strong>：第2講で学んだ「2の補数」を使えば、引き算は<strong>足し算</strong>に化けました。だから加算器を使い回せます。</li>
+          <li><strong>掛け算</strong>：「3 × 4」は「3を4回足す」こと。つまり<strong>足し算の繰り返し</strong>。</li>
+          <li><strong>割り算</strong>：「12 ÷ 3」は「12から3を引けるだけ引く」こと。つまり<strong>引き算の繰り返し</strong>。</li>
+        </ul>
+        <p>結局、<span class="em">四則演算はすべて、足し算――ひいては論理ゲートの組み合わせ――に還元できる</span>のです。
+        私たちが電卓で打つ計算も、表計算ソフトの集計も、ゲームの物理演算も、
+        最後の最後は、AND・OR・NOT・XOR といった単純なゲートの上で行われています。
+        「コンピュータは賢い」のではなく、<strong>「単純な操作を、ありえない速さと量でこなしている」</strong>。
+        この感覚は、これから先の講でも何度も立ち返る、大事な視点です。</p>
+        <p>ここで第2講の話とつながる注意点をひとつ。
+        加算器は<strong>決まった桁数（たとえば8桁）</strong>でできているので、結果がその桁に収まらないと
+        いちばん上の繰り上がりがあふれて消えます（桁あふれ）。
+        だから「大きい数どうしを足したら、答えが急に小さな数やマイナスに化けた」という現象が起こりうる。
+        第2講で触れた"カンスト"や2038年問題は、まさにこの加算器の桁数の限界に由来していたのです。
+        <span class="em">計算機の計算は万能ではなく、つねに「決まった桁数の中での計算」</span>だ――
+        この事実は、第14講「数値計算と誤差」でさらに重要になってきます。</p>
+      </section>
+
+      <!-- 記憶 -->
+      <section id="s-memory">
+        <h2>記憶を作る ― フリップフロップ</h2>
+        <p>計算はできるようになりました。でも、それだけでは足りません。
+        コンピュータには、計算の途中経過や結果を<strong>覚えておく</strong>力も必要です。
+        驚くことに、これも同じ論理ゲートで作れます。</p>
+        <p>仕掛けはこうです。ゲートの<strong>出力を、ぐるりと自分の入力に戻す（フィードバックする）</strong>。
+        すると回路は、外から新しい指示が来るまで、「いま1」「いま0」という状態を
+        その場に<strong>保持し続ける</strong>ようになります。
+        これが記憶素子<span class="term">フリップフロップ</span>。1ビットを記憶する最小単位です。
+        ちょうど、2つの椅子取りゲームで「どちらが座っているか」を、外から押されるまで保ち続けるようなもの。
+        これをたくさん並べたものが、CPU内部の超高速メモリ（レジスタやキャッシュ）になります。</p>
+        <p>ただ「覚えられる」だけでは、混乱が起きます。
+        計算の途中で値がふらふら書き換わっては困るので、
+        <strong>「いつ覚え直すか」のタイミングをそろえる</strong>必要があります。
+        その号令役が<span class="term">クロック</span>です。
+        コンピュータの中では、1秒間に何十億回という超高速の"メトロノーム"が時を刻んでおり、
+        その拍に合わせて、すべての記憶素子がいっせいに値を更新します。
+        CPUの速さを表す「○GHz（ギガヘルツ）」は、まさにこのメトロノームが1秒に何回鳴るか、を示す数字。
+        <span class="em">計算する・覚える・歩調をそろえる</span>――この3つがそろって、ようやく機械は規律正しく動けるのです。</p>
+        <p>なお、フリップフロップで作る記憶は<strong>速いけれど高価で場所を食う</strong>ため、
+        CPUのすぐそばに少しだけ置かれます（レジスタやキャッシュ）。
+        もっと大量に覚えたいデータは、別の安価な仕組み（メインメモリやストレージ）に置く。
+        速いけど狭い記憶と、遅いけど広い記憶を、用途で使い分けて積み重ねる――
+        この「記憶の階層」という考え方は第4講・第7講で再登場します。
+        ここでは「論理ゲートから記憶も生まれる」という事実だけ、しっかり持ち帰ってください。</p>
+        <div class="def">
+          <p><b>計算 ＋ 記憶 ＝ コンピュータの芽</b></p>
+          <p style="margin-bottom:0">計算する力（加算器）と、覚える力（フリップフロップ）。
+          この2つがそろえば、機械は<strong>「データを読み、計算し、結果を書き戻す」</strong>という動作を
+          延々と繰り返せる。これこそ、第4講で扱うコンピュータ本体の、いちばん下の土台である。</p>
+        </div>
+        <p>第4講では、この「計算する部品」と「覚える部品」を、どう organize（組織化）すれば
+        「プログラムで動く万能な機械」になるのか――現代のあらゆるコンピュータが従う設計思想を見ていきます。
+        論理ゲートという素材は、ここでいったん完成。次は、それを使った"建築"の話です。</p>
+      </section>
+
+      <!-- 歴史 -->
+      <section id="s-history">
+        <h2>歴史 ― 哲学から半導体へ</h2>
+        <p>論理回路の物語は、3人の登場人物でたどると分かりやすくなります。</p>
+        <div class="history">
+          <p><strong>① ジョージ・ブール（1815–1864）。</strong>
+          貧しい家に生まれ、ほぼ独学で数学を修めた人でした。
+          「思考の法則」を数式にする、という途方もない仕事を成し遂げながら、
+          49歳の若さで亡くなります。雨の中を歩いて高熱を出したのが命取りだった、と伝わります。
+          自分の代数が、のちに世界を動かす機械の心臓になるとは、知るよしもありませんでした。</p>
+          <p><strong>② クロード・シャノン（1916–2001）。</strong>
+          ブールの抽象的な論理を、電気スイッチという物理につないだ人。
+          「論理は回路にできる」という橋を架けたことで、コンピュータの設計が一気に現実味を帯びました。</p>
+          <p><strong>③ トランジスタを生んだ人々。</strong>
+          初期のコンピュータはスイッチに「真空管」を使っていましたが、
+          大きく・熱く・壊れやすいのが難点でした。
+          1947年、ベル研究所のバーディーン、ブラッテン、ショックレーが
+          <strong>トランジスタ</strong>を発明します。小さく・省電力で・頑丈な、究極のスイッチ。
+          彼らはこの功績でノーベル物理学賞を受けました。
+          トランジスタを極小化して大量に敷き詰めたものが、現代のIC（集積回路）であり、CPUです。</p>
+        </div>
+        <p>このトランジスタの小型化は、その後すさまじい勢いで進みました。
+        「チップに詰め込めるトランジスタの数は、およそ2年で2倍になる」という有名な経験則
+        （<strong>ムーアの法則</strong>）のもと、半導体は数十年にわたって指数的に高密度化していきます。
+        いま、あなたのスマホの中の小さなチップには、<strong>百億個を超えるトランジスタ</strong>＝論理ゲートの素が
+        敷き詰められています。本講で1個ずつ見てきたスイッチが、それだけの数、同時に働いている。
+        ひとつひとつは単純きわまりないのに、数の暴力で複雑なことをやってのける――
+        これがコンピュータの底力の正体です（半導体とムーアの法則は、第2部でさらに掘り下げます）。</p>
+        <p>哲学（ブール）→ 回路への翻訳（シャノン）→ 物理的なスイッチ（トランジスタ）。
+        この3段のリレーがそろって、はじめて「論理で計算する機械」が現実になりました。
+        ひとつの抽象的なアイデアが、世紀をまたいで人から人へ受け渡され、形になっていく――
+        コンピュータ科学には、こうした長い時間をかけたリレーがいくつもあります。</p>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用</h2>
+        <h3>「コンピュータは計算だけ？」への答え</h3>
+        <p>「コンピュータ（計算機）」という名前から、「ひたすら数を計算する機械」だと思われがちです。
+        でも本講を踏まえると、もっと正確に言えます。コンピュータがやっているのは、
+        <strong>「条件によって、次に何をするかを論理で決める」</strong>こと。
+        足し算（演算）は、そのうちのひとつの仕事にすぎません。
+        実際CPUの中には、計算を担う「演算装置」と並んで、
+        「次にどの命令を実行するか」を論理で判断する「制御装置」があります（第4講）。
+        <span class="em">計算する力と、論理で道を選ぶ力。コンピュータの正体は、この二枚看板</span>なのです。
+        本講で組み立てたゲートは、その両方をまかなう、共通の素材でした。</p>
+        <h3>身のまわりは「もし〜なら」だらけ</h3>
+        <p>論理回路の発想――「条件によって動きを変える」――は、計算機の外にもあふれています。
+        自動ドア（人が近づいた<strong>なら</strong>開く）、信号機、エアコンの温度制御、
+        洗濯機の「フタが閉まっている<strong>かつ</strong>水位が足りている<strong>なら</strong>回す」。
+        こうした「条件で分岐する」仕組みは、すべてANDやORやNOTの組み合わせで記述できます。
+        家電の賢さの正体も、煎じ詰めればこの論理の積み重ねなのです。</p>
+        <h3>検索の AND / OR も同じ論理</h3>
+        <p>ネット検索で「<strong>猫 AND かわいい</strong>」「<strong>東京 OR 大阪</strong>」のように条件を組むのも、
+        ブール代数そのものです（こうした検索を"ブール検索"と呼びます）。
+        無数のWebページを「条件に合う／合わない（1か0か）」でふるい分けている。
+        19世紀の論理学が、私たちの毎日の検索窓で、いまも現役で働いているわけです。
+        スプレッドシートの <code>IF</code> 関数、データベースの絞り込み条件（第12講）、
+        プログラムの分岐（第11講）――「条件で真偽を判定して動きを変える」仕組みは、
+        どれもブール代数の子孫。一度この目を持つと、身のまわりのソフトのいたるところに論理回路の影が見えてきます。</p>
+        <div class="trivia">
+          <p>「論理ゲートさえあれば何でも作れる」は、ゲームの世界でも実証されています。
+          『マインクラフト』には「レッドストーン」という"電気もどき"の仕組みがあり、
+          これでANDやORが作れるため、有志がブロックを積み上げて
+          <strong>動く電卓やCPU、さらには簡易的なコンピュータ</strong>まで作ってしまいました。
+          中には「マインクラフトの中で、別のゲームを動かす」猛者まで現れています。
+          理論上、論理ゲートさえあれば、どんな計算機でも組み上げられる――
+          その生きた証拠が、子ども向けに見えるゲームの中にあるのです。</p>
+        </div>
+      </section>
+
+      <!-- よくある誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「コンピュータの中には、特別で複雑な計算装置が入っている」</p>
+          <p class="a">逆です。中身は、AND・OR・NOTのような<strong>ごく単純なゲートの繰り返し</strong>。
+          複雑なのは"種類"ではなく"数と速さ"です。単純な部品を膨大に・高速に動かすことで、複雑な処理を実現しています。</p>
+          <p class="q">誤解②：「論理回路（ハード）と、プログラム（ソフト）は別世界の話」</p>
+          <p class="a">地続きです。プログラムの <code>if</code>（もし〜なら）や計算は、最終的に論理ゲートの動作へ翻訳されて実行されます（第11講）。
+          ソフトとハードは、抽象の階段の上と下にいるだけで、根は同じ論理です。</p>
+          <p class="q">誤解③：「AND・OR・NOT が3つとも必要」</p>
+          <p class="a">実は <strong>NAND（ANDの出力を反転したもの）1種類だけ</strong>で、すべての論理回路が作れます（万能ゲート）。
+          ORもNOTもANDも、NANDの組み合わせで再現できる。だから製造を1種類に絞れて効率がいいのです。</p>
+          <p class="q">誤解④：「最新のAIは、こんな古い論理回路とは無関係」</p>
+          <p class="a">無関係どころか土台です。AIの計算も、最後はGPUなどの論理ゲートの上で動いています（第15講）。
+          派手なAIも、足もとには19世紀の論理が広がっているのです。</p>
+          <p class="q">誤解⑤：「コンピュータの『1と0』は、本当に1ボルトと0ボルトのこと」</p>
+          <p class="a">厳密には違います。1と0は<strong>「電圧が高め／低め」という"範囲"</strong>に対応させた約束ごとで、
+          実際の電圧はノイズで常に揺れています。多少揺れても「高め寄りか低め寄りか」で判定できるからこそ、デジタルは頑丈なのでした（第1講・第2講）。
+          「ぴったりの値」ではなく「どちら寄りか」で1か0を決めている、というのがポイントです。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <div class="summary">
+          <ul>
+            <li>ブール代数は「真1・偽0」で論理を計算する数学。シャノンがそれを電気スイッチに対応づけた。</li>
+            <li>論理ゲート（AND・OR・NOT、実はNAND1種だけ）の組み合わせで、あらゆる論理回路が作れる。</li>
+            <li>XOR＋ANDで1桁の足し算機（半加算器）ができ、四則演算はすべてゲートに還元できる。</li>
+            <li>ゲートの出力を自分の入力に戻すと、状態を保持する記憶（フリップフロップ）になる。計算する力と記憶する力がそろって、コンピュータの土台が完成する。</li>
+            <li>哲学（ブール）→回路化（シャノン）→物理スイッチ（トランジスタ）という世紀をまたぐリレーを経て、論理で計算する機械は現実のものになった。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>「AかつBが成立しているときだけ"消灯"する」装置を作りたい。どのゲートを使えばよいか。</li>
+            <li>XOR（違うとき1、同じとき0）の真理値表を、4通りすべて自分で書いてみよ。</li>
+            <li>「8 × 3」を、コンピュータはどんな単純な操作の繰り返しで計算するか。</li>
+            <li>なぜ現代のチップは、たった数種類（理想的には1種類）のゲートの繰り返しで作られるのか。製造の観点から説明せよ。</li>
+            <li>論理ゲートは「計算」だけでなく「記憶」も作れた。記憶を生むための、回路上の工夫は何だったか。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) AND の後に NOT をつなぐ＝<strong>NANDゲート</strong>。AかつBが真のときだけ0（消灯）になる。<br>
+            (2) (0,0)→0、(0,1)→1、(1,0)→1、(1,1)→0。<br>
+            (3) 「8を3回足す」＝<strong>足し算の繰り返し</strong>（8＋8＋8）。掛け算は加算器の反復で実現される。<br>
+            (4) 同じ部品を超大量に同じ製法で作るほど、設計・製造・検査が単純で安く確実になるから。NANDの万能性がそれを可能にする。<br>
+            (5) ゲートの<strong>出力を自分の入力に戻す（フィードバック）</strong>こと。これで状態が保持され、1ビットの記憶（フリップフロップ）になる。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">Noam Nisan, Shimon Schocken『コンピュータシステムの理論と実装（Nand2Tetris）』</span>（オライリー・ジャパン）
+          ― NANDゲートひとつから出発し、加算器・CPU・OSまで"ゼロからコンピュータを作る"名著。第3〜4講を手で体験できる決定版。</li>
+          <li><span class="bk">チャールズ・ペゾルド『CODE ― コードから見たコンピュータのからくり（第2版）』</span>（日経BP）
+          ― モールス信号やリレーから論理回路・CPUへと、やさしい言葉で積み上げる名著。本講の世界観をまるごと深掘りできる。</li>
+          <li><span class="bk">結城浩『プログラマの数学（第2版）』</span>（SBクリエイティブ）
+          ― 論理・場合の数・帰納など、論理回路の土台になる考え方をやさしく学べる一冊。</li>
+          <li><span class="bk">天野英晴『ディジタル回路（電子情報通信レクチャーシリーズ）』ほか論理回路の教科書</span>
+          ― ゲート・加算器・順序回路をきちんと学びたい人へ。大学の論理回路（ディジタル回路）の標準的な教科書から1冊。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part1_lecture2.html"><span class="lab">← 前の講</span>第2講 0と1で世界を表す</a>
+        <a class="nx" href="part1_lecture4.html"><span class="lab">次の講 →</span>第4講 コンピュータの設計図</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第1部 第3講「論理回路と計算の素材」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

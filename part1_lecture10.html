@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第1部 第10講 暗号とハッシュ ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="会ったこともない相手と、なぜ安全に秘密を共有できるのか。古典暗号・公開鍵暗号・RSA・ハッシュ・ブロックチェーンを身近に学ぶ。ゆるコンピュータ科学講義 第1部 第10講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#c8503a; --accent-soft:#f7e3dd;
+    --accent2:#2f6f6a; --accent2-soft:#dcebe9;
+    --code-bg:#2b2722; --code-ink:#f3ead9;
+    --sidebar:#262320; --sidebar-ink:#e9e2d4; --sidebar-muted:#a59c8a;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#16140f; --paper:#1f1c16; --ink:#ece6d8; --muted:#a79e8c;
+    --line:#332f27; --accent:#e8775f; --accent-soft:#3a221c;
+    --accent2:#6fb6ad; --accent2-soft:#1c2c2a;
+    --code-bg:#100e0a; --code-ink:#f3ead9;
+    --sidebar:#100e0a; --sidebar-ink:#e9e2d4; --sidebar-muted:#8d8472;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#a83c2c 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"#a3f9...";position:absolute;right:6px;bottom:-6px;font-family:ui-monospace,monospace;font-size:3.8rem;font-weight:800;color:rgba(255,255,255,.08)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.9;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent2);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent2-soft);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent2)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:var(--accent2-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#2b2722}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent2-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent2-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent2);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent2-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent2);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第10講 暗号とハッシュ</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第1部 第10講</span><br>暗号とハッシュ</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-classic">古典暗号 ― ずらすだけ</a></li>
+      <li><a href="#s-keydist">鍵配送問題</a></li>
+      <li><a href="#s-publickey">公開鍵暗号 ― 南京錠の発想</a></li>
+      <li><a href="#s-hash">ハッシュ ― 戻せないから役立つ</a></li>
+      <li><a href="#s-history">歴史 ― エニグマと暗号戦争</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第1部 基礎教養編 ／ 第10講</div>
+        <h1>暗号とハッシュ<br>― 会わずに秘密を共有する魔法</h1>
+        <p>一度も会ったことのない通販サイトと、なぜ安全にカード番号をやり取りできるのか。現代の魔法の正体。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― 秘密を守る、という人類の願い</h2>
+        <p>「他人に知られたくない情報を、こっそり伝えたい」――この願いは、文字の歴史とほぼ同じくらい古いものです。
+        戦の作戦、外交の機密、恋文。人類はずっと、暗号と、その解読の知恵比べを続けてきました。
+        そして現代、私たちは毎日、その最先端の恩恵を受けています。
+        ネット通販でカード番号を入力するとき、メッセージアプリで会話するとき、銀行にログインするとき――
+        その裏では、強力な暗号が静かに働いています。</p>
+        <p>この講で解き明かすのは、ひとつの大きな謎です。
+        <span class="em">一度も会ったことのない相手と、どうやって安全に"秘密"を共有できるのか。</span>
+        盗聴されているかもしれない通信路を通して、なぜ秘密がやり取りできるのか。
+        この一見不可能な問題を解いた「公開鍵暗号」は、20世紀の暗号史における最大の発明であり、
+        いまのインターネットの安全は、まるごとこの上に成り立っています。
+        さらに後半では、暗号と親戚でありながら正反対の目的を持つ「ハッシュ」が、
+        パスワードの保管からブロックチェーンまでを支えていることを見ていきます。</p>
+        <p>本講には、これまでの講の知識が次々と合流してきます。
+        暗号を破る武器になるのは、第1講で学んだ文字の頻度（エントロピー）。
+        現代暗号の安全を支えるのは、第6講で学んだ計算量と指数爆発。
+        そして暗号史の主役の一人は、第5講で出会ったチューリングです。
+        <span class="em">これまで積み上げてきた道具が、ここで一気に"安全を守る技術"として束ねられる</span>――
+        本講は、第1部の前半で学んだ理論が、現実の社会インフラへと結実する回でもあります。</p>
+        <p>暗号の歴史は、作る側（暗号者）と破る側（解読者）の、終わりのない知恵比べでもありました。
+        新しい暗号が生まれては破られ、それを乗り越える、より強い暗号が生まれる――その繰り返しです。
+        シーザー暗号は頻度分析で破られ、複雑なエニグマもチューリングたちに破られた。
+        だから「いま安全な暗号」は、「永遠に安全」を意味しません。
+        計算機の性能が上がれば、かつて破れなかった暗号も破れるようになる。
+        <span class="em">暗号の安全性は絶対的なものではなく、「いまの技術では現実的な時間で破れない」という相対的なもの</span>なのだ、
+        という感覚を、本講の最初に持っておいてください。だからこそ暗号は、時代とともに世代交代を続けているのです。</p>
+        <p class="lead-in">古典暗号 → その弱点（鍵配送問題）→ 公開鍵暗号という革命 → ハッシュ。
+        第6講の計算量や、第5講のチューリングが、ここで思わぬ形で再会します。</p>
+      </section>
+
+      <!-- 古典暗号 -->
+      <section id="s-classic">
+        <h2>古典暗号 ― ずらすだけのシーザー暗号</h2>
+        <p>暗号の歴史は古代まで遡ります。最も有名なのが、ローマの将軍ユリウス・カエサル（シーザー）が使ったとされる
+        <span class="term">シーザー暗号</span>。やり方は驚くほど単純で、<strong>アルファベットを決まった数だけずらす</strong>だけです。
+        たとえば3つずらすなら、A→D、B→E、C→F…。これで「HELLO」は「KHOOR」になります。
+        受け取った側は、3つ戻せば元に戻せる。この「ずらす数（＝3）」が、暗号を解くための<span class="term">鍵</span>です。</p>
+        <p>送り手と受け手が「3つずらす」という同じ鍵を共有していれば、秘密のやり取りができる。
+        このように<strong>暗号化と復号に同じ鍵を使う</strong>方式を<span class="term">共通鍵暗号（対称鍵暗号）</span>と呼びます。
+        仕組みがシンプルで高速なので、現代でも（もっと複雑で強力な方式が）大量のデータの暗号化に使われています。
+        現代の共通鍵暗号の代表が<strong>AES</strong>で、世界中の通信やファイル暗号化の標準として使われています。
+        シーザー暗号の「ずらす」よりはるかに複雑な、ビットの撹拌を何重にも繰り返す方式ですが、
+        「送り手と受け手が同じ鍵を使う」という骨格はシーザー暗号と同じ。
+        2000年以上前の発想が、形を変えていまも現役なのです。</p>
+        <p>しかし、シーザー暗号そのものは、いとも簡単に破られます。
+        まず、ずらし方は25通りしかないので、全部試せば必ず解けます（総当たり）。
+        さらに巧妙な手が<span class="term">頻度分析</span>です。
+        英語で最もよく使われる文字はE。だから暗号文の中でいちばん多く出てくる文字は、
+        おそらくEがずれたものだ――と推測できる。
+        ここで、第1講・第9講で学んだ「文字の出現頻度（＝エントロピー）」が、
+        今度は<span class="em">暗号を"破る"側の武器</span>として登場します。
+        圧縮に使えた偏りが、暗号解読にも使える。情報理論の射程の広さがうかがえます。</p>
+        <p>頻度分析の感覚を、少しだけ味わってみましょう。
+        ある暗号文を集計したら、記号「Q」がいちばん多く、次に「X」「M」が多かったとします。
+        英語では E, T, A が頻出と分かっているので、「Qは実はEでは？」「X, MはT, Aでは？」と推測できる。
+        いくつか当てはめて意味の通る単語が現れれば、ずらし量（鍵）が芋づる式に判明します。
+        <span class="em">総当たりせずとも、言語の"クセ"を突けば暗号は崩れる</span>のです。
+        この発見は中世のアラビア世界にまで遡るとされ、以来、単純な置き換え暗号は
+        「頻度分析で破れるもの」となりました。
+        だから現代の暗号は、頻度のかたよりが表に出ないよう、はるかに複雑な仕組みを使っています。</p>
+      </section>
+
+      <!-- 鍵配送問題 -->
+      <section id="s-keydist">
+        <h2>鍵配送問題 ― 暗号の最大の急所</h2>
+        <p>シーザー暗号のような共通鍵暗号には、どんなに方式を強力にしても消えない、根本的な急所があります。
+        それが<span class="term">鍵配送問題</span>です。</p>
+        <p>共通鍵暗号では、送り手と受け手が<strong>あらかじめ同じ鍵を共有していなければなりません</strong>。
+        では、その鍵を、どうやって相手に渡すのでしょう？
+        鍵を盗まれたら、暗号文はすべて読まれてしまいます。
+        かといって、鍵そのものを通信路で送ろうとすれば、<span class="em">その通信もまた盗聴されうる</span>。
+        暗号を守るための鍵を安全に渡すために、また別の安全な手段が要る――堂々めぐりです。</p>
+        <p>会って手渡しできれば安全ですが、ネット通販のたびに、店まで鍵を取りに行くなんて不可能です。
+        世界中の見知らぬ相手と通信するインターネットでは、なおさら。
+        <strong>「最初の秘密（鍵）を、どうやって共有するのか」</strong>――
+        この問題が、長らく暗号の根本的なジレンマとして立ちはだかっていました。</p>
+        <p>この問題が、いかに身近で切実かを考えてみましょう。
+        あなたが初めて訪れた通販サイトで買い物をするとき、その店とは一度も会ったことがありません。
+        にもかかわらず、クレジットカード番号という重大な秘密を渡す必要がある。
+        事前に鍵を共有する機会など、まったくないのです。
+        昔ながらの共通鍵暗号の発想だけでは、この「見知らぬ相手との初対面の取引」は、原理的に安全にできません。
+        だからこそ、インターネットでの商取引が当たり前になるには、
+        <span class="em">「事前の鍵共有なしに、いきなり安全な通信を始められる仕組み」</span>がどうしても必要だったのです。
+        そして1970年代、このジレンマを鮮やかに打ち破る、まさに革命的なアイデアが現れます。</p>
+      </section>
+
+      <!-- 公開鍵暗号 -->
+      <section id="s-publickey">
+        <h2>公開鍵暗号 ― 南京錠の発想</h2>
+        <p>その革命的アイデアが<span class="term">公開鍵暗号</span>です。
+        発想の核心を、「南京錠」のたとえで理解しましょう。</p>
+        <div class="def">
+          <p><b>鍵を2つで1組にする</b></p>
+          <p style="margin-bottom:0">「かけると閉まるが、それでは開けられない<strong>南京錠（公開鍵）</strong>」と、
+          「その錠だけを開けられる<strong>自分専用の鍵（秘密鍵）</strong>」を、ペアで作る。
+          南京錠（公開鍵）は、世界中にばらまいてしまってよい。
+          誰かがあなたに秘密を送りたければ、あなたの南京錠で箱に鍵をかけて送る。
+          その箱を開けられるのは、秘密鍵を持つあなただけ。<strong>事前に鍵を共有する必要が、消える</strong>。</p>
+        </div>
+        <p>これが鍵配送問題への答えです。
+        南京錠（公開鍵）は誰に見られても、誰にコピーされても構いません。
+        錠は「かける」ことしかできず、「開ける」には秘密鍵が要るからです。
+        だから、盗聴されている通信路で公開鍵を堂々と配っても、安全が成り立つ。
+        <span class="em">「閉めるのは誰でもできるが、開けるのは本人だけ」という非対称性</span>が、すべての鍵（文字どおり）なのです。</p>
+        <p>「盗聴されている通信路で、どうやって共通の秘密を作るのか」を、もう少し直感的に示す
+        有名な"絵の具のたとえ"があります（ディフィー・ヘルマン鍵交換の考え方）。
+        まず、二人とも知っている共通の色（たとえば黄色）を用意します。これは公開されていてかまいません。
+        次に、二人はそれぞれ<strong>自分だけの秘密の色</strong>を選び、黄色に混ぜて、その混合色を相手に送ります。
+        盗聴者は、行き交う混合色を見ることはできます。
+        最後に、二人は受け取った相手の混合色に、もう一度<strong>自分の秘密の色</strong>を混ぜる。
+        すると――不思議なことに、二人とも<strong>まったく同じ色</strong>にたどり着きます。
+        一方、盗聴者は「混ぜる前の秘密の色」を知らないので、同じ色を作れない。
+        <span class="em">絵の具は混ぜるのは簡単だが、混ざった色から元の色を分離するのは難しい</span>――
+        この一方通行性を数学（巨大な数のべき乗計算）で実現したのが、鍵交換のからくりです。
+        盗聴されながら、盗聴者だけが仲間外れになる秘密を作れる。最初に聞くと、まるで手品のようです。</p>
+        <h3>RSA ― かけ算は簡単、逆は絶望的</h3>
+        <p>この「南京錠」を数学で実現した代表が<span class="term">RSA暗号</span>です。
+        利用するのは、<strong>「かけ算は簡単だが、その逆（素因数分解）は途方もなく難しい」</strong>という非対称性です。
+        2つの巨大な素数を掛け合わせるのは、コンピュータには一瞬。
+        ところが、でき上がった巨大な数から、元の2つの素数を当てる（素因数分解する）のは、
+        現在のコンピュータを使っても、現実的な時間ではまず不可能です。
+        この<strong>「やるのは簡単・戻すのは絶望的に困難」という一方通行性</strong>が、暗号の安全を支えています。</p>
+        <p>「素因数分解がそんなに難しいの？」と思うかもしれません。
+        小さい数なら簡単です。<code>15 ＝ 3 × 5</code>、<code>91 ＝ 7 × 13</code>。
+        しかし、これが何百桁もの巨大な数になると、話はまるで変わります。
+        かけ算は桁が増えても手間がそれほど増えませんが、素因数分解は素数の候補をしらみつぶしに試すしかなく、
+        桁が増えるにつれて手間が爆発的に膨らむ――第6講で学んだ、あの指数爆発です。
+        現在使われているRSAの鍵は、世界中のスーパーコンピュータを総動員しても、
+        分解に天文学的な年月がかかる大きさに設定されています。
+        <span class="em">「理論上は解けるが、現実には終わらない」という第6講の壁が、そのまま安全の根拠になっている</span>のです。</p>
+        <p>ここで、第6講の<strong>P対NP問題</strong>を思い出してください。
+        「答えの確認は簡単でも、発見は困難」――まさにNPの世界です。
+        実際、もしP＝NPが証明され、素因数分解のような問題が一気に高速で解けるようになれば、
+        RSAをはじめ現代暗号の多くは無力化しかねません。
+        <span class="em">第6講で学んだ「指数爆発」という"困りもの"が、ここでは安全を守る"頼もしい盾"になっている</span>のです。
+        攻撃者を絶望させる計算の壁こそが、私たちの秘密を守っている。</p>
+        <p>あなたがネット通販でカード番号を入力するとき、ブラウザの鍵マーク（HTTPS）の裏では、
+        この公開鍵暗号で「最初の秘密（共通鍵）の共有」を安全に済ませ、
+        そこから先は高速な共通鍵暗号に切り替えてやり取りする、という連携が一瞬で行われています。
+        公開鍵暗号で鍵配送問題を解き、共通鍵暗号で速度をかせぐ。両者の"いいとこ取り"です。
+        会ったこともない店と、安全に秘密を交わせるのは、この数学の合わせ技のおかげなのです。</p>
+      </section>
+
+      <!-- ハッシュ -->
+      <section id="s-hash">
+        <h2>ハッシュ ― 戻せないからこそ、役に立つ</h2>
+        <p>第7講で「鍵から番地を計算するハッシュ関数」を学びました。
+        セキュリティで使うのは、その親戚にあたる<span class="term">暗号学的ハッシュ関数</span>です。
+        持っている性質は、おもに3つ。</p>
+        <ul>
+          <li><strong>どんな長さの入力も、固定長の値にする</strong>（巨大なファイルでも、短い「指紋」に変換）。</li>
+          <li><strong>同じ入力からは、必ず同じ値が出る</strong>。</li>
+          <li><strong>出てきた値から、元の入力を逆算できない</strong>（一方通行）。</li>
+        </ul>
+        <p>圧縮（第9講）と違って、<span class="em">戻せないことそのものが目的</span>なのが、ハッシュの面白いところです。
+        では、戻せない値が、いったい何の役に立つのでしょうか。代表的な2つの使い道を見ましょう。</p>
+        <h3>パスワードの保管</h3>
+        <p>まともなサービスは、あなたのパスワードを<strong>そのままの形では保存していません</strong>。
+        保存しているのは、パスワードをハッシュ関数に通した「ハッシュ値」だけ。
+        ログイン時には、入力されたパスワードを同じくハッシュして、保存してあるハッシュ値と照合します。
+        こうしておけば、万一データが流出しても、ハッシュ値からは元のパスワードを逆算できない。
+        <span class="em">サービスの運営者でさえ、あなたの生パスワードを知らない</span>という状態を作れるのです。
+        「パスワードを忘れたら、再設定はできるが"確認"はできない」のは、運営側も生パスワードを持っていないからです。</p>
+        <p>ただし、ハッシュにも油断は禁物です。
+        同じパスワードからは同じハッシュ値が出るので、攻撃者は「よく使われるパスワードのハッシュ値一覧」を
+        あらかじめ用意しておき、流出したハッシュ値と照合する、という攻撃ができます。
+        これを防ぐため、実際にはパスワードに<strong>「ソルト」と呼ばれるランダムな文字列を一人ずつ加えてから</strong>ハッシュ化します。
+        こうすれば、同じパスワードでも人によってハッシュ値が変わり、一覧表での照合が効かなくなる。
+        <span class="em">「正しく使えば強いが、使い方を誤ると穴になる」</span>――暗号技術は、仕組みだけでなく運用が肝心なのです。
+        この「人間の運用がセキュリティの弱点になる」という話は、第2部のセキュリティの回で深く掘り下げます。</p>
+        <h3>改ざん検知とブロックチェーン</h3>
+        <p>ハッシュには、もうひとつ強力な性質があります。
+        入力をたった1文字でも変えると、出てくるハッシュ値が<strong>まったくの別物に激変する</strong>のです。
+        この性質を使えば、ファイルが途中ですり替えられていないかを、ハッシュ値の照合で確かめられます（改ざん検知）。
+        さらに、この「ちょっとの変化で値が激変する」性質を鎖のようにつないだのが、
+        ビットコインなどの<span class="term">ブロックチェーン</span>です。
+        各データのかたまり（ブロック）が、前のブロックのハッシュ値を含む形で連結されているため、
+        過去のデータを少しでも書き換えると、それ以降のハッシュがすべて食い違い、改ざんが即座にバレる。
+        <span class="em">中央に管理者を置かなくても、データの正しさを保てる</span>――
+        この仕組みの土台が、ハッシュの一方通行性なのです。</p>
+        <p>ビットコインの「マイニング（採掘）」も、ハッシュの性質を利用しています。
+        「あるブロックのハッシュ値が、先頭にゼロがたくさん並ぶ特別な形になるような数字を探せ」という、
+        膨大な試行錯誤が必要なパズルを世界中のコンピュータに解かせ、
+        最初に解いた者が新しいブロックを追加する権利を得る、という仕組みです。
+        ハッシュは逆算できないので、ひたすら数を変えて試すしかなく、莫大な計算（と電力）がかかる。
+        この「正直に計算した者だけが報われ、改ざんには非現実的な計算量が必要」という設計で、
+        管理者なしの信頼を成立させているのです。
+        もっとも、その膨大な電力消費が環境問題として批判されるなど、課題も抱えています
+        （ブロックチェーンと暗号通貨は、第2部であらためて掘り下げます）。</p>
+      </section>
+
+      <!-- 歴史 -->
+      <section id="s-history">
+        <h2>歴史 ― エニグマと暗号戦争</h2>
+        <div class="history">
+          <p><strong>エニグマを破った、チューリング。</strong>
+          第二次世界大戦中、ナチスドイツ軍は<strong>「エニグマ」</strong>という、
+          歯車式で1文字打つごとに暗号化のしかたが変わる、超強力な暗号機を使っていました。
+          設定の組み合わせは天文学的で、総当たりはまったく不可能。連合軍を苦しめました。
+          これを破ったのが、第5講の主役<strong>アラン・チューリング</strong>率いる、英国の暗号解読チームです。
+          彼らは「ドイツ軍の電文は、毎朝決まった天気予報の言い回しを含む」といった人間側のスキを突き、
+          専用の解読機械を作って、エニグマを打ち破りました。
+          この功績は、戦争を年単位で早く終わらせ、多くの命を救ったとも言われます。
+          計算理論の父が、暗号解読でも歴史を動かした――理論と現実が交差する瞬間でした。</p>
+          <p><strong>公開鍵暗号の誕生。</strong>
+          鍵配送問題を解く公開鍵暗号の考え方は、1976年にディフィーとヘルマンが公表し、
+          その具体的な実現法であるRSAが、リベスト・シャミア・エーデルマンの3人によって1977年に発表されました
+          （RSAは3人の頭文字）。
+          じつは、ほぼ同じアイデアが、それ以前にイギリスの政府機関の中で秘密裏に発見されていたものの、
+          機密扱いで世に出せなかった、という後日談もあります。</p>
+        </div>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用</h2>
+        <h3>HTTPS ― ネットの安全の土台</h3>
+        <p>ブラウザのアドレス欄にある鍵マークと「https」の表示。これこそ、本講の技術の結晶です。
+        HTTPSでは、まず公開鍵暗号で安全に共通鍵を共有し（鍵配送問題の解決）、
+        以降はその共通鍵で高速に通信を暗号化します。
+        さらに、通信相手が本物のサイトかどうかを<strong>デジタル署名</strong>（公開鍵暗号の応用）で確認し、
+        なりすまし（偽サイト）を防いでいます。
+        私たちが安心してログインや買い物ができるのは、この何重もの仕組みが一瞬で働いているからです。</p>
+        <h3>デジタル署名 ― 「本人が書いた」を証明する</h3>
+        <p>公開鍵暗号は、秘密を守るだけでなく、逆向きにも使えます。
+        <strong>秘密鍵で"署名"し、公開鍵で"確認"する</strong>と、
+        「この文書は、確かに秘密鍵の持ち主が作った（＝なりすましでない）」「途中で改ざんされていない」
+        ことを証明できます。これが<span class="term">デジタル署名</span>です。
+        ソフトウェアの配布元の証明、電子契約、そしてブロックチェーンの取引承認など、
+        「誰が作ったかを保証する」あらゆる場面で使われています。
+        暗号は"隠す"技術であると同時に、"本物であることを証明する"技術でもあるのです。</p>
+        <h3>次の脅威 ― 量子コンピュータと耐量子暗号</h3>
+        <p>暗号の「いたちごっこ」は、いまも続いています。次の大きな波になりうるのが<strong>量子コンピュータ</strong>です。
+        まだ研究段階ですが、もし大規模なものが実現すれば、
+        RSAが安全の根拠にしている「素因数分解の困難さ」が崩れる可能性が指摘されています。
+        そこで、量子コンピュータでも破れない新しい暗号（<strong>耐量子暗号</strong>）の研究が、いまから世界中で進められています。
+        <span class="em">「将来の脅威に、いまのうちから備える」</span>――暗号の世界では、こうした長い目での競争が、静かに、しかし熱心に続いているのです。</p>
+        <h3>暗号は諸刃の剣</h3>
+        <p>強力な暗号は、私たちのプライバシーや安全を守る一方で、社会に難問も突きつけます。
+        犯罪者の通信も同じように守ってしまうため、「捜査のために暗号を解けるようにすべきか、
+        それとも全員のプライバシーを守り抜くべきか」という、答えの出にくい論争が世界中で続いています。
+        技術そのものに善悪はなく、<span class="em">それをどう使い、どんなルールを定めるかは、社会が決めるべき問題</span>です。
+        この「技術と社会のせめぎ合い」は、第2部のセキュリティや社会制度の回で、本格的に掘り下げていきます。</p>
+        <h3>エンドツーエンド暗号化 ― 運営者にも読めない</h3>
+        <p>メッセージアプリの一部には<strong>エンドツーエンド暗号化（E2EE）</strong>という方式があります。
+        これは、メッセージを<strong>送信者の端末で暗号化し、受信者の端末でしか復号できない</strong>ようにする仕組み。
+        途中の通信を運ぶサービス運営者でさえ、中身を読めません。
+        公開鍵暗号を使って「相手の端末だけが開けられる」状態を作っているのです。
+        プライバシーを強く守れる一方で、運営者が中身を確認できないため、
+        犯罪利用やトラブル対応との兼ね合いが社会的な論争にもなっています。
+        <span class="em">技術の強さは、同時に新しい難問も生む</span>――この光と影は、第2部でも繰り返し登場するテーマです。</p>
+        <h3>「知っていることを、明かさずに証明する」</h3>
+        <p>暗号の発想は、ときに魔法のようなことを可能にします。そのひとつが<strong>ゼロ知識証明</strong>です。
+        これは、<span class="em">「ある秘密を知っている」ことを、その秘密の中身は一切明かさずに、相手に証明する</span>技術。
+        たとえるなら、「私はこの扉の合言葉を知っている」ことを、合言葉そのものは決して教えずに信じさせる、というような芸当です。
+        パスワードを送らずに本人確認をしたり、生年月日を見せずに「成人である」ことだけを証明したり――
+        プライバシーを守りながら、必要なことだけを証明する未来の重要技術として、注目を集めています。
+        「隠す」と「証明する」という暗号の2つの顔を、巧みに組み合わせた応用です。</p>
+        <p>こうして暗号は、単なる「秘密を隠す道具」を超えて、
+        <strong>「会ったことのない相手と、どうやって信頼を築くか」という、デジタル社会の根本問題</strong>に答える技術へと育ってきました。
+        ネット通販で見知らぬ店を信用できるのも、ブロックチェーンが管理者なしで動くのも、その根っこには本講で学んだ仕組みがあります。
+        <span class="em">数学が、人と人（あるいは機械と機械）のあいだの"信頼"を作り出す</span>――
+        これは、コンピュータ科学が成し遂げた、最も深遠な達成のひとつだと言えるでしょう。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「公開鍵を公開したら、暗号が破られてしまう」</p>
+          <p class="a">破られません。公開鍵は「かける（暗号化する）」ことしかできず、「開ける（復号する）」には秘密鍵が必要です。
+          だから公開鍵は、誰に見られても安全。むしろ広く配ることが前提です。</p>
+          <p class="q">誤解②：「サービスは私のパスワードを保管しているはずだ」</p>
+          <p class="a">まともなサービスは、生パスワードではなく<strong>ハッシュ値</strong>だけを保管します。
+          だから流出してもパスワードは逆算されにくく、運営者すら本来あなたの生パスワードを知りません。
+          （だからこそ、忘れたパスワードは"確認"ではなく"再設定"になります。）</p>
+          <p class="q">誤解③：「暗号は、隠すための技術だけだ」</p>
+          <p class="a">それだけではありません。デジタル署名のように「本人が作った・改ざんされていない」を証明する用途も、暗号の重要な役割です。
+          秘密を守る（機密性）と、本物を保証する（真正性）の両方を担っています。</p>
+          <p class="q">誤解④：「いまの暗号は絶対に安全で、永遠に破られない」</p>
+          <p class="a">「いまのコンピュータでは現実的な時間で破れない」が正確な表現です。
+          計算能力の進歩や、将来の量子コンピュータによって、安全性の前提は変わりえます。だから暗号は世代交代を続けています。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <div class="summary">
+          <ul>
+            <li>古典暗号（シーザー暗号）は総当たりや頻度分析で破られる。文字頻度＝エントロピーが解読の武器に。</li>
+            <li>共通鍵暗号は速いが「鍵配送問題」を抱える。最初の鍵をどう安全に共有するかが急所。</li>
+            <li>公開鍵暗号は鍵を2つで1組に。「閉めるのは誰でも、開けるのは本人だけ」の非対称性が核心。</li>
+            <li>RSAは「素因数分解の困難さ＝一方通行性」で安全を担保。第6講のP対NP・指数爆発と直結。</li>
+            <li>暗号学的ハッシュは「戻せない（一方通行）」ことが利点。パスワードの保管・改ざん検知・ブロックチェーンを支える。</li>
+            <li>HTTPSは公開鍵＋共通鍵＋署名の合わせ技。暗号は「隠す」と「本物を証明する」の両方を担う。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>シーザー暗号（3つずらす）で「CAT」を暗号化すると、どうなるか。</li>
+            <li>共通鍵暗号の「鍵配送問題」とは何か。なぜ通信路で鍵を送るだけでは解決しないのか。</li>
+            <li>サービスがパスワードを「ハッシュ値で」保存する利点は何か。流出時のリスクで説明せよ。</li>
+            <li>RSAの安全性が「素因数分解の難しさ」に依存しているなら、それを高速に解く方法が見つかると何が起きるか。</li>
+            <li>公開鍵を世界中に配っても安全なのは、なぜか。公開鍵と秘密鍵の役割の違いから説明せよ。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) C→F、A→D、T→W で「FDW」。<br>
+            (2) 暗号化に使う鍵を相手と共有する必要があるが、その鍵を送る通信も盗聴されうるため、堂々めぐりになる問題。<br>
+            (3) 生パスワードを保存しないので、データが流出してもハッシュ値から元のパスワードを逆算されにくく、被害を限定できる。<br>
+            (4) RSAの前提（戻すのが困難）が崩れ、暗号が解読可能になる。実際、将来の<strong>量子コンピュータ</strong>が素因数分解を高速化しうるため、それに耐える「耐量子暗号」の研究が進んでいる。<br>
+            (5) 公開鍵は「暗号化（かける）」専用で、「復号（開ける）」には秘密鍵が必要。開ける力を持たない公開鍵は、誰に見られても安全だから。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">サイモン・シン『暗号解読（上・下）』</span>（新潮文庫）
+          ― シーザー暗号からエニグマ、公開鍵暗号まで、暗号と解読の歴史を物語として読ませる傑作。本講の決定版の副読本。</li>
+          <li><span class="bk">結城浩『暗号技術入門（第3版）』</span>（SBクリエイティブ）
+          ― 共通鍵・公開鍵・ハッシュ・署名を、初学者向けにていねいに解説する定番。仕組みをきちんと理解したい人へ。</li>
+          <li><span class="bk">サトシ・ナカモト「ビットコイン：P2P電子マネーシステム」（論文）</span>
+          ― ブロックチェーンの原典。短い論文で、ハッシュと署名で"管理者なしの信頼"を作る発想が読める（第2部で再訪）。</li>
+          <li><span class="bk">岡本龍明・山本博資『現代暗号』</span>（産業図書）
+          ― 公開鍵暗号やRSAを数理的にきちんと学びたい人向けの本格的な教科書。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part1_lecture9.html"><span class="lab">← 前の講</span>第9講 圧縮と誤り訂正</a>
+        <a class="nx" href="part1_lecture11.html"><span class="lab">次の講 →</span>第11講 プログラミング言語</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第1部 第10講「暗号とハッシュ」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

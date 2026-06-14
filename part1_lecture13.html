@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第1部 第13講 インターネットの基礎 ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="中央の管制塔がないのに、なぜ世界中のデータが迷子にならず届くのか。パケット・IP・DNS・TCP/IP・URLを身近に学ぶ。ゆるコンピュータ科学講義 第1部 第13講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#c8503a; --accent-soft:#f7e3dd;
+    --accent2:#2f6f6a; --accent2-soft:#dcebe9;
+    --code-bg:#2b2722; --code-ink:#f3ead9;
+    --sidebar:#262320; --sidebar-ink:#e9e2d4; --sidebar-muted:#a59c8a;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#16140f; --paper:#1f1c16; --ink:#ece6d8; --muted:#a79e8c;
+    --line:#332f27; --accent:#e8775f; --accent-soft:#3a221c;
+    --accent2:#6fb6ad; --accent2-soft:#1c2c2a;
+    --code-bg:#100e0a; --code-ink:#f3ead9;
+    --sidebar:#100e0a; --sidebar-ink:#e9e2d4; --sidebar-muted:#8d8472;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#a83c2c 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"://";position:absolute;right:14px;bottom:-10px;font-family:ui-monospace,monospace;font-size:4.4rem;font-weight:800;color:rgba(255,255,255,.08)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.9;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent2);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent2-soft);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent2)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:var(--accent2-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#2b2722}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent2-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent2-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent2);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent2-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent2);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第13講 インターネットの基礎</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第1部 第13講</span><br>インターネットの基礎</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-packet">パケット交換</a></li>
+      <li><a href="#s-address">住所と電話帳 ― IPとDNS</a></li>
+      <li><a href="#s-layer">階層で考える ― TCP/IP</a></li>
+      <li><a href="#s-url">URLを解剖する</a></li>
+      <li><a href="#s-02sec">接続の0.2秒に何が起きているか</a></li>
+      <li><a href="#s-history">歴史 ― 壊れても生き残る網</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第1部 基礎教養編 ／ 第13講</div>
+        <h1>インターネットの基礎<br>― 世界をつなぐ、見えない約束</h1>
+        <p>中央に管制塔があるわけでもないのに、なぜ世界中のデータは迷子にならず、相手に届くのか。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― 管制塔なき巨大ネットワーク</h2>
+        <p>インターネットは、人類が作り上げた最大の機械だと言われることがあります。
+        世界中の何十億台もの機器が、国境を越えてつながり、いまこの瞬間も膨大なデータが行き交っています。
+        ところが驚くべきことに、この巨大なネットワークには、<strong>全体を取り仕切る「中央の管制塔」が存在しません</strong>。
+        どこかの1台が止まっても、全体は動き続ける。誰も全貌を把握していないのに、ちゃんと機能する。</p>
+        <p>では、中央の司令塔がないのに、なぜあなたの送ったメッセージは、地球の裏側の相手まで、
+        迷子にならずに届くのでしょうか。
+        この講では、その秘密を解き明かします。鍵になるのは、
+        <strong>「データを小包に分けて送る」「住所と電話帳で宛先を見つける」「役割を層に分ける」</strong>という、
+        3つの巧妙なアイデアです。
+        どれも、これまでの講で学んだ「抽象化」や「分散」の考え方が、壮大なスケールで応用されたもの。
+        ふだん何気なく使っている「ネットにつながる」という体験の裏側を、のぞいてみましょう。</p>
+        <p>少し立ち止まって考えると、これは驚異的なことです。
+        あなたがスマホで送ったメッセージは、わずか数秒で、地球の反対側にいる相手に届きます。
+        その途中、データは見知らぬ何台もの機器を経由し、ときには海底を渡り、宇宙の衛星を経ることさえある。
+        しかも、その経路を誰かが一元管理しているわけではない。
+        にもかかわらず、ほぼ確実に、正しく届く。
+        <span class="em">これほど巨大で、複雑で、しかも管理者のいないシステムが、これほど安定して動いている例は、人類史上ほかにありません</span>。
+        その"魔法"のタネを解き明かすのが、本講の目的です。</p>
+        <p>ひとつ、最初に押さえておきたい視点があります。
+        インターネットの本質は、特定の機械や会社ではなく、<strong>「約束ごと（プロトコル）」の集まり</strong>だということ。
+        「データはこういう形で包んで送る」「宛先はこう書く」「届いたらこう返事する」――
+        こうした共通のルールさえ守れば、機種もメーカーも国も違う機器どうしが、問題なく会話できます。
+        いわば、世界中が同じ"通信のマナー"を共有しているのです。
+        <span class="em">モノではなく、約束によって成り立つネットワーク</span>。
+        この視点を持つと、これから出てくるIPやTCPといった用語が、すべて「約束の名前」として腑に落ちてきます。</p>
+        <p class="lead-in">パケット交換 → IPアドレスとDNS → 階層化（TCP/IP）→ URLの解剖 → 接続の0.2秒。
+        「ページが開く」までに起きていることを、順番に追っていきます。</p>
+      </section>
+
+      <!-- パケット交換 -->
+      <section id="s-packet">
+        <h2>パケット交換 ― データを小包に分けて送る</h2>
+        <p>インターネット以前の通信、つまり電話は、通話のあいだ、二者を結ぶ専用の回線をまるごと確保する方式でした
+        （回線交換）。確実ですが、回線を独占するので無駄が多く、どこか1か所が切れれば通話も切れてしまいます。</p>
+        <p>インターネットは、これとはまったく逆の発想を採ります。<span class="term">パケット交換</span>です。
+        <span class="em">送りたいデータを、小さな小包（パケット）に分割し、それぞれに宛先を書いて、バラバラに送り出す</span>。
+        小包たちは、それぞれ別々の経路を通ってかまいません。
+        ある経路が混んでいたり切れていたりすれば、別の道を通ればよい。
+        受け取った側で、小包を番号順に組み立て直せば、元のデータが復元できます。
+        手紙を1通ずつ別の配達員に託すようなもの、と考えると分かりやすいでしょう。</p>
+        <p>この方式の最大の強みは<strong>頑健さ</strong>です。一部の経路が壊れても、小包は別の道で迂回できる。
+        中央に「すべてを管理する装置」を置かず、各地点（ルーター）が自律的に
+        「この小包は、次はどっちへ流せば宛先に近づくか」を判断して、バケツリレーで送っていく。
+        <span class="em">中央集権ではなく、自律分散</span>。
+        この構造こそ、インターネットが世界規模に育っても破綻しない理由です。
+        第12講の「分散」の話が、ここでは通信網のかたちで現れています。</p>
+        <p>もう少し具体的に見てみましょう。たとえば1枚の写真を送るとき、
+        それは「1番目の小包」「2番目の小包」…と細かく分割され、各小包には
+        <strong>宛先・送り主・通し番号</strong>などの情報が、荷札のように付けられます。
+        小包たちは、混雑を避けてそれぞれ別の経路を旅し、到着の順番もバラバラかもしれません。
+        しかし通し番号が書いてあるので、受け取った側は正しい順に並べ直して、元の写真を復元できる。
+        途中で迷子になった小包があれば、「○番が届いていない、もう一度送って」と要求すればよい
+        （この再送の管理は、次に出てくるTCPの仕事です）。
+        <span class="em">分割して、番号をつけて、バラバラに送り、組み立て直す</span>――
+        このシンプルな段取りが、世界規模の通信を支える基本動作なのです。</p>
+      </section>
+
+      <!-- 住所と電話帳 -->
+      <section id="s-address">
+        <h2>住所と電話帳 ― IPアドレスとDNS</h2>
+        <p>小包を届けるには、宛先（住所）が必要です。それが<span class="term">IPアドレス</span>。
+        インターネットにつながる機器1台ずつに割り振られる番号で、<code>192.0.2.1</code> のように書きます
+        （これも第2講で学んだ、数値による表現です）。
+        この番号があるからこそ、世界中のどの機器宛てにも、小包を届けられるのです。</p>
+        <p>とはいえ、私たち人間は <code>142.250.x.x</code> のような数字の羅列を、とても覚えられません。
+        そこで、<code>google.com</code> のような<strong>覚えやすい名前</strong>を、機械用のIPアドレスに変換する
+        「インターネットの電話帳」が用意されています。それが<span class="term">DNS</span>です。</p>
+        <div class="def">
+          <p><b>DNS（ドメインネームシステム）</b></p>
+          <p style="margin-bottom:0"><code>example.com</code> のような<strong>ドメイン名</strong>を、
+          対応する<strong>IPアドレス</strong>に変換する仕組み。
+          いわば「名前 → 電話番号」を引く、世界規模の電話帳。
+          ブラウザにアドレスを打つと、まずDNSに「この名前の番号は？」と問い合わせてから、通信が始まる。</p>
+        </div>
+        <p>このDNSがうまく引けないと、「サイトが開けない」障害が起きます。
+        実際、大規模なネット障害のニュースの多くは、このDNSのあたりのトラブルが原因です。
+        <span class="em">電話帳が壊れると、電話番号（IPアドレス）自体は生きていても、誰も電話をかけられない</span>。
+        ふだん意識しませんが、DNSはインターネットを支える、静かで重要な土台なのです。</p>
+        <h3>住所が足りない ― IPアドレス枯渇問題</h3>
+        <p>長く使われてきたIPアドレスの方式（IPv4）は、<code>192.0.2.1</code> のように4つの数字で表され、
+        全部で約43億通り（第2講で見た32ビット＝<code>2³²</code>）の住所しか作れません。
+        43億と聞くと膨大に思えますが、世界人口より少なく、いまや一人が
+        スマホ・パソコン・家電と何台もの機器を持つ時代。
+        <span class="em">割り当てられる住所が、世界規模で足りなくなってきた</span>のです。これが<strong>IPアドレス枯渇問題</strong>です。</p>
+        <p>対策は2つの方向で進みました。ひとつは、家庭やオフィスの中では"内輪の住所"を使い回し、
+        外に出るときだけ代表の住所を共有する、というやりくり（NAT）。
+        もうひとつが、住所の桁を大幅に増やした新方式<strong>IPv6</strong>への移行です。
+        IPv6は <code>2¹²⁸</code> という、事実上無尽蔵といえる数の住所を用意できます。
+        この桁数は、地球上の砂粒の数をはるかに超えるとも言われるほど。
+        「住所が足りない」という、第2講の"桁数の限界"の話が、世界規模のインフラ問題として現れた好例です。
+        移行には時間がかかっていますが、増え続ける機器を支えるために、着実に進んでいます。</p>
+        <h3>身近なネットワーク ― Wi-Fiとルーター</h3>
+        <p>家庭やオフィスでネットを使うとき、中心にいるのが<strong>ルーター</strong>です。
+        ルーターは、家の中の機器（スマホ・PC・テレビ）と、外のインターネットを橋渡しする"玄関"の役割を果たします。
+        家の中では、各機器に"内輪の住所"を配り（だから家庭内のIPアドレスはよく <code>192.168.…</code> で始まります）、
+        外と通信するときは、ルーターが代表して取り次ぐ。
+        そして、その玄関と機器を<strong>無線でつなぐ約束ごと</strong>が<span class="term">Wi-Fi</span>です。
+        Wi-Fiはあくまで「家の中の最後の数メートルを無線にする」技術であって、インターネットそのものではありません。
+        「Wi-Fiにはつながっているのにネットが見られない」という、よくあるトラブルは、
+        <span class="em">「家の玄関まではつながっているが、玄関から外（インターネット）への道で問題が起きている」</span>状態。
+        ルーターの先（回線やプロバイダ、DNS）に原因がある、というわけです。
+        本講の「層に分かれている」という視点を持つと、こうした切り分けが自分でできるようになります。</p>
+      </section>
+
+      <!-- 階層 -->
+      <section id="s-layer">
+        <h2>階層で考える ― TCP/IP という積み木</h2>
+        <p>「世界中の、種類も世代も違う無数の機器が通信する」という途方もない複雑さを、
+        人類はどうやって飼いならしたのでしょうか。
+        答えは、これまでも何度も登場した<span class="term">階層化</span>です。
+        通信の役割をいくつかの層に分け、<strong>各層は、すぐ下の層だけに頼り、その中身は気にしない</strong>。
+        これが設計の肝です。</p>
+        <figure>
+          <svg viewBox="0 0 460 230" role="img" aria-label="通信プロトコルの階層">
+            <style>.ly{stroke:var(--accent2);stroke-width:1.8}.lt{font:13px sans-serif;fill:var(--ink);font-weight:700}.ld{font:11px sans-serif;fill:var(--muted)}</style>
+            <rect class="ly" x="40" y="20" width="380" height="42" rx="8" fill="var(--accent-soft)"/>
+            <text class="lt" x="58" y="40">アプリ層</text><text class="ld" x="58" y="55">HTTP・メール（人が使うサービス）</text>
+            <rect class="ly" x="40" y="68" width="380" height="42" rx="8" fill="var(--accent2-soft)"/>
+            <text class="lt" x="58" y="88">トランスポート層 (TCP)</text><text class="ld" x="58" y="103">小包の順番・欠損を管理し、確実に届ける</text>
+            <rect class="ly" x="40" y="116" width="380" height="42" rx="8" fill="var(--accent-soft)"/>
+            <text class="lt" x="58" y="136">ネットワーク層 (IP)</text><text class="ld" x="58" y="151">宛先IPへ小包を中継・配送する</text>
+            <rect class="ly" x="40" y="164" width="380" height="42" rx="8" fill="var(--accent2-soft)"/>
+            <text class="lt" x="58" y="184">物理・リンク層</text><text class="ld" x="58" y="199">電波・光ファイバ・LANケーブル（実際の信号）</text>
+          </svg>
+          <figcaption>図1：通信は層の積み木。上の層は、下の層の中身を知らなくてよい。</figcaption>
+        </figure>
+        <p>その中核が<span class="term">TCP/IP</span>です。
+        <strong>IP</strong>は、とにかく小包を宛先へ中継する係。ただし「確実に届く保証はしない、雑な郵便」です。
+        その上で<strong>TCP</strong>が、小包の到着確認・順番の並べ替え・欠けた小包の再送を引き受け、
+        <span class="em">「信頼できない土台の上に、信頼できる通信を作り上げる」</span>。
+        Webページが、文字化けも欠落もなく正しく届くのは、このTCPの働きのおかげです。</p>
+        <p>一方、多少データが欠けても、それより<strong>速さ</strong>が大事な通信もあります。
+        ビデオ通話やオンラインゲームは、古いデータを再送して待つより、最新のデータを送り続けたい。
+        こうした用途では、TCPを使わない軽い方式（UDP）を選びます。
+        ここでも、第6講・第12講と同じ<strong>「確実さ 対 速さ」のトレードオフ</strong>が顔を出します。
+        階層化のありがたみは、「下を取り替えても、上が無事」な点にもあります。
+        通信が電話線から光ファイバ、4G、5G、Wi-Fiへと激変しても、変わったのはいちばん下の層だけ。
+        その上のIP・TCP・HTTPはほぼ手つかずで動き続けます。
+        <span class="em">複雑なものは、層に分けて「隣の層とだけ約束する」ことで飼いならす</span>――
+        第11講の抽象化の階段と、まったく同じ思想です。</p>
+        <p>各層がどう協力するかは、「封筒の入れ子」で考えると分かりやすいでしょう。
+        手紙（アプリ層のデータ）を、まず封筒に入れて「順番と再送の管理票」を貼り（TCP）、
+        さらにそれを大きな封筒に入れて「宛先IP」を書き（IP）、
+        最後にトラックの荷札（物理層）をつけて送り出す――というイメージです。
+        受け取った側は、外側から順に封筒を開けていき、最後に手紙を取り出す。
+        各層は、自分の封筒のことだけ責任を持てばよく、中身の手紙の内容は気にしない。
+        この<strong>「層ごとに情報を包んでいく」やり方（カプセル化）</strong>のおかげで、
+        膨大な機器が、役割分担をしながら整然と通信できるのです。
+        <span class="em">一人で全部やろうとせず、役割を分けて、隣とだけ約束を交わす</span>――
+        巨大システムを成り立たせる、普遍的な知恵がここにあります。</p>
+      </section>
+
+      <!-- URL -->
+      <section id="s-url">
+        <h2>URLを解剖する</h2>
+        <p>私たちが毎日目にする<span class="term">URL</span>（ウェブアドレス）。
+        これは、ただの呪文ではなく、<strong>「どこへ、どうやってアクセスするか」を表す、よくできた住所表記</strong>です。
+        ためしに分解してみましょう。</p>
+        <pre><code>https://www.example.com/news/article?id=42
+└─┬─┘   └──────┬──────┘└───┬───┘└──┬──┘
+スキーム      ホスト名      パス     クエリ
+(通信方法)  (どのサーバー) (中の場所)(追加の指定)</code></pre>
+        <ul>
+          <li><strong>スキーム（https）</strong>：どの方法（プロトコル）で通信するか。<code>https</code> は暗号化された通信（第10講）。</li>
+          <li><strong>ホスト名（www.example.com）</strong>：どのサーバーか。これがDNSでIPアドレスに変換される。</li>
+          <li><strong>パス（/news/article）</strong>：そのサーバーの中の、どの場所（ファイルやページ）か。</li>
+          <li><strong>クエリ（?id=42）</strong>：追加の指定。「42番の記事を」のように、サーバーへの注文を添える。</li>
+        </ul>
+        <p>URLを読めるようになると、ネットの安全にも役立ちます。
+        たとえば、本物そっくりの偽サイト（フィッシング詐欺）を見抜くには、ホスト名をよく見ることが肝心。
+        <code>example.com</code> に似せた <code>examp1e.com</code>（数字の1）や、
+        まったく無関係なドメインの下にそれらしい文字列を並べただけのURLは、危険信号です。
+        <span class="em">URLという住所を正しく読む力は、現代のネットリテラシーの基本</span>なのです。</p>
+        <p>ページを要求するときの会話の作法も、決まった約束（HTTP）になっています。
+        ブラウザは「このページをください（GET）」「このデータを送ります（POST）」といった種類の要求を出し、
+        サーバーは結果を<strong>状態コード（ステータスコード）</strong>という3桁の番号で返します。
+        いちばん有名なのが、ページが見つからないときの<strong>404</strong>。
+        ほかにも、成功を表す200、別の場所へ移ったことを示す301/302、サーバー側の不具合を表す500番台などがあります。
+        「404 Not Found」の画面に出くわしたとき、それは<span class="em">サーバーは生きていて、ちゃんと返事はしているが、
+        「そのページは無い」と言っている</span>状態だと分かる。
+        番号の意味を少し知っているだけで、ネットの不具合の見え方がぐっと具体的になります。</p>
+      </section>
+
+      <!-- 0.2秒 -->
+      <section id="s-02sec">
+        <h2>接続の0.2秒に、何が起きているか</h2>
+        <p>ブラウザにURLを入れてEnterキーを押し、ページが表示されるまで。体感ではほんの一瞬、コンマ数秒です。
+        しかしその短い時間に、本講で学んだ仕組みが、目まぐるしく連携しています。順番に追ってみましょう。</p>
+        <ol>
+          <li><strong>DNSで名前を引く</strong>：まず、入力したドメイン名を、DNSに問い合わせてIPアドレスに変換する。</li>
+          <li><strong>相手のサーバーに接続する</strong>：IPアドレス宛に、TCPで「つなぎたい」と挨拶し、接続を確立する。</li>
+          <li><strong>安全な通信を準備する</strong>：httpsなら、ここで第10講の暗号のやり取りをして、盗聴されない通路を作る。</li>
+          <li><strong>データを要求し、受け取る</strong>：「このページをください」と要求（HTTP）し、返ってきたデータをパケットで受け取る。</li>
+          <li><strong>画面を組み立てる</strong>：受け取ったデータを、ブラウザが解釈して、文字や画像のページとして描き上げる。</li>
+        </ol>
+        <p>これらが、しかも相手のサーバーが地球の裏側にあっても、わずか0.2秒ほどで完了する。
+        その裏では、パケットが世界中の何台ものルーターをバケツリレーで渡り歩き、
+        ときには<strong>海底ケーブル</strong>を通って大陸を越えています。
+        「ページが開く」という当たり前の体験は、じつは<span class="em">本講義で学んだ技術の総動員</span>によって支えられた、
+        ささやかな奇跡なのです。
+        この一瞬の舞台裏を知ると、ネットの見え方が少し変わるはずです。</p>
+        <div class="trivia">
+          <p>「インターネットは空（クラウド）の中にある」と思われがちですが、その実体は、きわめて物理的です。
+          大陸と大陸のあいだのデータは、その大半が<strong>海底ケーブル</strong>――海の底に敷かれた光ファイバーの束――を通っています。
+          世界中の海底に、何十万kmものケーブルが張り巡らされ、国際通信の屋台骨を担っているのです。
+          ときに、このケーブルが船の錨やサメ（！）に傷つけられ、特定の地域のネットが遅くなる、という事件も起きます。
+          また、どれだけ技術が進んでも、信号は<strong>光の速さ</strong>を超えられません。
+          地球の裏側との通信に、どうしても物理的な往復の時間（遅延）がかかるのは、この光速の限界のためです。
+          <span class="em">"クラウド"の正体は、海を越え、地を這う、膨大なケーブルとコンピュータの集合体</span>なのです。
+          この物理的な実体は、第2部のデータセンターやインフラの回で、さらに掘り下げます。</p>
+        </div>
+      </section>
+
+      <!-- 歴史 -->
+      <section id="s-history">
+        <h2>歴史 ― 壊れても生き残る網として</h2>
+        <div class="history">
+          <p><strong>冷戦が生んだ、自律分散のネットワーク。</strong>
+          インターネットの源流は、1960〜70年代にアメリカで作られた<strong>ARPANET</strong>という研究用ネットワークです。
+          その設計思想の背景には、「一部が攻撃で破壊されても、通信が生き残るネットワークを作りたい」という発想がありました
+          （冷戦下の核攻撃への備え、という文脈で語られることが多い）。
+          中央の管制塔を置かず、各地点が自律的に小包を中継するパケット交換は、まさにこの「壊れにくさ」のための設計だったのです。</p>
+          <p>その後、世界中のバラバラなネットワークを「相互につなぐ」ための共通の約束として、
+          ヴィント・サーフとロバート・カーンらが<strong>TCP/IP</strong>を設計しました。
+          異なる仕組みのネットワークどうしを、共通のルールで橋渡しする――この「ネットワークのネットワーク（inter-network）」が、
+          そのまま「インターネット」という名前の由来になっています。
+          <span class="em">特定の企業の製品ではなく、誰でも使える"公開された約束（プロトコル）"だったからこそ</span>、
+          インターネットは国境も企業も越えて、世界中に広がることができたのです。</p>
+        </div>
+        <p>ここで、よく混同される2つの言葉を整理しておきましょう。
+        <strong>インターネット</strong>は、いま見てきた「世界中の機器をつなぐ土台のネットワーク」そのものです。
+        一方<strong>ウェブ（World Wide Web）</strong>は、そのインターネットの上で動く<strong>サービスのひとつ</strong>。
+        1989年、ティム・バーナーズ＝リーが考案した、文書どうしをリンクでつなぐ仕組みです。
+        いわば、インターネットが"道路網"なら、ウェブはその上を走る"宅配サービス"のようなもの。
+        ほかにも、メールや動画通話など、道路網の上を走るサービスは色々あります。
+        「ネットを見る＝ウェブを見る」と感じがちですが、両者は別の層の話。
+        この区別は、第2部の最初（ブラウザとWebの回）で、さらにくわしく扱います。</p>
+        <h3>"つながる"ことが生んだ、光と影</h3>
+        <p>インターネットは、人類の知識へのアクセスを民主化し、距離を消し去り、新しい産業や文化を次々と生みました。
+        遠くの人とつながり、世界中の情報を一瞬で得られる――これは間違いなく大きな恩恵です。
+        しかし同時に、影も生み出しました。
+        誤情報やデマが一瞬で世界に広がる（第8講のスモールワールドの裏面）、
+        プライバシーが脅かされる、依存や分断が深まる、サイバー攻撃の脅威にさらされる――。
+        <span class="em">「すべてをつなぐ」という設計思想は、便利さと脆さを、表裏一体で抱えている</span>のです。
+        中央の管制塔がない自由なネットワークだからこそ、誰がどう責任を持つのか、という難しい問いも生まれます。</p>
+        <p>もうひとつ、忘れてはならないのが「つながれない人」の存在です。
+        世界には、まだ高速なインターネットを使えない地域や人々が大勢います。
+        この格差は<strong>デジタル・デバイド（情報格差）</strong>と呼ばれ、教育や経済の格差にも直結する、重要な社会問題です。
+        通信は、もはや電気や水道と同じ社会インフラ。だからこそ「誰もが公平にアクセスできるべきか」という議論
+        （ネット中立性など）も、世界中で続いています。
+        技術の話は、いつのまにか社会や公平の話につながっていく――
+        この視点こそ、第2部「応用・社会・現代技術編」へと続く、大切な橋渡しになります。</p>
+        <h3>公開された「約束」が、世界を広げた</h3>
+        <p>インターネットがここまで広がった最大の理由は、技術的な巧みさだけではありません。
+        その中核の約束（TCP/IPやHTTPなどのプロトコル）が、特定の企業の所有物ではなく、
+        <strong>誰でも自由に使える「公開された標準」</strong>だったことが決定的でした。
+        もし、ある一社が通信のルールを独占し、使用料を取っていたら、インターネットはこれほど普及しなかったでしょう。
+        「みんなで共通の約束を守れば、みんながつながれる」――この開かれた精神が、世界をひとつのネットワークにまとめ上げたのです。
+        <span class="em">優れた技術であることと同じくらい、"開かれていること"が、普及を決める</span>。
+        これは、第11講のオープンソースの話とも通じる、コンピュータ科学の重要な教訓です。</p>
+        <p>その「みんなの約束」は、いまも少しずつ進化しています。
+        通信をより速く・安全にする新しい方式が次々と提案され、世界中の合意のもとで、ゆっくりと更新されていく。
+        中央の支配者がいないからこそ、変化には時間がかかりますが、その分、特定の誰かの都合に振り回されにくい。
+        私たちが当たり前に使っている「ネット」は、完成した固定物ではなく、
+        <span class="em">世界中の人々が少しずつ手を入れ続けている、生きた共有財産</span>なのです。
+        その仕組みと歴史を知ることは、これからのデジタル社会を考えるための、確かな土台になります。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「インターネットは、どこかの中央コンピュータが管理している」</p>
+          <p class="a">中央の管制塔はありません。各地点（ルーター）が自律的に小包を中継する、分散型の仕組みです。
+          だからこそ、一部が壊れても全体は動き続けます。</p>
+          <p class="q">誤解②：「データは、送り手から受け手へ、1本の決まった道を通る」</p>
+          <p class="a">パケット交換では、小包ごとに別々の経路を通ることがあり、受け手で順番に組み立て直します。
+          道が混んだり切れたりしても、別の道へ迂回できるのが強みです。</p>
+          <p class="q">誤解③：「IPアドレスとドメイン名は同じもの」</p>
+          <p class="a">役割が違います。IPアドレス（数字）が機械用の住所、ドメイン名（文字）が人間用の名前。
+          その橋渡しをするのがDNS（電話帳）です。</p>
+          <p class="q">誤解④：「サイトが開けないのは、いつもそのサイトが落ちているから」</p>
+          <p class="a">必ずしもそうではありません。DNS（電話帳）の不調、経路の障害、自分側の回線の問題など、原因はさまざま。
+          サイト自体は生きていても「名前が引けない」だけで開けないこともあります。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <div class="summary">
+          <ul>
+            <li>インターネットに中央の管制塔はない。各地点が自律的に中継する分散型だから、一部が壊れても全体は生き残る。中身ではなく「公開された約束（プロトコル）」の集まりであることが、世界規模の普及を可能にした。</li>
+            <li>データを小包（パケット）に分けてバラバラに送り、受け手で組み立て直す（パケット交換）。経路の故障に強い。</li>
+            <li>IPアドレス（数字）が機械用の住所、ドメイン名（文字）が人間用の名前。両者を橋渡しする「インターネットの電話帳」がDNS。</li>
+            <li>通信は階層（レイヤー）の積み木。IPがとにかく小包を配送し、その上でTCPが到着確認・並べ替え・再送を担って「信頼できない土台の上に、信頼できる通信を作り上げる」。封筒の入れ子（カプセル化）のイメージ。</li>
+            <li>確実さを重視するTCP／速さを重視するUDP、と用途で使い分ける。階層化のおかげで、下の技術（回線）を入れ替えても、上のサービスは無事。</li>
+            <li>URLは「通信方法（スキーム）・サーバー（ホスト名）・場所（パス）・注文（クエリ）」を表す住所。正しく読めると、偽サイト（フィッシング）を見抜く力にもなる。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>パケット交換が、回線交換に比べて「経路の故障に強い」のはなぜか。</li>
+            <li>「IPアドレスは生きているのに、サイトが開けない」障害は、どの仕組みの不調が疑われるか。</li>
+            <li>リアルタイムのオンライン対戦ゲームが、確実なTCPではなく、あえてUDPを使うことがあるのはなぜか。</li>
+            <li>通信回線が光ファイバから5Gに変わっても、その上のWebやアプリが作り直さずに動くのは、どんな設計のおかげか。</li>
+            <li>URL <code>https://shop.example.com/item?id=7</code> のうち、DNSでIPアドレスに変換される部分はどこか。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) 各パケットが独立に経路を選べるので、ある道が壊れても別の道へ迂回できる。専用回線を独占する回線交換は、1か所切れると通信全体が落ちる。<br>
+            (2) <strong>DNS</strong>（名前→IPの電話帳）の障害が疑わしい。番号は生きていても、名前から引けない状態。<br>
+            (3) 多少のデータ欠落より<strong>遅延の少なさ</strong>が重要だから。再送を待つと操作が遅れる。古い情報を送り直すより、最新を送るほうがよい。<br>
+            (4) <strong>階層化</strong>。下の層（物理・リンク層）が変わっても、上の層（IP・TCP・HTTP）は影響を受けない設計だから。<br>
+            (5) ホスト名の <code>shop.example.com</code> の部分。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">『マスタリングTCP/IP 入門編』（井上直也ほか）</span>（オーム社）
+          ― TCP/IP・IP・DNSを体系的に学べる定番の入門書。本講をもっと深く知りたくなったら。</li>
+          <li><span class="bk">小川晃通『プロフェッショナルIPv6』</span>（ラムダノート）ほかIPアドレス解説
+          ― IPアドレスの仕組みや枯渇問題、IPv6への移行を学べる。第2部の通信回の予習にも。</li>
+          <li><span class="bk">『Web技術の基本』系の入門書</span>
+          ― URL・HTTP・DNS・ブラウザの関係を、図解でやさしく追える一冊を手元に（第2部のWeb回ともつながる）。</li>
+          <li><span class="bk">アンドリュー・ブラム『チューブ ― インターネットの「実体」をたずねて』</span>（早川書房）
+          ― 海底ケーブルやデータセンターなど、ネットの"物理的な実体"を訪ね歩くノンフィクション。読み物として面白い。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part1_lecture12.html"><span class="lab">← 前の講</span>第12講 データベースと表形式データ</a>
+        <a class="nx" href="part1_lecture14.html"><span class="lab">次の講 →</span>第14講 数値計算と誤差</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第1部 第13講「インターネットの基礎」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

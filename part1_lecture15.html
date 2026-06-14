@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第1部 第15講 AIと大規模言語モデル ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="ルールを書くのをやめ、例から学ばせる。機械学習・ニューラルネット・LLM・ハルシネーションを身近に学ぶ、第1部の最終講。ゆるコンピュータ科学講義 第1部 第15講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#c8503a; --accent-soft:#f7e3dd;
+    --accent2:#2f6f6a; --accent2-soft:#dcebe9;
+    --code-bg:#2b2722; --code-ink:#f3ead9;
+    --sidebar:#262320; --sidebar-ink:#e9e2d4; --sidebar-muted:#a59c8a;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#16140f; --paper:#1f1c16; --ink:#ece6d8; --muted:#a79e8c;
+    --line:#332f27; --accent:#e8775f; --accent-soft:#3a221c;
+    --accent2:#6fb6ad; --accent2-soft:#1c2c2a;
+    --code-bg:#100e0a; --code-ink:#f3ead9;
+    --sidebar:#100e0a; --sidebar-ink:#e9e2d4; --sidebar-muted:#8d8472;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#a83c2c 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"AI / LLM";position:absolute;right:10px;bottom:-6px;font-family:ui-monospace,monospace;font-size:3.6rem;font-weight:800;color:rgba(255,255,255,.08)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.9;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent2);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent2-soft);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent2)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:var(--accent2-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#2b2722}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent2-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent2-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent2);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent2-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent2);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  .finale{background:linear-gradient(160deg,var(--accent2) 0%,#245a55 100%);color:#fff;border-radius:16px;padding:24px 26px;margin:28px 0}
+  .finale h3{color:#fff;margin-top:0}
+  .finale p:last-child{margin-bottom:0}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第15講 AIと大規模言語モデル</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第1部 第15講</span><br>AIと大規模言語モデル</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-rule">ルールを書く限界</a></li>
+      <li><a href="#s-ml">機械学習 ― 例から学ぶ</a></li>
+      <li><a href="#s-nn">ニューラルネットと重み</a></li>
+      <li><a href="#s-llm">大規模言語モデル</a></li>
+      <li><a href="#s-limit">限界 ― ハルシネーション</a></li>
+      <li><a href="#s-history">歴史 ― AIの冬と春</a></li>
+      <li><a href="#s-apply">現代への応用と心構え</a></li>
+      <li><a href="#s-review">15回の旅を振り返って</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第1部 基礎教養編 ／ 第15講（最終講）</div>
+        <h1>AIと大規模言語モデル<br>― 考える機械への到達点</h1>
+        <p>ルールを教えるのをやめ、例から学ばせる。発想の大転換と、その先にあるもの。第1部の締めくくり。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― いよいよ「考える機械」へ</h2>
+        <p>15回の旅も、いよいよ最終講です。
+        第1講で「情報とは何か」を問うてから、私たちは二進数、論理回路、計算機、アルゴリズム、データ、暗号、
+        ネットワークと、コンピュータの土台を一段ずつ積み上げてきました。
+        その到達点として、いまの時代を象徴する技術――<span class="term">AI（人工知能）</span>を扱います。</p>
+        <p>AIの夢は、決して新しいものではありません。
+        第5講で出会ったアラン・チューリングは、1950年にはすでに「機械は考えられるか」という問いを立てていました。
+        しかし、長く実現には遠いと思われていたAIが、ここ十数年で劇的に進歩し、
+        いまや文章を書き、絵を描き、会話する。何が起きたのでしょうか。
+        鍵は、ひとつの<strong>発想の大転換</strong>にありました。
+        <span class="em">「ルールを人間が書く」のをやめ、「例から機械に学ばせる」</span>という転換です。
+        この講では、その転換の中身を解き明かし、いまをにぎわす大規模言語モデルの正体に迫ります。
+        そして最後に、15回かけて見てきたものを、ひとつの風景として振り返ります。</p>
+        <p class="lead-in">ルールの限界 → 機械学習 → ニューラルネット → 大規模言語モデル → その限界。
+        第1講の「情報」が、ここでAIの心臓として戻ってくる、感動の最終楽章です。</p>
+      </section>
+
+      <!-- ルールの限界 -->
+      <section id="s-rule">
+        <h2>ルールを書く限界 ― なぜ「猫」を説明できないのか</h2>
+        <p>初期のAIは、人間がコンピュータに<strong>ルールを全部書き下す</strong>方式でした（ルールベース）。
+        「もし〜なら、こうする」という条件（第3講・第11講の分岐）を、専門家が大量に書き並べていく。
+        ある程度はうまくいきましたが、すぐに大きな壁にぶつかります。</p>
+        <p>たとえば、1枚の写真が「猫」かどうかを判定するルールを、あなたは書けるでしょうか。
+        「耳が三角」？――いや、折れ耳の猫もいる。「ヒゲがある」？――後ろ姿には見えない。
+        「4本足でしっぽがある」？――犬も同じです。
+        私たちは猫を一目で見分けられるのに、その<strong>判断基準を、言葉で完全に書き下すことはできない</strong>。
+        <span class="em">世界は、人間が明文化できるルールで割り切るには、複雑すぎた</span>のです。
+        これがルールベースAIの限界でした。
+        人間の「なんとなく分かる」を、明示的なルールに翻訳しようとすると、例外が無限にあふれ出してしまう。</p>
+      </section>
+
+      <!-- 機械学習 -->
+      <section id="s-ml">
+        <h2>機械学習 ― 例から、機械に学ばせる</h2>
+        <p>そこで、発想を180度ひっくり返します。
+        <strong>ルールを人間が書く代わりに、大量の「例（データ）」を見せて、機械にルールを自分で見つけさせる</strong>。
+        これが<span class="term">機械学習</span>です。</p>
+        <p>「これは猫」「これは犬」と正解ラベルをつけた画像を、何万枚、何十万枚と見せます。
+        すると機械は、「猫を猫たらしめている特徴の組み合わせ」を、自力で数値パターンとして抽出していく。
+        人間が「耳が…ヒゲが…」と言葉で説明する必要はありません。
+        機械が、膨大な例の中から、共通する"猫らしさ"を統計的に掴み取るのです。
+        <span class="em">言葉にできない知識を、データから直接すくい上げる</span>――これが機械学習の核心です。</p>
+        <p>大事なのは、機械学習の本質が<strong>「個別の正解を暗記すること」ではなく「見たことのない新しいデータにも通用する、
+        一般的なパターンを掴むこと」</strong>だという点です。
+        学習に使った画像を覚えるだけなら意味がない。初めて見る猫の写真も「猫」と当てられてこそ、価値がある。
+        この「未知への一般化」こそが、機械学習の目指すところであり、難しさでもあります。</p>
+        <p>機械学習には、学ばせ方によって、大きく3つのタイプがあります。
+        ひとつめは<strong>教師あり学習</strong>。さきほどの「これは猫」「これは犬」のように、
+        正解ラベル付きの例を見せて学ばせる方法で、分類や予測に使われます。
+        ふたつめは<strong>教師なし学習</strong>。正解を与えず、データの中から「似たものどうしのグループ」や
+        隠れた構造を、機械自身に見つけさせる方法です。
+        みっつめが<strong>強化学習</strong>。正解は教えず、行動の結果に「報酬（ごほうび）」を与えて、
+        試行錯誤の中から「より多く報酬を得る振る舞い」を学ばせる方法。
+        ゲームをプレイして強くなるAIや、ロボットの制御などで活躍します。
+        <span class="em">教えるのか、気づかせるのか、試させるのか</span>――目的に応じて学ばせ方を選ぶ、というわけです。</p>
+      </section>
+
+      <!-- ニューラルネット -->
+      <section id="s-nn">
+        <h2>ニューラルネットと「重み」の調整</h2>
+        <p>機械学習の主役が、脳の神経細胞のつながりをゆるく真似た<span class="term">ニューラルネットワーク</span>です。
+        小さな計算ユニットを層状にたくさんつなぎ、ユニット間のつながりに<strong>「重み」</strong>という数値を持たせます
+        （第3講の論理ゲートを、固定ではなく"調整できる"ようにしたもの、とイメージすると分かりやすいでしょう）。
+        入力（たとえば画像のピクセル）を放り込むと、重みに従って計算が次々と伝わり、出力（「猫らしさ」）が出てきます。</p>
+        <div class="def">
+          <p><b>学習＝重みの微調整</b></p>
+          <p style="margin-bottom:0">最初、重みはすべてデタラメで、出力も的外れ。
+          そこで「正解とのズレ（誤差）」を測り、<strong>そのズレが少しでも減る方向へ、重みをほんの少し修正する</strong>。
+          これを膨大なデータで何百万回・何億回と繰り返すと、重みが少しずつ"正しい設定"に近づき、
+          やがて未知の画像でも猫を当てられるようになる。学習とは、巨大な数値の山を、誤差を頼りに少しずつ削り出す作業。</p>
+        </div>
+        <p>この「ズレを測り、それが減る坂道を下る方向へ少しずつ進む」手法を<strong>勾配降下法</strong>と呼びます。
+        霧の中で山を下るとき、足もとの傾きを頼りに「より低い方へ」一歩ずつ進むイメージです。
+        そして、層をうんと深く重ねたものが<span class="term">ディープラーニング（深層学習）</span>。
+        層が深いほど、単純な特徴（線や色）から複雑な特徴（目や顔、そして猫全体）へと、
+        段階的に"理解"を積み上げられるようになります。
+        これは第11講の「抽象化の階段」が、AIの内部にも現れている、と見ることもできます。</p>
+        <p>ディープラーニングが2010年代に一気に開花したのには、理由があります。
+        ひとつは、学習に使える<strong>大量のデータ</strong>がインターネット上にあふれたこと。
+        もうひとつが、膨大な計算をこなす<strong>計算機の性能</strong>、とくに<strong>GPU</strong>の活用です。
+        GPUは、もともと画像処理（同じような計算を大量に並列でこなす）のための部品でしたが、
+        ニューラルネットの計算とまさに相性が良かった。
+        第4講で触れた「ノイマン・ボトルネックを、並列処理で乗り越える」流れが、ここでAIの原動力になっているのです。
+        データと計算力、2つの燃料がそろって、眠っていたニューラルネットの理論が、ついに花開きました。</p>
+      </section>
+
+      <!-- LLM -->
+      <section id="s-llm">
+        <h2>大規模言語モデル ― 「次の一語」を当てる怪物</h2>
+        <p>そして現在の主役、<span class="term">大規模言語モデル（LLM）</span>。
+        人間と自然に対話する、あの巨大AIです。その学習目標は、意外なほど単純です。
+        <span class="em">「文章の途中まで与えられたとき、次に来る一語を当てる」</span>。ただ、それだけ。
+        インターネット規模の膨大な文章を使い、この「次の一語当て」を、天文学的な回数くり返して訓練します。</p>
+        <p>「たかが次の一語当てで、なぜあんなに賢く見えるの？」と思うでしょう。しかし、侮れません。
+        「日本の首都は◯◯」の◯を当てるには地理の知識が要ります。
+        「2＋3＝◯」には計算が、物語の続きを書くには文脈の理解が要る。
+        <strong>次の一語を高い精度で当てようとすると、結果的に、莫大な知識と推論のパターンを、
+        重みの中に取り込まざるをえなくなる</strong>のです。
+        単純な目標を極限まで突き詰めた先に、まるで知性のような振る舞いが立ち現れた――これがLLMの驚きです。</p>
+        <p>近年のAIは、言葉だけにとどまりません。
+        文章・画像・音声・動画を、ひとつのAIがまとめて扱う<strong>マルチモーダル</strong>化が進んでいます。
+        「この写真には何が写っている？」と画像について質問したり、文章から画像や音楽を生成したり――。
+        異なる種類の情報を、すべて<span class="em">第2講以来の「数値（ベクトル）」という共通の土俵に乗せて扱う</span>ことで、
+        これが可能になっています。文字も、絵も、音も、根っこはすべて数値だったからこそ、ひとつのAIが横断的に扱えるのです。
+        ここでも「すべては情報（0と1）」という、第1講・第2講の土台が効いています。
+        本講義で学んだ一つひとつの概念が、最先端AIの足もとで、確かに働いているのが見えてくるはずです。</p>
+        <div class="finale">
+          <h3>ここで第1講が、戻ってくる</h3>
+          <p>LLMがやっていることは、ある意味で、<strong>「言葉のエントロピーを、極限まで精密に学んだ」</strong>ことにほかなりません。
+          第1講を思い出してください。エントロピーとは「次に何が来やすいか、の予測しにくさ」でした。
+          シャノンは、人に「次の文字を当てさせる」ことで英語のエントロピーを測ろうとした、とも紹介しました。
+          ―― その「次を当てるゲーム」を、機械に、インターネット規模で、極限まで突き詰めさせたものが、LLMなのです。
+          第1講のいちばん素朴な問い（次に来るものを、どれだけ予測できるか）が、
+          15講を経て、最先端AIの心臓部として戻ってきた。情報理論は、生まれて70年以上たったいまこそ、全盛期なのです。</p>
+        </div>
+        <p>ちなみに、LLMが言葉を扱う第一歩は、「単語を数値（ベクトル）に変換する」ことです。
+        意味の近い言葉が、数値空間の近い場所に配置されるように学習する。
+        すると「王様 − 男 ＋ 女 ≒ 女王」といった、意味の足し算引き算めいたことすら起きる。
+        言葉という、最も人間的なものを、第2講以来の「すべては数値」という土俵に乗せてしまう。
+        この巧妙な数値化が、LLMの土台にあります。</p>
+        <p>「大規模」という名前にも、意味があります。
+        近年わかってきた驚くべき事実は、<strong>モデルの規模（重みの数）と、学習データの量と、計算量を、
+        ただ大きくしていくほど、性能がなめらかに上がり続ける</strong>ということでした（スケール則と呼ばれます）。
+        しかもある規模を超えると、それまでできなかった種類の課題（複雑な推論など）が、
+        まるで突然"できるようになる"瞬間さえ観測された。
+        この「とにかく大きくすれば賢くなる」という発見が、世界中の企業を
+        巨大なモデルと、膨大な計算資源（第4講のGPU、第2部で扱うデータセンター）の開発競争へと駆り立てました。
+        <span class="em">質的な賢さが、量を突き詰めた先から立ち現れる</span>――
+        本講義でくり返してきた「単純なものを、桁違いの規模で動かすと、複雑なことが起きる」という主題の、究極の形がここにあります。</p>
+      </section>
+
+      <!-- 限界 -->
+      <section id="s-limit">
+        <h2>限界 ― ハルシネーションと「もっともらしさ」</h2>
+        <p>LLMは強力ですが、その仕組みゆえの限界も、はっきりしています。
+        最も重要なのが<span class="term">ハルシネーション（幻覚）</span>――
+        <strong>事実でないことを、自信満々に、流暢に語ってしまう</strong>現象です。</p>
+        <p>なぜ起きるのか。それは、LLMが本質的に<span class="em">「もっともらしく次の語を続ける」装置</span>であって、
+        <strong>「真偽を確かめている装置ではない」</strong>からです。
+        LLMは「この文脈なら、次はこの語が自然だ」を選んでいるだけで、
+        その内容が事実かどうかを検証する仕組みは、もともと持っていません。
+        だから、存在しない論文や、間違った歴史を、まるで本当のことのように、よどみなく生成してしまう。
+        流暢さと正しさは、別物なのです。</p>
+        <p>この限界は、これまでの講と深く響き合っています。
+        第9講で学んだ「失われた情報は生み出せない」「もっともらしく埋めているだけ」という鉄則。
+        第5講で学んだ「AIの出力が常に正しいか完璧に検証する万能の仕組みは、原理的に期待しすぎない方がよい」という、計算の限界。
+        第14講で学んだ「コンピュータの出力を過信しない」という心構え。
+        <span class="em">15講を通して見てきた「限界」の話が、AIという最先端技術の評価に、そのまま効いてくる</span>のです。
+        AIは魔法ではありません。強力な道具です。だからこそ――</p>
+        <div class="trivia">
+          <p>AIの失敗は、ときに笑ってしまうような形で現れます。
+          自信満々に存在しない本を「名著です」と勧めたり、簡単な計算を堂々と間違えたり、
+          「いちご（strawberry）に r は何個？」のような単純な問いにつまずいたり。
+          これらは「AIがおバカだから」ではなく、<strong>「次の語を当てる」という仕組みの"クセ"が表に出た</strong>結果です。
+          文字を1つずつ数えるような作業は、文章の流れを予測するのとは別種の能力で、そこに弱点が出やすい。
+          AIの得意・不得意を知ることは、その失敗を笑い話で済ませ、重大な場面で頼りすぎないための、大切なリテラシーなのです。</p>
+        </div>
+      </section>
+
+      <!-- 歴史 -->
+      <section id="s-history">
+        <h2>歴史 ― AIの「冬」と「春」</h2>
+        <div class="history">
+          <p><strong>チューリングテストから、冬の時代を経て。</strong>
+          AIの歴史は、期待と幻滅の波の繰り返しでした。
+          1950年、チューリングは「人間と区別がつかない受け答えができれば、知能とみなしてよいのでは」という
+          <strong>チューリングテスト</strong>を提案し、AI研究の出発点を示しました。
+          1956年には「人工知能（AI）」という言葉が生まれ、研究は熱狂的に始まります。
+          しかし、当初の楽観的な期待は裏切られ、研究費が打ち切られる<strong>「AIの冬」</strong>が、何度か訪れました。
+          ルールベースの限界に、人々はぶつかり続けたのです。</p>
+          <p>転機は2010年代。ディープラーニングが画像認識で圧倒的な成果を上げ、
+          長い冬が明けて「春」が訪れました。
+          そして2020年代、大規模言語モデルの登場で、AIは一気に社会の主役に躍り出ます。
+          数十年間、地道に研究され続けてきたニューラルネットの理論が、
+          データと計算力という燃料を得て、ついに大輪の花を咲かせた――
+          <span class="em">基礎研究は、すぐには実らなくても、いつか時代が追いつく</span>。AIの歴史は、その壮大な実例です。</p>
+        </div>
+        <div class="trivia">
+          <p>AIの「春」の到来を、世界に強く印象づけたのが囲碁でした。
+          囲碁は、取りうる盤面が宇宙の原子の数より多いとも言われ（第6講の組み合わせ爆発！）、
+          総当たりではとても読み切れません。長く「コンピュータが人間のプロに勝つのは何十年も先」と言われていました。
+          その囲碁AIを飛躍的に強くした手法のひとつが、<strong>モンテカルロ木探索</strong>。
+          なんと「この先、ランダムに打ちまくってみて、勝率が高かった手を選ぶ」という、
+          第14講の乱数を大胆に使ったアプローチです。
+          そこにディープラーニングと強化学習を組み合わせたAIが、2016年、ついにトップ棋士を破りました。
+          <span class="em">緻密に読み切るのではなく、でたらめに試して、学んで、強くなる</span>――
+          人間とはまるで違うやり方で頂点に立ったことが、世界に衝撃を与えたのです。</p>
+        </div>
+      </section>
+
+      <!-- 応用と心構え -->
+      <section id="s-apply">
+        <h2>現代への応用と、これからの心構え</h2>
+        <p>AIは、いまやあらゆる場面に浸透しています。
+        翻訳、文章の要約や作成、画像・音楽・動画の生成、プログラムのコード生成（第11講）、
+        医療画像の診断支援、自動運転、科学研究の加速――その応用は広がり続けています。
+        私たちの仕事や暮らしを、大きく変えていくのは間違いありません。</p>
+        <p>同時に、AIは新しい難問も生んでいます。
+        AIは学習に使ったデータの<strong>偏り（バイアス）</strong>をそのまま受け継ぐため、
+        過去の差別的なデータから学べば、差別的な判断を再生産してしまう危険があります。
+        また、誰の文章や絵を学習に使ってよいのかという<strong>著作権・プライバシー</strong>の問題、
+        本物そっくりの偽情報（ディープフェイク）が簡単に作れてしまう問題、
+        そして「AIが下した判断の責任は誰が負うのか」という問題――。
+        これらは技術だけでは解決できず、<span class="em">社会の側でルールや合意を作っていく必要</span>があります。
+        技術の光が強いほど、影もまた濃くなる。
+        この「技術と社会の関係」というテーマは、第2部の最終盤でじっくり考えることになります。</p>
+        <p>AIの進歩を語るとき、必ず話題になるのが、
+        <strong>「いつか人間のように、あらゆることを考えられるAI（汎用人工知能・AGI）が生まれるのか」</strong>という問いです。
+        いまのAIは、特定の作業（文章生成や画像認識など）では人間を上回ることもありますが、
+        人間のように、まったく新しい状況へ柔軟に対応する力は、まだ持っていません。
+        AGIが実現するのか、するとしていつなのか――専門家のあいだでも意見は大きく割れており、誰にも確かなことは分かりません。
+        ここで大切なのは、過度な期待にも、過度な恐怖にも振り回されないこと。
+        <span class="em">いまのAIが、どんな仕組みで、何を得意とし、どこに限界があるのかを理解することこそ、
+        冷静に未来を考えるための、いちばん確かな足場になる</span>のです。
+        SF的な空想ではなく、技術の中身を知ったうえで議論する――それが、本講義が一貫して目指してきた姿勢でした。</p>
+        <p>もうひとつ、避けて通れないのが<strong>「仕事」への影響</strong>です。
+        AIは多くの作業を肩代わりし、私たちの働き方を大きく変えるでしょう。
+        歴史を振り返れば、新しい技術はつねに、ある仕事を消すと同時に、新しい仕事を生んできました。
+        重要なのは、AIに「奪われる」と身構えるより、AIを「使いこなす」側に回ること。
+        そして、AIには難しい――文脈をふまえた最終判断、結果に責任を持つこと、人と人との信頼を築くこと――の価値は、むしろ高まります。
+        <span class="em">道具が賢くなる時代に問われるのは、その道具を賢く使う、人間の側の力</span>なのです。</p>
+        <p>だからこそ、最後に強調したいことがあります。
+        <strong>道具が賢くなるほど、それを使う人間の側の「理解する力」「吟味する力」が問われる</strong>、ということです。
+        AIの出力は、もっともらしく見えても、間違っているかもしれない。
+        それを鵜呑みにするのではなく、「これは正しいのか？」「どういう仕組みで出てきた答えか？」と問える力――
+        それこそが、AI時代に最も重要なスキルになります。
+        そして、その「問える力」の土台になるのが、まさに本講義で学んできた、コンピュータ科学の基礎教養なのです。
+        <span class="em">AIを正しく恐れ、正しく使いこなすために、私たちは"中で何が起きているか"を知っておく必要がある</span>。
+        この第1部は、そのための地図だったのです。</p>
+      </section>
+
+      <!-- 振り返り -->
+      <section id="s-review">
+        <h2>15回の旅を振り返って</h2>
+        <p>第1講で「情報とは何か」を問い、ビットとエントロピーから出発しました。
+        それが二進数（第2講）、論理回路（第3講）を経て計算機（第4講）になり、
+        「計算とは何か・その限界」（第5講）と「速さ」（第6講）が理論的に詰められました。
+        データの扱い方（第7〜9講）、秘密の守り方（第10講）を学び、
+        言語（第11講）・データ（第12講）・ネットワーク（第13講）・数値の限界（第14講）と応用へ降り、
+        いま、例から学ぶ機械（第15講）にたどり着きました。長い旅でした。</p>
+        <p>通して見えてきたのは、分野を越えてくり返し現れる、いくつかの<strong>思想</strong>です。</p>
+        <div class="def">
+          <p><b>コンピュータ科学を貫く、4つの視点</b></p>
+          <p style="margin:.2em 0"><b>① 抽象化</b>：複雑なものは、層に分けて隠す（論理回路→言語→ネットワーク…）。</p>
+          <p style="margin:.2em 0"><b>② トレードオフ</b>：何かを得れば、何かを失う（速さと正確さ、安全と便利さ）。</p>
+          <p style="margin:.2em 0"><b>③ 限界</b>：できることには、原理的な境界がある（停止性問題、計算量、誤差）。</p>
+          <p style="margin-bottom:0"><b>④ すべては情報</b>：文字も画像も音も、根っこは0と1。情報という一つの視点で世界が見通せる。</p>
+        </div>
+        <p>この4つの視点を持って世界を眺めれば、これから登場するどんな新技術も、
+        まったくの未知ではなく「ああ、あの考え方の応用だな」と見えてくるはずです。
+        技術は次々と移り変わりますが、その根っこにある"考え方"は、驚くほど変わりません。
+        <span class="em">流行を追いかけるのではなく、変わらない土台を理解する。</span>
+        それこそが、この第1部が、あなたに手渡したかった一番の道具です。</p>
+        <p>そして物語は、ここで終わりません。
+        第2部「応用・社会・現代技術編」では、この第1部で築いた土台の上に、
+        ブラウザ、セキュリティ、半導体、データセンター、そして社会制度といった「現実」を重ねていきます。
+        理論が、いかにして私たちの世界を形づくっているのか――その続きを、ぜひ一緒に見ていきましょう。</p>
+        <p>最後に、ひとつだけ。この15講を通じて、いちばん伝えたかったことは、
+        「コンピュータは魔法でも万能でもなく、人間が考え抜いて作り上げた、理解できる仕組みの積み重ねだ」ということです。
+        ブール代数も、チューリングマシンも、エントロピーも、もとはと言えば、誰かが世界をよく見て、深く考えた結果でした。
+        <span class="em">その「考え方」を受け取ったあなたは、もう、技術の流行にただ振り回される側ではありません。</span>
+        中で何が起きているかを想像し、問いを立て、賢く使いこなす側に立てる。
+        それが、この講義があなたに願う、いちばんの贈り物です。
+        第1部の受講、本当にお疲れさまでした。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「AIは、人間がルールを教え込んでいる」</p>
+          <p class="a">現代のAIは逆です。ルールを書く代わりに、大量の例（データ）から、機械が自分でパターンを学びます。
+          人間が言葉にできない知識を、データから掴み取るのが機械学習の核心です。</p>
+          <p class="q">誤解②：「AIは、答えの正しさを理解したうえで答えている」</p>
+          <p class="a">LLMは「もっともらしく次の語を続ける」装置で、真偽を検証してはいません。
+          だから自信満々に間違える（ハルシネーション）。流暢さと正しさは別物です。</p>
+          <p class="q">誤解③：「AIが進化すれば、どんな問題でも解けるようになる」</p>
+          <p class="a">AIもコンピュータの一種で、第5講の「原理的に解けない問題」や第6講の計算量の限界からは逃れられません。
+          「AIなら何でもできる」という期待には、理論的な天井があります。</p>
+          <p class="q">誤解④：「AIが書いたコードや文章は、もう人間がチェックしなくていい」</p>
+          <p class="a">むしろ逆です。AIの出力が正しいか吟味するには、人間側の理解が不可欠。
+          道具が高度になるほど、それを評価できる人間の知識の価値は上がります。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <div class="summary">
+          <ul>
+            <li>AIは「人間がルールを書く」から「機械が大量の例（データ）から学ぶ」へと発想を転換した。世界は、ルールで割り切るには複雑すぎたから。</li>
+            <li>ニューラルネットは「重み」を、誤差が減る方向へ微調整して学習する（勾配降下法・深層学習）。</li>
+            <li>開花の燃料は「大量データ」と「GPUによる計算力」。並列処理がボトルネックを越えた（第4講）。</li>
+            <li>LLMは「次の一語当て」を極限まで磨いたもの。言葉のエントロピー（第1講）を学んでいるとも言える。</li>
+            <li>ハルシネーション等の限界がある。AIは魔法でなく道具。出力を吟味する人間のリテラシーこそ最重要。</li>
+            <li>15講を貫く4視点：抽象化／トレードオフ／限界／すべては情報。変わらない土台こそが一番の道具。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>「猫を判定するルールを人間が書く」方式が行き詰まったのはなぜか。機械学習はそれをどう乗り越えたか。</li>
+            <li>ニューラルネットの「学習」とは、具体的に何を調整する作業か。</li>
+            <li>LLMが「次の一語を当てる」だけの訓練で、なぜ知識や推論らしきものを獲得できるのか。</li>
+            <li>AIがもっともらしい嘘（ハルシネーション）を生むのは、その学習の仕組みのどんな性質に由来するか。</li>
+            <li>本講義を貫く「4つの視点」を挙げ、それぞれが登場した講を1つずつ思い出してみよ。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) 猫の判断基準を言葉で完全に書き下せない（例外が無数にある）から。機械学習は大量の例から特徴を自力で抽出させ、書けないルールをデータから獲得した。<br>
+            (2) ユニット間のつながりの「重み」という数値を、正解とのズレ（誤差）が減る方向へ少しずつ修正する作業。<br>
+            (3) 次の語を高精度で当てるには、地理・計算・文脈理解などが必要になり、結果として広範な知識・推論パターンを重みに取り込まざるを得ないから。<br>
+            (4) LLMは「もっともらしく次の語を続ける」装置で、真偽を検証していないため。流暢さと正しさは別物。<br>
+            (5) 抽象化（第3・11・13講など）、トレードオフ（第6・7・12講など）、限界（第5・6・14講など）、すべては情報（第1・2講など）。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">岡野原大輔『大規模言語モデルは新たな知能か』</span>（岩波科学ライブラリー）
+          ― LLMの仕組みと可能性・限界を、第一線の研究者がやさしく語る新書。本講の続きに最適。</li>
+          <li><span class="bk">伊藤穰一・中島聡ほか／『教養としてのAI』系の入門書</span>
+          ― AIの全体像と社会への影響を、文系の読者にもわかるように解説する一冊を手元に。</li>
+          <li><span class="bk">メラニー・ミッチェル『教養としてのAI講義』</span>（日経BP）
+          ― AIの歴史・仕組み・限界を、誇張なく誠実に解説した良書。「AIを正しく恐れる」ための一冊。</li>
+          <li><span class="bk">スチュアート・ラッセル／ピーター・ノーヴィグ『エージェントアプローチ人工知能』</span>（共立出版）
+          ― AIの世界的な定番教科書。本格的に学びたくなったら（分厚いので覚悟して）。</li>
+        </ul>
+        <div class="finale" style="margin-top:30px">
+          <h3>第1部 完 ― そして第2部へ</h3>
+          <p>全15講、お疲れさまでした。ここまでで、コンピュータ科学の「原理」の地図が、あなたの中に描かれたはずです。
+          次は<strong>第2部「応用・社会・現代技術編」</strong>。
+          この土台が、ブラウザ・セキュリティ・半導体・データセンター・社会制度として、どう現実に現れるのか。
+          理論が世界とつながる、その続きでお会いしましょう。
+          <a href="index.html" style="color:#fff;text-decoration:underline">▶ 講義一覧（TOP）へ戻る</a></p>
+        </div>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part1_lecture14.html"><span class="lab">← 前の講</span>第14講 数値計算と誤差</a>
+        <a class="nx" href="index.html"><span class="lab">第1部 完 →</span>講義一覧（TOP）へ</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第1部 第15講「AIと大規模言語モデル」（第1部 最終講）</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

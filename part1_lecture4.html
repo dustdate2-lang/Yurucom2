@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第1部 第4講 コンピュータの設計図 ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="なぜ世界中のコンピュータが80年前の同じ設計図に従うのか。バベッジからノイマン型、CPU・メモリ・バスの基本構造までを学ぶ。ゆるコンピュータ科学講義 第1部 第4講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#c8503a; --accent-soft:#f7e3dd;
+    --accent2:#2f6f6a; --accent2-soft:#dcebe9;
+    --code-bg:#2b2722; --code-ink:#f3ead9;
+    --sidebar:#262320; --sidebar-ink:#e9e2d4; --sidebar-muted:#a59c8a;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#16140f; --paper:#1f1c16; --ink:#ece6d8; --muted:#a79e8c;
+    --line:#332f27; --accent:#e8775f; --accent-soft:#3a221c;
+    --accent2:#6fb6ad; --accent2-soft:#1c2c2a;
+    --code-bg:#100e0a; --code-ink:#f3ead9;
+    --sidebar:#100e0a; --sidebar-ink:#e9e2d4; --sidebar-muted:#8d8472;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#a83c2c 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"CPU MEM I/O";position:absolute;right:-6px;bottom:-10px;font-family:ui-monospace,monospace;font-size:3.4rem;font-weight:800;color:rgba(255,255,255,.08)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.9;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent2);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent2-soft);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent2)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:var(--accent2-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#2b2722}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent2-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent2-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent2);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent2-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent2);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第4講 コンピュータの設計図</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第1部 第4講</span><br>コンピュータの設計図</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-prehistory">計算機の前史 ― 歯車とカード</a></li>
+      <li><a href="#s-eniac">ENIACの悩み</a></li>
+      <li><a href="#s-neumann">ノイマンの一撃 ― プログラム内蔵方式</a></li>
+      <li><a href="#s-structure">現代コンピュータの基本構造</a></li>
+      <li><a href="#s-bottleneck">ボトルネックと記憶の階層</a></li>
+      <li><a href="#s-history">歴史と人物</a></li>
+      <li><a href="#s-apply">現代への応用 ― PC選びの勘どころ</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第1部 基礎教養編 ／ 第4講</div>
+        <h1>コンピュータの設計図<br>― ノイマン型と計算機の歴史</h1>
+        <p>なぜ世界中のコンピュータが、80年前に描かれた同じ設計図に、いまも従っているのか。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― 部品から「機械」へ</h2>
+        <p>第3講で、私たちは計算の素材を手に入れました。
+        論理ゲートを組み合わせた「計算する部品（加算器）」と、状態を保つ「覚える部品（フリップフロップ）」。
+        けれども、部品が机の上にバラバラと転がっているだけでは、まだ「コンピュータ」ではありません。
+        それらをどう配置し、どう連携させれば、<span class="em">「プログラムを与えれば何にでもなる機械」</span>になるのか。
+        この設計思想こそ、本講のテーマです。</p>
+        <p>結論を先に言ってしまいましょう。その設計図の名前は<span class="term">ノイマン型アーキテクチャ</span>。
+        いまあなたの手にあるスマホも、職場のPCも、ゲーム機も、世界最速のスーパーコンピュータも、
+        ほぼ例外なく、この1940年代に固まった設計の<strong>子孫</strong>です。
+        80年近く、人類は基本的に同じ青写真の上でコンピュータを作り続けている。
+        なぜそんなことが可能なのか――その秘密は、たったひとつの発想の転換にありました。
+        それを理解するために、まずは時計の針を、コンピュータが生まれる前まで巻き戻します。</p>
+        <p class="lead-in">歯車の計算機 → 配線を組み替えるENIAC → ノイマン型の革命 → 現代の基本構造。
+        この流れを追うと、「なぜいまの形になったのか」が一本の物語として見えてきます。</p>
+      </section>
+
+      <!-- 前史 -->
+      <section id="s-prehistory">
+        <h2>計算機の前史 ― 歯車とパンチカード</h2>
+        <p>「計算を機械にやらせたい」という夢は、とても古いものです。
+        17世紀には、哲学者パスカルが歯車式の加算機を作りました。
+        そして19世紀、イギリスの<span class="term">チャールズ・バベッジ</span>が、
+        蒸気で動く巨大な自動計算機<strong>「解析機関（Analytical Engine）」</strong>を構想します。
+        これは歯車仕掛けでありながら、計算の手順をパンチカード（穴あきカード）で与えて自動実行する、
+        驚くほど現代的な発想の機械でした。
+        当時の技術と資金では完成しませんでしたが、その設計には、
+        後のコンピュータの要素――計算する部分、記憶する部分、手順を与える部分――が
+        すでにそろっていたのです。</p>
+        <p>バベッジが「手順をカードで与える」という発想を得たのには、意外な源がありました。
+        当時の織物工場で使われていた<strong>ジャカード織機</strong>です。
+        この織機は、穴を開けたカードの並びで複雑な模様を自動的に織り上げる仕組みでした。
+        <span class="em">「カードの穴の並び＝やってほしい仕事の指示」</span>という考え方を、
+        バベッジは計算機に持ち込んだのです。
+        織物の自動化の技術が、巡り巡ってコンピュータの祖先になった――
+        技術はしばしば、まったく別の分野からアイデアを借りて進歩します。</p>
+        <p>このバベッジの構想に、「世界初のプログラムを書いた人物」とも言われるのが、
+        詩人バイロンの娘<span class="term">エイダ・ラブレス</span>です。
+        彼女は、機械が単に数値を計算するだけでなく、<span class="em">記号を操れるなら、
+        いつか音楽や絵すら生み出せるかもしれない</span>と書き残しました。
+        数値計算機を「あらゆる記号を扱う汎用機械」として捉えた、驚くべき先見でした。
+        現代のコンピュータが音楽も画像も扱えることを、彼女は150年以上前に見通していたのです。
+        プログラミング言語「Ada」は、この功績にちなんで名づけられています。</p>
+        <div class="trivia">
+          <p>「機械が芸術を生むなんて」と笑うなかれ。
+          エイダの予言は、いまや生成AIという形で完全に現実になりました。
+          一方で彼女は「機械は、命じられたことしかできない（新しいものを生み出しはしない）」とも書いており、
+          これは現代の「AIは本当に創造しているのか」という議論（第15講）を、
+          すでに先取りしていたとも読めます。
+          150年以上前の覚え書きが、いまの最先端の論争とそのまま響き合う――
+          コンピュータ科学の問いの、息の長さがうかがえます。</p>
+        </div>
+      </section>
+
+      <!-- ENIAC -->
+      <section id="s-eniac">
+        <h2>ENIACの悩み ― 配線を組み替える計算機</h2>
+        <p>時代は飛んで第二次世界大戦中。大砲の弾道計算を高速で行うために、
+        アメリカで巨大な電子計算機<span class="term">ENIAC（エニアック）</span>が作られました（1945年）。
+        真空管を約1万8千本も使い、当時としては桁違いの速さで計算できる怪物でした。</p>
+        <p>ところが、この怪物には致命的な弱点がありました。
+        <span class="em">別の計算をさせるたびに、人間が配線を物理的につなぎ替えなければならなかった</span>のです。
+        「プログラムを変更する」という作業が、文字どおりケーブルの抜き差しと、
+        スイッチや配電盤の設定の組み替えで、しかも数日がかりの重労働でした。
+        計算そのものは一瞬なのに、その準備に何日もかかる。
+        これでは「いろいろな仕事をこなす万能機械」とはとても呼べません。
+        <strong>「速く計算できること」と「手軽に別の仕事をさせられること」は、まったく別の問題</strong>だ――
+        ENIACは、その壁を身をもって示したのです。</p>
+        <p>ENIACの規模も桁外れでした。重さは約30トン、設置には大きな部屋がまるごと必要で、
+        動かすと大量の電力を食い、真空管はしょっちゅう切れて交換に追われたといいます。
+        そして、その配線の組み替え――今でいうプログラミング――を担っていたのは、
+        おもに<strong>6人の女性数学者たち</strong>でした。
+        当時「計算」や「機械の配線」は地味な裏方仕事とみなされ、長く歴史に埋もれていましたが、
+        近年「ENIACの最初のプログラマたち」として再評価が進んでいます。
+        コンピュータの黎明期には、エイダ・ラブレスといい、彼女たちといい、
+        プログラミングの歴史に女性たちの大きな足跡が刻まれているのです。</p>
+      </section>
+
+      <!-- ノイマン -->
+      <section id="s-neumann">
+        <h2>ノイマンの一撃 ― プログラムもデータと同じメモリに置く</h2>
+        <p>この「段取りの遅さ」を根本から解決したのが、
+        天才数学者<span class="term">ジョン・フォン・ノイマン</span>らがまとめた、ある決定的なアイデアでした。
+        それが<span class="term">プログラム内蔵方式（stored-program）</span>、通称<strong>ノイマン型アーキテクチャ</strong>です。
+        発想は、驚くほどシンプルでした。</p>
+        <div class="def">
+          <p><b>プログラム内蔵方式の核心</b></p>
+          <p style="margin-bottom:0">計算の手順（プログラム）を、配線ではなく、
+          <strong>データと同じメモリの中に「ただの数値」として書いておく</strong>。
+          機械は、メモリから命令を1つずつ読み出して実行する。
+          プログラムを変えたければ、配線をいじるのではなく、<strong>メモリの中身を書き換えるだけ</strong>でよい。</p>
+        </div>
+        <p>これは革命でした。プログラムが「配線」ではなく「データ（数値）」になったことで、
+        ソフトを入れ替えるだけで、1台の機械があらゆる仕事をこなせるようになった。
+        ―― これこそ、第5講で学ぶチューリングの「万能機械」の、現実の姿です。
+        ゲームをし、文章を書き、動画を見る。同じ1台のPCでそれができるのは、
+        すべてこのプログラム内蔵方式のおかげなのです。</p>
+        <p>そしてもうひとつ、見逃せない含みがあります。
+        「プログラムもデータと同じ」ということは、
+        <span class="em">あるプログラムが、別のプログラム（データ）を読み込み、生成し、書き換えられる</span>ということ。
+        高級言語を機械語に翻訳するコンパイラ（第11講）も、
+        自分自身を増殖させるコンピュータウイルスも、
+        そしてAIが新しいコードを書くという出来事も、すべてこの一点に源流があります。
+        「プログラムはデータである」――この短い一文が、ソフトウェアという世界そのものを開いたのです。</p>
+        <p>この考え方が初めて文書としてまとまったのが、1945年の「EDVACに関する報告書の第一草稿」と呼ばれる文献でした。
+        ENIACの反省を踏まえた次世代機の設計案で、ここに名を連ねたノイマンの名から「ノイマン型」と呼ばれるようになります。
+        ポイントを一言でまとめれば、こうです。
+        ―― <strong>機械（ハード）は固定したまま、与える数値（ソフト）を変えるだけで、振る舞いを自在に変える。</strong>
+        ハードを作り替えずに、無限の用途を1台で実現する。
+        この「ハードとソフトの分離」こそ、コンピュータを特別な存在にした最大の発明なのです。
+        以後、私たちは"機械を買い替えずにアプリを入れ替える"という、今では当たり前の自由を手にしました。</p>
+      </section>
+
+      <!-- 構造 -->
+      <section id="s-structure">
+        <h2>現代コンピュータの基本構造</h2>
+        <p>ノイマン型コンピュータは、おおまかに次の4つの部品でできています。
+        どんなに高性能なスマホやスパコンも、抽象的にはこの図のかたちをしています。</p>
+        <figure>
+          <svg viewBox="0 0 540 235" role="img" aria-label="ノイマン型コンピュータの構成図">
+            <style>.box{fill:var(--paper);stroke:var(--accent2);stroke-width:2}.cpu{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2.5}.lab{font:13px sans-serif;fill:var(--ink);text-anchor:middle;font-weight:700}.sub{font:10.5px sans-serif;fill:var(--muted);text-anchor:middle}.bus{stroke:var(--accent);stroke-width:3;fill:none}.ar{fill:var(--accent)}</style>
+            <rect class="cpu" x="40" y="50" width="170" height="130" rx="12"/>
+            <text class="lab" x="125" y="44">CPU（中央処理装置）</text>
+            <rect class="box" x="58" y="70" width="60" height="44" rx="8" style="fill:var(--accent2-soft)"/>
+            <text class="sub" x="88" y="88">制御</text><text class="sub" x="88" y="102">装置</text>
+            <rect class="box" x="132" y="70" width="60" height="44" rx="8" style="fill:var(--accent2-soft)"/>
+            <text class="sub" x="162" y="88">演算装置</text><text class="sub" x="162" y="102">(ALU)</text>
+            <rect class="box" x="58" y="124" width="134" height="40" rx="8" style="fill:var(--accent2-soft)"/>
+            <text class="sub" x="125" y="148">レジスタ（超高速の作業机）</text>
+            <line class="bus" x1="210" y1="115" x2="320" y2="115"/>
+            <polygon class="ar" points="320,108 334,115 320,122"/><polygon class="ar" points="222,108 208,115 222,122"/>
+            <text class="sub" x="270" y="105">バス</text>
+            <rect class="box" x="334" y="50" width="170" height="60" rx="10"/>
+            <text class="lab" x="419" y="76">メモリ（主記憶）</text><text class="sub" x="419" y="96">命令とデータを並べて格納</text>
+            <rect class="box" x="334" y="125" width="170" height="55" rx="10"/>
+            <text class="lab" x="419" y="150">入出力装置</text><text class="sub" x="419" y="168">キーボード・画面・ストレージ</text>
+            <line class="bus" x1="419" y1="110" x2="419" y2="125"/>
+          </svg>
+          <figcaption>図1：ノイマン型の基本構成。CPUがメモリから命令を読み、実行する。</figcaption>
+        </figure>
+        <ul>
+          <li><strong>CPU（中央処理装置）</strong>：頭脳。命令を解釈する「制御装置」、計算する「演算装置（ALU、第3講の加算器の集合体）」、作業用の小さな超高速メモリ「レジスタ」からなる。</li>
+          <li><strong>メモリ（主記憶）</strong>：命令とデータを、番地（住所）つきで並べておく場所。CPUはここから命令を1つずつ取り出す。</li>
+          <li><strong>バス</strong>：CPUとメモリ・周辺機器を結ぶ「信号の通り道」。データはここを行き来する。</li>
+          <li><strong>入出力装置</strong>：キーボード、ディスプレイ、ストレージ（SSD/HDD）など、外の世界との接点。</li>
+        </ul>
+        <p>CPUの動作は、じつは単調な繰り返しです。
+        <strong>「命令を取ってくる（フェッチ）→ 意味を解釈する（デコード）→ 実行する」</strong>。
+        この3拍子を、ただひたすら繰り返しているだけ。
+        違うのは、その速さです。現代のCPUは、これを<strong>1秒間に何十億回</strong>もこなします。
+        その回数のテンポを刻むのが、第3講で出てきたクロックで、
+        「○GHz（ギガヘルツ）」は1秒に何十億回の拍を刻むかを表していました。
+        <span class="em">天才的にすごいことをしているのではなく、単純な手順を超高速で繰り返している</span>――
+        第3講に続いて、ここでも同じ真実が顔を出します。</p>
+        <h3>「命令」とは、こういうものだ</h3>
+        <p>メモリに並ぶ「命令」とは、具体的にどんなものでしょう。
+        CPUが分かる命令は、おどろくほど原始的です。たとえば「3 + 5」を計算させるだけでも、
+        実際にはこんな細かい手順に分解されます（イメージです）。</p>
+        <pre><code>① メモリ100番地の値（3）をレジスタAに読み込め
+② メモリ101番地の値（5）をレジスタBに読み込め
+③ レジスタAとBを足して、結果をレジスタAに入れろ
+④ レジスタAの値を、メモリ102番地に書き戻せ</code></pre>
+        <p>「読み込む・足す・書き戻す」。たったこれだけの単純な命令の集まりです。
+        私たちが書く <code>c = a + b</code> という一行も、最終的にはこうした原始的な命令の列に翻訳されて
+        （この翻訳が第11講のコンパイラの仕事）、CPUがひとつずつ実行していきます。
+        <span class="em">どんなに高度なソフトも、根っこはこの単純な命令の、気の遠くなるような積み重ね</span>なのです。</p>
+      </section>
+
+      <!-- ボトルネック -->
+      <section id="s-bottleneck">
+        <h2>ノイマン・ボトルネックと記憶の階層</h2>
+        <p>美しいノイマン型にも、弱点があります。
+        命令もデータも、<strong>同じ1本の通り道（バス）</strong>を通ってメモリとやり取りするため、
+        CPUがいくら速くなっても、メモリとの往復で渋滞が起きてしまうのです。
+        これを<span class="term">ノイマン・ボトルネック</span>と呼びます。
+        どれだけ腕のいい料理人（CPU）がいても、冷蔵庫（メモリ）と調理台を結ぶ廊下が1本しかなく、
+        そこが混雑すれば、料理は進まない――そんなイメージです。</p>
+        <p>この渋滞をやわらげる工夫が<span class="term">記憶の階層</span>です。
+        記憶装置には、「速いが高価で小容量」のものと「遅いが安価で大容量」のものがあります。
+        そこで、よく使うデータほどCPUの近くの速い記憶に置き、
+        めったに使わないデータほど遠くの広い記憶に置く、という階層構造をとります。</p>
+        <table class="tbl">
+          <caption>表1：記憶の階層（上ほど速く小さく、下ほど遅く大きい）</caption>
+          <tr><th>場所</th><th>速さ／容量の傾向</th><th>役割</th></tr>
+          <tr><td>レジスタ</td><td>最速・極小</td><td>CPUがいま使っている値</td></tr>
+          <tr><td>キャッシュ</td><td>非常に速い・小</td><td>最近使ったデータの一時置き場</td></tr>
+          <tr><td>メインメモリ(RAM)</td><td>速い・中</td><td>実行中のアプリとデータ</td></tr>
+          <tr><td>ストレージ(SSD/HDD)</td><td>遅い・大</td><td>電源を切っても残る保存場所</td></tr>
+        </table>
+        <p>ここで大事な区別があります。<strong>メモリ（RAM）とストレージ（SSD/HDD）は別物</strong>です。
+        メモリは「作業机の広さ」で、電源を切ると中身が消える一時的な場所。
+        ストレージは「本棚の大きさ」で、電源を切っても残る保存場所。
+        「机が狭い（メモリが少ない）」と、一度にたくさんの作業を広げられず動作がもたつき、
+        「本棚が小さい（ストレージが少ない）」と、たくさんのファイルを保存できません。
+        役割がまったく違うので、混同しないようにしましょう（次の応用で実際のPC選びに効いてきます）。</p>
+        <p>このボトルネックの問題は、現代のコンピュータが進む方向そのものも左右しました。
+        1本の通り道が渋滞するなら、<strong>処理する人手（CPUのコア）を増やして手分けする</strong>という発想です。
+        いまのCPUが複数のコアを持つのも、画像やAIの計算で<strong>GPU</strong>（多数の小さな計算ユニットで一気に並列処理する部品）が活躍するのも、
+        もとをたどればこの「1本道の渋滞をどう回避するか」という問いへの答えです。
+        80年前の設計図の弱点と向き合い続けることが、今日の性能向上の原動力になっている――
+        GPUや並列処理のくわしい話は、第15講や第2部であらためて扱います。</p>
+      </section>
+
+      <!-- 歴史 -->
+      <section id="s-history">
+        <h2>歴史と人物</h2>
+        <div class="history">
+          <p><strong>チャールズ・バベッジ（1791–1871）。</strong>
+          解析機関を構想した彼は、その前に「階差機関」という、表計算を自動化する機械も設計しています。
+          当時の航海や天文に使う数表は手計算で作られ、誤りだらけでした。
+          「人間が間違えるなら、機械に計算させればいい」というのが彼の動機。命を預ける航海表の誤りを正す、切実な目的があったのです。
+          ただ完璧主義で、完成前に次々と設計を改良してしまい、どの機械も生前には完成しませんでした。
+          かなりの変人としても知られ、街の大道音楽家を「思考の邪魔だ」と心底嫌い、
+          取り締まりを求める運動まで起こしたという逸話が残っています。
+          偉大な先駆者は、しばしば一筋縄ではいかない人物でもあるのです。</p>
+        </div>
+        <div class="history">
+          <p><strong>ジョン・フォン・ノイマン（1903–1957）。</strong>
+          「ノイマン型」に名を残す、20世紀を代表する大天才です。
+          数学・物理・経済学（ゲーム理論の創始）・コンピュータと、信じがたいほど広い分野で一級の業績を残しました。
+          第1講で触れた「エントロピーと呼びたまえ」の助言も彼。
+          原子爆弾を作るマンハッタン計画にも関わり、膨大な計算の必要性から計算機開発にのめり込みました。
+          逸話も豊富で、暗算の速さは伝説級、記憶力も超人的だった一方、車の運転は壊滅的に下手だったとか。
+          光と影をあわせ持つ、まさに規格外の人物でした。</p>
+        </div>
+        <p>ノイマン型は「ノイマンが一人で考えた」と思われがちですが、
+        実際にはENIACを作ったエッカートとモークリーら、多くの技術者の議論の中から生まれたものです。
+        ノイマンがその構想を1本の報告書にまとめ、そこに彼の名前が載ったことで
+        「ノイマン型」という呼び名が広まりました。
+        偉大な発明は、たいてい一人の天才の手柄ではなく、複数の人の積み重ねである――
+        これも、技術史を見るときの大事な視点です。</p>
+        <div class="trivia">
+          <p>この時代には、もうひとつ有名な逸話が生まれています。<strong>「バグ（bug）」の語源</strong>です。
+          1947年、初期の計算機「Mark II」が誤動作した原因を調べたところ、
+          リレー（電気スイッチ）に<strong>本物の蛾（moth）が挟まって</strong>いました。
+          技術者のグレース・ホッパーらは、その蛾をノートに貼り付け、
+          「実際にバグ（虫）が見つかった最初の事例」と記録したと伝わります。
+          「虫＝不具合」という言い回し自体はそれ以前からありましたが、この一件で
+          「デバッグ（虫取り＝不具合の修正）」という言葉が広く定着しました。
+          ちなみにグレース・ホッパーは、第11講で再登場する高級言語の母でもあります。</p>
+        </div>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用 ― PC選びの勘どころ</h2>
+        <p>「結局、どのパソコンを買えばいいの？」という素朴な疑問にも、本講の知識が効いてきます。
+        スペック表に並ぶ呪文のような言葉は、ほとんどが本講で見た部品の話だからです。</p>
+        <ul>
+          <li><strong>CPU</strong>：頭脳の性能。「コア数」（同時に作業できる人数）と「クロック（GHz）」（1人あたりの作業の速さ）が目安。
+          ただし数字が大きい＝体感が速い、とは限りません（後述）。</li>
+          <li><strong>メモリ（RAM）</strong>：作業机の広さ。多いほど、たくさんのアプリやタブを同時に開いても もたつきにくい。
+          普段使いの体感に、地味だが大きく効きます。</li>
+          <li><strong>ストレージ（SSD/HDD）</strong>：保存できる量。いまはSSDが主流で、HDDより圧倒的に速く、起動やファイル読み込みの体感を左右します。</li>
+        </ul>
+        <p>大事なのは、<span class="em">「いちばん高いものを買う」のではなく「自分の用途に合わせる」</span>こと。
+        文章作成やネット中心なら、CPU最強より<strong>メモリとSSDが十分かどうか</strong>のほうが体感に効きます。
+        動画編集やゲームなら、高性能なCPUや、第2部で扱うGPU（画像処理に特化した部品）が重要になる。
+        コンピュータ科学から見た"正解"は、<strong>「用途に対して、ボトルネックになる部分にお金をかける」</strong>。
+        全部を最高にする必要はないのです。本講で学んだ「どこが渋滞しやすいか」の視点が、賢い買い物に直結します。</p>
+        <h3>CPUが分かる言葉 ― 命令セット</h3>
+        <p>CPUが理解できる命令の一覧を<strong>命令セット</strong>と呼びます。これはいわば、そのCPUの"母国語の単語帳"。
+        「メモリから読め」「足せ」「条件が成り立てばここへ飛べ」といった、原始的な命令の集まりです（第11講で再訪）。
+        面白いのは、この単語帳の設計に2つの流儀があること。
+        命令の種類を豊富にして1命令で多くを行う方式（CISC）と、
+        命令を単純なものに絞って数で勝負する方式（RISC）です。
+        かつてはパソコンのCPUはCISC系が主流でしたが、近年はスマホはもちろん、
+        最新のパソコン向けCPUにもRISC系の考え方が広がっています。
+        <span class="em">「単純な命令を高速に大量にこなす」という、第3講以来の思想が、ここでも勝ち筋になっている</span>のです。</p>
+        <p>そして、同じ命令セットさえ守っていれば、CPUの中身（作り）が世代ごとに大きく変わっても、
+        昔のソフトがそのまま動きます。これも一種の「約束（インターフェース）と中身の分離」（第7講・第11講）。
+        私たちが新しいパソコンに買い替えても、慣れたソフトが動き続けるのは、
+        この命令セットという"変わらない約束"が守られているおかげなのです。</p>
+        <h3>ノイマン型ではない設計もある</h3>
+        <p>ほぼすべてのコンピュータがノイマン型だと述べましたが、例外的な工夫もあります。
+        たとえば、命令の通り道とデータの通り道を分けて、ボトルネックをやわらげる方式（ハーバードアーキテクチャ）。
+        これは、家電や車に組み込まれる小さなコンピュータ（マイコン）などで使われています。
+        「プログラムとデータを同じメモリに置く」という、ノイマン型の便利さと弱点は、表裏一体。
+        だから用途によっては、あえて分ける選択もある――
+        <span class="em">どんな名設計にも長所と短所があり、目的に応じた使い分けがある</span>という、本講義おなじみの教訓が、ここにも当てはまります。</p>
+        <h3>1台が、世界を変えた ― 設計図の普遍性</h3>
+        <p>あらためて振り返ると、ノイマン型という1枚の設計図のすごさは、その<strong>普遍性</strong>にあります。
+        部屋いっぱいの大きさだった黎明期の計算機から、手のひらのスマホ、世界最速のスーパーコンピュータまで、
+        大きさも速さも何百万倍と違うのに、<span class="em">抽象的な設計図は、ほとんど同じ</span>。
+        だからこそ、本講で一度この基本構造を理解すれば、ありとあらゆるデジタル機器を「同じ目」で見渡せるようになります。
+        新しいガジェットが登場しても、「これもCPUとメモリがあって、命令を順に実行しているのだな」と見当がつく。
+        技術の表面は猛烈な速さで移り変わりますが、その骨格は、驚くほど変わらないのです。</p>
+        <p>そして、この骨格の上で性能を上げ続けてきた歴史が、第3講でも触れた「ムーアの法則」でした。
+        トランジスタを小さくし、たくさん詰め込むことで、コンピュータは半世紀にわたって指数的に速く・安くなってきた。
+        しかし近年、物理的な限界が近づき、その勢いには陰りも見えています。
+        だからこそ、1個のCPUを速くするのではなく、たくさんのCPUやGPUで手分けする「並列化」や、
+        特定の用途に特化した専用チップ（第2部で扱います）が、次の主役になりつつあります。
+        80年前の設計図と、その限界――その両方と向き合い続けることが、コンピュータ発展の原動力なのです。</p>
+        <h3>スマホもゲーム機も、クラウドも、みなノイマン型</h3>
+        <p>この設計図の射程は、PCだけにとどまりません。
+        スマートフォンも、ゲーム機も、家電に入っている小さなマイコンも、
+        中身は「CPU・メモリ・記憶・入出力」という同じ構成――つまりノイマン型です。
+        さらに、いまや主流の<strong>クラウド</strong>（手元の端末ではなく、遠くのデータセンターのコンピュータで処理する仕組み）も、
+        その向こう側にあるのは、やはり大量のノイマン型コンピュータです。
+        <span class="em">見た目や用途がどれだけ違っても、抽象的な設計図は1枚に集約される</span>。
+        だからこそ、この第4講の基本構造を一度つかんでおけば、
+        世の中のあらゆるデジタル機器を「同じ目」で見渡せるようになります。
+        データセンターやクラウドの実際は、第2部でたっぷり扱います。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「メモリとストレージは同じもの」</p>
+          <p class="a">別物です。メモリ（RAM）は電源を切ると消える"作業机"、ストレージ（SSD/HDD）は電源を切っても残る"本棚"。
+          「メモリを増やす」と「保存容量を増やす」はまったく別の話です。</p>
+          <p class="q">誤解②：「クロック（GHz）が高いほど、必ず速い」</p>
+          <p class="a">一概には言えません。クロックが速くてもメモリとの往復（ノイマン・ボトルネック）で頭打ちになることもあるし、
+          世代やコア数、効率の違いも効きます。1つの数字だけで速さは決まりません。</p>
+          <p class="q">誤解③：「ノイマンが一人でコンピュータを発明した」</p>
+          <p class="a">多くの技術者の共同作業から生まれました。ノイマンが報告書にまとめたことで名前が残っただけ、という側面もあります。
+          偉大な発明はたいてい集団の積み重ねです。</p>
+          <p class="q">誤解④：「プログラムとデータは、コンピュータの中で別の場所にある別物」</p>
+          <p class="a">ノイマン型では、どちらも同じメモリに「数値」として並んでいます。
+          この"プログラムもデータ"という性質こそが、ソフトの入れ替えやコンパイラ、AIのコード生成を可能にしました。</p>
+          <p class="q">誤解⑤：「コンピュータは、何か高度で複雑な処理を一気にやっている」</p>
+          <p class="a">実際は「読み込む・足す・書き戻す」といった原始的な命令を、1つずつ順番にこなしているだけです。
+          すごいのは中身の高度さではなく、その<strong>速さ（1秒に何十億回）と正確さ</strong>。
+          第3講の論理回路と同じく、ここでも「単純×超高速＝複雑に見える」が成り立っています。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <div class="summary">
+          <ul>
+            <li>バベッジの解析機関とエイダの構想に、汎用計算機の原型がすでにあった。</li>
+            <li>ENIACは速いが「配線の組み替え」で動いた。プログラム変更が重労働だった。</li>
+            <li>ノイマン型＝プログラムをデータと同じメモリに数値として置く方式。汎用コンピュータが実現した。</li>
+            <li>現代機はCPU・メモリ・バス・入出力からなり、フェッチ→デコード→実行を高速で繰り返す。</li>
+            <li>同じバスを共有する弱点（ノイマン・ボトルネック）を、記憶の階層で緩和している。</li>
+            <li>「プログラムはデータ」という性質が、コンパイラ・ウイルス・AIのコード生成を生んだ。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>「プログラムをデータと同じメモリに置く」ことの利点を、ENIACとの違いから2つ挙げよ。</li>
+            <li>クロックが2倍になれば、処理は必ず2倍速くなるか。ノイマン・ボトルネックを踏まえて答えよ。</li>
+            <li>動画やファイルをたくさん保存したいが動作の速さはこだわらない人は、PCのどこにお金をかけるべきか。</li>
+            <li>「プログラムはデータである」ことが可能にした応用を、本文以外で1つ考えてみよ。</li>
+            <li>CPUの「フェッチ→デコード→実行」とは、それぞれ何をする段階か。一言ずつで説明せよ。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) ①配線でなくメモリ書き換えだけでプログラムを変えられる（即座に多用途）、②プログラム自身を別のプログラムが生成・変更できる。<br>
+            (2) 必ずしも2倍にはならない。メモリとの往復（ボトルネック）が律速になれば、そこで頭打ちになる。<br>
+            (3) 保存量重視なので<strong>ストレージ（大容量SSD/HDD）</strong>を優先。CPUやメモリは用途相応で十分。<br>
+            (4) 例：OSがアプリを起動する、ブラウザがJavaScriptを読み込んで実行する、自己更新ソフト、など（いずれもコードをデータとして受け取り実行している）。<br>
+            (5) フェッチ＝メモリから命令を取ってくる、デコード＝命令の意味を解釈する、実行＝その通りに計算・処理する。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">矢沢久雄『コンピュータはなぜ動くのか（第2版）』</span>（日経BP）
+          ― ハードからソフトまで、コンピュータの全体像を1冊で見渡せる定番の入門書。本講の続きにうってつけ。</li>
+          <li><span class="bk">チャールズ・ペゾルド『CODE ― コードから見たコンピュータのからくり（第2版）』</span>（日経BP）
+          ― リレーやスイッチから、CPU・メモリ・命令の仕組みまでをやさしく積み上げる名著。第3〜4講を貫いて読める。</li>
+          <li><span class="bk">ヘネシー＆パターソン『コンピュータの構成と設計（パタヘネ）』</span>（日経BP）
+          ― CPUとメモリ階層を本格的に学ぶ世界標準の教科書。もっと深く知りたくなったらこの1冊。</li>
+          <li><span class="bk">ウォルター・アイザックソン『イノベーターズ』</span>（講談社）
+          ― バベッジとエイダからノイマン、現代まで、コンピュータを作った人々の群像を描く読み物。歴史の流れがつかめる。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part1_lecture3.html"><span class="lab">← 前の講</span>第3講 論理回路と計算の素材</a>
+        <a class="nx" href="part1_lecture5.html"><span class="lab">次の講 →</span>第5講 計算とは何か</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第1部 第4講「コンピュータの設計図」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>
