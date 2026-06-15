@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第2部 第1講 ブラウザ・HTML・Webページのしくみ ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="Webページは、どうやって表示されているのか。HTML・CSS・JavaScript、ブラウザの仕事、表示までの流れを身近に学ぶ。ゆるコンピュータ科学講義 第2部 第1講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#2f6f6a; --accent-soft:#dcebe9;
+    --accent2:#c8503a; --accent2-soft:#f7e3dd;
+    --code-bg:#21302e; --code-ink:#eaf3f1;
+    --sidebar:#1f2b29; --sidebar-ink:#e3ece9; --sidebar-muted:#94a7a3;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#111413; --paper:#172220; --ink:#e6ece9; --muted:#9aa9a5;
+    --line:#283633; --accent:#6fb6ad; --accent-soft:#16302c;
+    --accent2:#e8775f; --accent2-soft:#3a221c;
+    --code-bg:#0c1413; --code-ink:#eaf3f1;
+    --sidebar:#0c1413; --sidebar-ink:#e3ece9; --sidebar-muted:#7d8e8a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#245a55 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"</>";position:absolute;right:14px;bottom:-10px;font-family:ui-monospace,monospace;font-size:4.4rem;font-weight:800;color:rgba(255,255,255,.10)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.92;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent-soft);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent2);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent2-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#172220}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent2);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第2部 第1講 ブラウザとWeb</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第2部 第1講</span><br>ブラウザ・HTML・Webページのしくみ</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-html">HTML ― 意味の印をつける</a></li>
+      <li><a href="#s-separation">構造・見た目・動きの分離</a></li>
+      <li><a href="#s-browser">ブラウザの仕事</a></li>
+      <li><a href="#s-flow">ページが表示されるまで</a></li>
+      <li><a href="#s-history">歴史 ― Webの誕生</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第2部 応用・社会・現代技術編 ／ 第1講</div>
+        <h1>ブラウザ・HTML・Webページのしくみ<br>― あの画面は、どう組み立てられているのか</h1>
+        <p>毎日見ているWebページ。その正体は「ただの文字の文書」だと知っていましたか？</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― 第2部のはじまり</h2>
+        <p>ここから<strong>第2部「応用・社会・現代技術編」</strong>が始まります。
+        第1部では、情報・計算・データといったコンピュータ科学の<strong>原理</strong>を、土台から積み上げてきました。
+        第2部では、その土台の上に、私たちが日々触れている<strong>現実の技術と社会</strong>を重ねていきます。
+        ブラウザ、ファイル、API、セキュリティ、半導体、データセンター、そして社会制度――
+        「理論が、いかにして私たちの世界を形づくっているか」を見ていく旅です。</p>
+        <p>その第一歩としてふさわしいのが、いちばん身近な技術、<strong>Webページ</strong>です。
+        私たちは毎日、スマホやパソコンで無数のWebページを見ています。
+        ニュースを読み、買い物をし、動画を観る。けれど、「そのページが、いったいどうやって表示されているのか」を、
+        考えたことはあるでしょうか。
+        じつは、その正体を知ると、少し驚くはずです。
+        <span class="em">あの色とりどりのページの中身は、もとをたどれば「ただのテキスト（文字の文書）」</span>なのです。
+        この講では、その文書（HTML）の正体、それを彩るCSS、動きを与えるJavaScript、
+        そしてそれらを読み解いて画面に描き出すブラウザの仕事を、順に解き明かしていきます。</p>
+        <p>ちなみに、いまあなたが読んでいるこの教材も、すべてHTMLとCSSで作られています。
+        見出し、段落、囲み記事、コードの表示、配色の切り替え――そのどれもが、本講で学ぶ仕組みの上に成り立っています。
+        つまりこの講は、<span class="em">「いま自分が見ているもの」そのものの正体を解き明かす回</span>でもあるのです。
+        読み終えたら、ぜひこのページの"ソース"をのぞいてみてください（最後の寄り道コラムで触れます）。
+        習ったばかりのタグや仕組みが、実際に使われているのが見つかるはずです。</p>
+        <p class="lead-in">HTML（意味の印）→ 構造・見た目・動きの分離 → ブラウザの仕事 → 表示までの流れ。
+        第1部第13講（インターネット）で学んだ「ページが届くまで」の、その続きの物語です。</p>
+      </section>
+
+      <!-- HTML -->
+      <section id="s-html">
+        <h2>HTML ― 文書に「意味の印」をつける</h2>
+        <p>Webページの土台になっているのが<span class="term">HTML</span>（HyperText Markup Language）です。
+        名前のなかの<strong>「マークアップ（markup）」</strong>が、その本質を表しています。
+        マークアップとは、文章に<strong>「ここは見出し」「ここは段落」「ここは画像」といった"意味の印"をつけていく</strong>こと。
+        もとは、原稿に編集者が「ここは大きな見出しで」と赤字で指示を書き込む作業を指す言葉でした。
+        HTMLは、それをコンピュータ向けに行う仕組みなのです。</p>
+        <p>具体的には、<strong>タグ</strong>と呼ばれる目印で文章を挟みます。
+        たとえば、こんなふうに。</p>
+        <pre><code>&lt;h1&gt;今日のニュース&lt;/h1&gt;        ← これは大見出し
+&lt;p&gt;朝から good な天気です。&lt;/p&gt;   ← これは段落
+&lt;a href="..."&gt;続きを読む&lt;/a&gt;      ← これはリンク</code></pre>
+        <p><code>&lt;h1&gt;</code> で始まり <code>&lt;/h1&gt;</code> で終わる部分が「大見出し」、
+        <code>&lt;p&gt;</code> で挟まれた部分が「段落」、というように、
+        文章のひとかたまりごとに「これは何なのか」という意味のラベルを貼っていく。
+        <span class="em">HTMLがやっているのは、見た目を作ることではなく、文書に"意味の構造"を与えること</span>なのです。
+        ここが最初のポイントです。HTMLは「どう見せるか」ではなく「これは何か」を記述する言語なのです。</p>
+        <p>そして名前のもうひとつの要素、<strong>「ハイパーテキスト（HyperText）」</strong>。
+        これは<span class="term">リンク</span>のことです。文書の中の言葉から、別の文書へ飛べる仕組み。
+        ふつうの本は最初から順に読みますが、ハイパーテキストは、気になった言葉をたどって、文書から文書へと自由に渡り歩ける。
+        この「リンクで文書どうしがつながる」という発想こそ、Web（World Wide Web ＝ 世界に張り巡らされた蜘蛛の巣）の名前の由来であり、
+        その核心です。第1部第8講で学んだグラフ（点と線）を思い出してください。
+        Webとは、<strong>文書を点、リンクを線とする、世界規模の巨大なグラフ</strong>なのです。</p>
+        <h3>マークアップという発想の深さ</h3>
+        <p>「文章に意味の印をつける」というマークアップの発想は、じつはとても奥が深いものです。
+        たとえば同じ「重要な言葉」でも、ただ太字にするのと、「これは重要だ」という意味の印（<code>&lt;strong&gt;</code>）をつけるのとでは、まったく違います。
+        前者は「見た目」の指示にすぎませんが、後者は「意味」の宣言。
+        意味の印がついていれば、見た目はあとからCSSで自由に変えられるし、読み上げソフトは「ここは強調されている」と声の調子を変えて伝えられます。
+        <span class="em">「どう見えるか」ではなく「これは何か」を記述する</span>――この一見遠回りな考え方が、
+        人にも機械にも扱いやすい、柔軟な文書を生むのです。
+        紙の文書が「見た目がすべて」だったのに対し、HTMLは「意味と見た目を切り離した」点に、革命がありました。</p>
+        <p>マークアップ言語にはHTML以外にもいろいろあり、たとえばデータ交換によく使われるXMLや、
+        手軽に書ける記法として人気のMarkdown（このような教材や、チャット、技術文書でよく使われます）も、同じ仲間です。
+        どれも共通して「素のテキストに、決まった記号で意味の印をつける」という発想に立っています。
+        プレーンなテキストでありながら、構造を持たせられる――
+        この「人間にも機械にも読める」というバランスのよさが、マークアップが長く使われ続ける理由なのです。</p>
+      </section>
+
+      <!-- 分離 -->
+      <section id="s-separation">
+        <h2>構造・見た目・動きの分離 ― HTML / CSS / JavaScript</h2>
+        <p>では、あの美しくデザインされたページは、どうやって作られるのでしょうか。
+        現代のWebページは、役割の違う<strong>3つの言語</strong>が分業して作っています。
+        この「役割分担」こそ、Webのいちばん大切な設計思想です。</p>
+        <div class="def">
+          <p><b>Webページを作る3つの言語</b></p>
+          <p style="margin:.2em 0"><b>HTML</b>：文書の<strong>構造・意味</strong>を決める（これは見出し、これは段落…）。建物でいえば「骨組み」。</p>
+          <p style="margin:.2em 0"><b>CSS</b>：その<strong>見た目</strong>を決める（色、大きさ、配置、フォント…）。建物でいえば「内装・外装」。</p>
+          <p style="margin-bottom:0"><b>JavaScript</b>：<strong>動き・対話</strong>を与える（ボタンを押すと反応する、内容が動的に変わる…）。建物でいえば「電気・設備」。</p>
+        </div>
+        <p>なぜ、わざわざ3つに分けるのでしょうか。それは<span class="em">「構造」と「見た目」と「動き」を分けておくと、片方を変えても、他方に影響しないから</span>です。
+        たとえば、サイト全体のデザインを変えたいとき、CSSだけ書き換えれば、HTML（中身）はそのままで見た目だけ一新できる。
+        逆に、記事を追加したいときは、HTMLに文章を足すだけで、デザインは自動的に適用される。
+        もし、文章とデザインがぐちゃぐちゃに混ざっていたら、ちょっとした修正のたびに全体を作り直す羽目になります。</p>
+        <p>これは、第1部で何度も登場した<strong>「関心の分離」「抽象化」</strong>という思想そのものです。
+        第1部第11講のプログラミング言語でも、第13講のネットワークの階層化でも、
+        「役割ごとに分けて、互いに干渉しないようにする」という同じ考え方が出てきました。
+        <span class="em">複雑なものを、独立した部品に分けて管理する</span>――
+        この知恵が、Webの世界でも、HTML・CSS・JavaScriptという形で貫かれているのです。</p>
+        <p>CSSの書き方を、少しだけのぞいてみましょう。たとえば、こんなふうに書きます。</p>
+        <pre><code>h1 { color: red; font-size: 32px; }   ← 見出しは赤の32px
+p  { line-height: 1.8; }              ← 段落は行間を広めに</code></pre>
+        <p>「どの部分（h1やp）を、どう飾るか（色・大きさ・間隔）」を指示しているだけ。
+        HTMLには一切デザインの情報を書かず、こうしてCSSに見た目をまとめておく。
+        すると、サイト全体で何百ページあっても、このCSSを1か所変えるだけで、全ページのデザインが一斉に変わります。
+        第1部第12講のデータベースで学んだ「ひとつの事実は一か所だけに書く（正規化）」と、同じ精神です。
+        <span class="em">同じことを何度も書かず、一か所にまとめておけば、変更も管理も楽になる</span>――
+        この原則は、コンピュータのあらゆる場面で繰り返し現れる、普遍的な知恵なのです。</p>
+      </section>
+
+      <!-- ブラウザ -->
+      <section id="s-browser">
+        <h2>ブラウザの仕事 ― 受け取って、組み立てて、描く</h2>
+        <p>では、これらHTML・CSS・JavaScriptを受け取って、実際に画面に表示するのは誰でしょう。
+        それが<span class="term">ブラウザ</span>（Chrome、Safari、Edge、Firefoxなど）です。
+        ブラウザは、私たちが思っている以上に、複雑で高度なソフトウェアです。
+        その仕事は、おおまかに次の流れになります。</p>
+        <ol>
+          <li><strong>受け取る</strong>：Webサーバーから、HTML・CSS・JavaScriptや画像などのファイルを受け取る（第13講の通信）。</li>
+          <li><strong>解釈する</strong>：HTMLを読んで、文書の構造を木構造（第7講！）に組み立てる。これをDOMと呼ぶ。</li>
+          <li><strong>見た目を計算する</strong>：CSSを読んで、どの要素を、どんな色・大きさ・位置で表示するかを計算する。</li>
+          <li><strong>描く</strong>：計算結果にもとづいて、実際に画面にピクセルを描き出す（レンダリング）。</li>
+          <li><strong>動かす</strong>：JavaScriptを実行し、ユーザーの操作に応じてページを変化させる。</li>
+        </ol>
+        <p>注目したいのは、HTMLが<strong>木構造</strong>として組み立てられる点です。
+        「ページ全体の中に本文があり、本文の中に見出しと段落があり…」という入れ子の関係は、まさに第1部第7講で学んだ木そのもの。
+        この木を<span class="term">DOM</span>（Document Object Model）と呼び、JavaScriptはこの木をたどったり、
+        枝を付け替えたりすることで、ページを動的に変化させます。
+        <span class="em">第1部で学んだデータ構造が、ブラウザの心臓部で実際に働いている</span>のです。</p>
+        <p>ブラウザの中核には、これらの処理を高速に行う<strong>レンダリングエンジン</strong>と、
+        JavaScriptを高速に実行する<strong>エンジン</strong>が組み込まれています。
+        とくにJavaScriptエンジンは、第1部第11講で学んだ「コンパイラ／インタプリタ」の技術の結晶で、
+        書かれたコードをその場で機械語に近い形へ変換しながら、猛烈な速さで実行します。
+        私たちが「Webサイトがサクサク動く」と感じる裏には、こうしたブラウザの地道で高度な最適化があるのです。</p>
+        <h3>サーバーとクライアント ― 役割分担のもうひとつの形</h3>
+        <p>Webの仕組みを理解するうえで、もうひとつ大切な区別があります。
+        <strong>サーバー</strong>と<strong>クライアント</strong>です。
+        私たちの手元のブラウザが「クライアント（お願いする側）」、
+        ページのデータを保管して送り出す向こう側のコンピュータが「サーバー（提供する側）」。
+        レストランにたとえれば、注文する客がクライアント、料理を作って出す厨房がサーバーです。
+        この<span class="em">「お願いする側」と「提供する側」に分けて、必要なときだけやり取りする</span>仕組み（クライアント・サーバー方式）が、
+        Webの基本構造です。</p>
+        <p>そして、処理を「手元（クライアント）でやるか、向こう（サーバー）でやるか」という分担にも、設計の妙があります。
+        たとえば、入力した内容のかんたんなチェックは手元のJavaScriptで即座に行い、
+        本当に重要な処理（決済やデータ保存）は、信頼できるサーバー側で行う。
+        手元の処理は速くて軽快ですが、利用者がいじれてしまうので、最終的な正しさはサーバーが責任を持つ――
+        この役割分担は、第2部第5講以降のセキュリティの話にも、深くつながっていきます。
+        「どこで、誰が、何を担うか」を分けて考える――これもまた、第1部以来の「関心の分離」の応用なのです。</p>
+      </section>
+
+      <!-- 表示までの流れ -->
+      <section id="s-flow">
+        <h2>ページが表示されるまでの一部始終</h2>
+        <p>ここで、第1部第13講（インターネットの基礎）とつなげて、
+        URLを入力してからページが表示されるまでの流れを、通して振り返ってみましょう。
+        これは、本講義の前半で学んだ知識が、すべて連携する場面です。</p>
+        <ol>
+          <li><strong>名前を引く</strong>：入力したURLのドメイン名を、DNSでIPアドレスに変換する（第13講）。</li>
+          <li><strong>サーバーにつなぐ</strong>：そのIPアドレスのサーバーに、TCP/IPで接続する（第13講）。httpsなら暗号の準備も（第10講）。</li>
+          <li><strong>ページを要求する</strong>：「このページをください」とHTTPで要求し、サーバーがHTMLなどを返す。</li>
+          <li><strong>組み立てる</strong>：ブラウザがHTMLを木（DOM）にし、CSSで見た目を計算し、JavaScriptを動かす（本講）。</li>
+          <li><strong>描く</strong>：最終的に、画面に色のついたピクセルとして描き出される（第2講の画像＝数値の表！）。</li>
+        </ol>
+        <p>たったコンマ数秒のあいだに、これだけのことが起きています。
+        情報を数値で表し（第2講）、ネットワークを越えて運び（第13講）、暗号で守り（第10講）、
+        木構造に組み立て（第7講）、コードを翻訳して実行する（第11講）。
+        <span class="em">「ページを開く」というありふれた動作のなかに、本講義で学んだほぼすべての要素が詰まっている</span>のです。
+        第2部の最初にこの話をするのは、まさにそのためです。Webページは、原理と応用が出会う、絶好の入口なのです。</p>
+        <div class="trivia">
+          <p>Webには、ほかの技術にはない、ちょっと素敵な文化があります。
+          それは<strong>「ソースを見る（View Source）」</strong>――どんなWebページでも、その元になっているHTMLやCSSを、
+          誰でも自分のブラウザで簡単にのぞけるのです（多くのブラウザで右クリックから「ページのソースを表示」できます）。
+          つまり、世界中の素晴らしいWebサイトのすべてのHTMLが、いわば"公開された教科書"。
+          初期のWeb開発者の多くは、憧れのサイトのソースを見て、真似ながら独学で学びました。
+          <span class="em">優れた作品の作り方が、誰にでも見えるように開かれている</span>――
+          この「見せ合う・学び合う」精神が、Webを爆発的に発展させた原動力のひとつでした。
+          バーナーズ＝リーが技術を無償公開したことと合わせ、Webの根っこには「開かれていること」への強い信念が流れているのです。</p>
+        </div>
+      </section>
+
+      <!-- 歴史 -->
+      <section id="s-history">
+        <h2>歴史 ― Webの誕生と「ブラウザ戦争」</h2>
+        <div class="history">
+          <p><strong>たった一人から始まった、World Wide Web。</strong>
+          Webは1989年、イギリスの科学者<strong>ティム・バーナーズ＝リー</strong>によって考案されました。
+          当時、彼が働いていた巨大な研究所では、たくさんの研究者が、バラバラの形式で大量の文書を持っていて、
+          互いの情報を参照するのが大変でした。
+          そこで彼は、「文書どうしをリンクでつなぎ、どこからでもたどれるようにすればいい」と考え、
+          HTML・URL・HTTPという、いまもWebを支える3つの基本を一人で設計したのです。
+          そして決定的だったのは、彼がこの技術を<strong>誰でも自由に使えるよう、無償で公開した</strong>こと。
+          特許で囲い込まず、世界に開放したからこそ、Webは爆発的に広がりました（第13講「開かれた約束」の精神です）。</p>
+          <p><strong>ブラウザ戦争。</strong>
+          Webが普及すると、その入口であるブラウザをめぐって、企業間の激しい競争が起こりました。
+          1990年代後半から2000年代にかけての「ブラウザ戦争」では、各社が独自機能を競い合った結果、
+          「このサイトはこのブラウザでしか正しく表示されない」といった混乱も生まれました（第2講の文字コード乱立に似ています）。
+          その反省から、いまでは<strong>Web標準</strong>という共通ルールが整えられ、
+          どのブラウザでも同じように表示される世界へと近づいてきました。
+          ここでも「みんなで共通の約束を守る」ことの大切さが、繰り返し確認されています。</p>
+          <p>バーナーズ＝リーが当初こだわったのは、Webが<strong>「読む」だけでなく「誰もが書ける」場所</strong>であることでした。
+          一部の発信者だけでなく、すべての人が情報を発信できる――その理想は、ブログやSNSという形で、ある意味で実現しました。
+          ただし、誰もが発信できることは、玉石混交の情報やデマがあふれることも意味します。
+          <span class="em">「開かれていること」は、自由と混乱を同時にもたらす</span>。
+          Webの理想と現実のあいだのこの緊張は、いまも私たちが向き合い続けている課題なのです。</p>
+        </div>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用</h2>
+        <h3>Webページから「Webアプリ」へ</h3>
+        <p>かつてWebは、文書を「読む」だけの場所でした。
+        しかしJavaScriptの進化により、いまやWeb上で、地図を動かし、表計算をし、動画を編集し、ゲームまで遊べます。
+        ブラウザの中で、本格的なアプリケーションが動く時代になったのです（Webアプリ）。
+        メールも、文書作成も、ビデオ会議も、いまやアプリをインストールせず、ブラウザだけでできる。
+        <span class="em">ブラウザは「文書を見る窓」から「あらゆるアプリが動く土台（プラットフォーム）」へと進化した</span>のです。
+        この流れは、特定の機種やOSに縛られず「ブラウザさえあればどこでも同じことができる」という、大きな自由をもたらしました。
+        WindowsでもMacでもスマホでも、同じWebアプリが同じように動く――これは、利用者にとっても作り手にとっても大きな利点です。
+        作り手は、機種ごとに別々のアプリを作らずに、ひとつのWebアプリを用意すればよい。
+        <span class="em">「どこでも同じように動く」という約束（Web標準）が、ソフトを"場所から解放した"</span>のです。
+        いまや、複雑な業務システムから、ちょっとしたツールまで、その多くがWeb上で動いています。
+        ブラウザは、現代における"もうひとつのOS"とも言える存在になりつつあるのです。</p>
+        <h3>「見た目の分離」が生む、アクセシビリティ</h3>
+        <p>HTMLが「見た目」ではなく「意味の構造」を記述することには、深い意義があります。
+        目の不自由な人が使う読み上げソフトは、HTMLの「ここは見出し」「ここはリンク」という意味の印を手がかりに、
+        ページを音声で正しく伝えます。
+        もし見た目だけで「なんとなく大きい文字」にしていたら、機械にはそれが見出しだと分かりません。
+        <span class="em">意味をきちんと印づけることが、誰もが情報にアクセスできる「アクセシビリティ」につながる</span>のです。
+        検索エンジン（第1部第8講）がページの内容を正しく理解できるのも、この意味の構造のおかげ。
+        「構造と見た目を分ける」という設計思想が、人にも機械にもやさしいWebを作っているのです。</p>
+        <h3>状態を覚える ― Cookieとログインのしくみ</h3>
+        <p>ひとつ、素朴な疑問があります。Webの通信は、基本的に「お願いして、答えをもらう」一回ごとの単発のやり取りで、
+        サーバーは前回誰が来たかを基本的には覚えていません（ステートレス、と言います）。
+        では、なぜログインした状態が保たれ、ショッピングカートの中身が消えないのでしょうか。
+        その鍵が<strong>Cookie（クッキー）</strong>です。
+        サーバーは、訪問者のブラウザに小さな"合言葉"（Cookie）を渡しておき、
+        次回以降、ブラウザがそれを提示することで「あ、さっきの人だ」と認識する。
+        <span class="em">単発のやり取りの上に、「覚えている」状態を人工的に作り出している</span>のです。
+        この仕組みのおかげで、私たちは毎回ログインし直さずに済みます。</p>
+        <p>ただし、この「覚える」仕組みは、便利さと引き換えに、プライバシーの問題も生みました。
+        Cookieを使えば「この人がどのサイトを見て回ったか」を追跡することもでき、広告に利用されてきました。
+        近年、こうした追跡への懸念から、Cookieの扱いには世界的に厳しいルールが設けられつつあります
+        （サイトでよく見る「Cookieに同意しますか？」という確認は、その表れです）。
+        便利さと、プライバシーの保護――この綱引きは、第2部全体を通じて何度も登場する、現代技術の重要なテーマです。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「Webページは、画像のような"絵"として送られてくる」</p>
+          <p class="a">違います。送られてくるのは主に「テキスト（HTML・CSS・JavaScript）」で、それをブラウザが受け取って、
+          その場で画面に"描き起こして"います。同じHTMLでも、ブラウザや画面サイズによって見え方が変わるのはこのためです。</p>
+          <p class="q">誤解②：「HTMLはプログラミング言語だ」</p>
+          <p class="a">厳密には違います。HTMLは「文書に意味の印をつける」マークアップ言語で、計算や条件分岐（第11講）はしません。
+          計算や動きを担うのはJavaScriptです。HTMLは"設計図"、JavaScriptが"動き"、と役割が違います。</p>
+          <p class="q">誤解③：「インターネットとWebは同じもの」</p>
+          <p class="a">別物です（第13講）。インターネットは「世界中の機器をつなぐ土台」、Webはその上で動く「サービスのひとつ」。
+          メールや動画通話も、同じインターネットの上を走る、Webとは別のサービスです。</p>
+          <p class="q">誤解④：「ブラウザはどれも同じで、見た目を映すだけの単純なソフト」</p>
+          <p class="a">ブラウザは、HTMLの解釈、CSSの計算、JavaScriptの高速実行、セキュリティ管理まで担う、極めて高度なソフトウェアです。
+          OSに匹敵する複雑さを持つ、とも言われます。</p>
+          <p class="q">誤解⑤：「ログイン状態は、サーバーが私のことをずっと覚えてくれている」</p>
+          <p class="a">基本のWeb通信は単発で、サーバーは前回の訪問を自動では覚えていません（ステートレス）。
+          ログイン状態が保たれるのは、ブラウザが持つCookie（合言葉）を毎回提示しているから。
+          「覚えている」状態は、この仕組みで人工的に作り出されているのです。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <div class="summary">
+          <ul>
+            <li>Webページの正体は「ただのテキスト文書」。それをブラウザが受け取り、その場で画面に描き起こしている。だから同じページでも、ブラウザや画面サイズで見え方が変わる。</li>
+            <li>HTMLは「見た目」でなく「意味の構造」を記述するマークアップ言語。リンクで文書をつなぐ（＝巨大なグラフ）。</li>
+            <li>HTML（構造）・CSS（見た目）・JavaScript（動き）の3分業。「関心の分離」という設計思想。</li>
+            <li>ブラウザはHTMLを木構造（DOM）として組み立て、CSSで見た目を計算し、JavaScriptで動かして、画面に描き出す。</li>
+            <li>ページ表示には、第1部のDNS・TCP/IP・暗号・木構造・コンパイラが総動員される。</li>
+            <li>Webはバーナーズ＝リーが考案し、無償で公開したことで爆発的に普及した。「開かれた標準」と「ソースを見せ合う文化」が、世界を一つにつないだ。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>HTML・CSS・JavaScriptの役割を、それぞれ一言で説明せよ。建物のたとえを使ってもよい。</li>
+            <li>「構造（HTML）」と「見た目（CSS）」を分けておくと、どんな利点があるか。1つ挙げよ。</li>
+            <li>HTMLが「プログラミング言語ではない」と言われるのはなぜか。JavaScriptとの違いから説明せよ。</li>
+            <li>「インターネット」と「Web」は、どう違うか。第1部第13講も思い出して説明せよ。</li>
+            <li>Webページが「巨大なグラフ」だと言えるのはなぜか。第1部第8講のグラフの定義から考えよ。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) HTML＝構造・意味（骨組み）、CSS＝見た目（内装）、JavaScript＝動き・対話（電気設備）。<br>
+            (2) 見た目だけを変えたいときCSSだけ直せばよく、中身（HTML）に影響しない。逆に中身を足してもデザインは自動適用される。修正や管理が楽になる。<br>
+            (3) HTMLは「意味の印をつける」だけで、計算や条件分岐・繰り返しをしない。それらの"動き"を担うのがJavaScript。<br>
+            (4) インターネットは世界中の機器をつなぐ土台（道路網）、Webはその上で動くサービスの一つ（宅配便）。メール等もインターネット上の別サービス。<br>
+            (5) 文書を「点（ノード）」、リンクを「線（エッジ）」とみなせるから。Webは点と線でできた世界規模のグラフそのもの。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">『HTML&CSS とウェブデザイン』系の入門書（たとえばジョン・ドゥケット『HTML&CSS』）</span>
+          ― 実際に手を動かして、HTML・CSSの基本を学べる定番のビジュアル入門書。本講の内容を体験できる。</li>
+          <li><span class="bk">『Web技術の基本』（小林恭平・坂本陽）</span>（SBクリエイティブ）
+          ― HTTP・URL・ブラウザ・サーバーの関係を、図解でやさしく整理した一冊。第13講と本講の橋渡しに。</li>
+          <li><span class="bk">ティム・バーナーズ＝リー『Webの創成』</span>（毎日コミュニケーションズ）
+          ― Web考案者本人が、その発想と理念を語った書。「なぜ無償で公開したのか」という思想が読める。</li>
+          <li><span class="bk">MDN Web Docs（developer.mozilla.org）</span>
+          ― HTML・CSS・JavaScriptの、信頼できる無料のオンライン辞典。さらに深く学ぶときの定番リファレンス。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="index.html"><span class="lab">← 第1部・一覧</span>講義一覧（TOP）へ</a>
+        <a class="nx" href="part2_lecture2.html"><span class="lab">次の講 →</span>第2部 第2講 ファイル・拡張子・フォーマット</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第2部 第1講「ブラウザ・HTML・Webページのしくみ」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

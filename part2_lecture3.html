@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第2部 第3講 APIとソフトウェア同士の会話 ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="アプリ同士は、どうやって連携しているのか。API・リクエスト/レスポンス・JSON・ノーコードを身近に学ぶ。ゆるコンピュータ科学講義 第2部 第3講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#2f6f6a; --accent-soft:#dcebe9;
+    --accent2:#c8503a; --accent2-soft:#f7e3dd;
+    --code-bg:#21302e; --code-ink:#eaf3f1;
+    --sidebar:#1f2b29; --sidebar-ink:#e3ece9; --sidebar-muted:#94a7a3;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#111413; --paper:#172220; --ink:#e6ece9; --muted:#9aa9a5;
+    --line:#283633; --accent:#6fb6ad; --accent-soft:#16302c;
+    --accent2:#e8775f; --accent2-soft:#3a221c;
+    --code-bg:#0c1413; --code-ink:#eaf3f1;
+    --sidebar:#0c1413; --sidebar-ink:#e3ece9; --sidebar-muted:#7d8e8a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#245a55 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"{ }";position:absolute;right:18px;bottom:-12px;font-family:ui-monospace,monospace;font-size:4.4rem;font-weight:800;color:rgba(255,255,255,.10)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.92;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent-soft);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent2);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent2-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#172220}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent2);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第2部 第3講 API</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第2部 第3講</span><br>APIとソフトウェア同士の会話</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-api">APIとは ― 機能の窓口</a></li>
+      <li><a href="#s-reqres">リクエストとレスポンス</a></li>
+      <li><a href="#s-json">JSON ― 機械同士の共通語</a></li>
+      <li><a href="#s-connect">APIがつなぐ世界</a></li>
+      <li><a href="#s-nocode">ノーコード ― 書かずに作る</a></li>
+      <li><a href="#s-history">歴史と背景</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第2部 応用・社会・現代技術編 ／ 第3講</div>
+        <h1>APIとソフトウェア同士の会話<br>― アプリは、こうして手を組む</h1>
+        <p>地図アプリに天気が出る。決済が一瞬で済む。その裏で、ソフト同士が"会話"しているのです。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― ソフトが、別のソフトに「お願い」する</h2>
+        <p>あるアプリの中に、別のサービスの地図が埋め込まれている。
+        飲食店の予約アプリから、そのまま地図と経路が見られる。
+        ネット通販で、クレジットカード会社の決済画面が呼び出される。
+        天気アプリが、気象会社のデータを表示する。
+        ―― こうした「アプリ同士の連携」は、いまや当たり前の風景です。
+        では、これらの<strong>別々の会社が作ったソフトウェアは、どうやって互いに協力している</strong>のでしょうか。</p>
+        <p>その答えが、本講のテーマ<span class="term">API</span>（Application Programming Interface）です。
+        APIは、<strong>ソフトウェアが、別のソフトウェアに「これをやってください」とお願いするための"窓口"</strong>。
+        現代のデジタルサービスは、自分ですべてを作るのではなく、
+        さまざまな会社のAPIを呼び出し、組み合わせることで成り立っています。
+        いわば、ソフトウェアの世界の「分業と協力」の仕組みです。
+        人間社会が、すべてを一人でやらず、専門家どうしが分業することで豊かになったように、
+        ソフトウェアの世界も、APIによる分業で、爆発的に発展してきました。
+        地図は地図の専門家に、決済は決済の専門家に任せ、自分は自分の得意なことに集中する――
+        この当たり前の知恵を、ソフトの世界で実現する仕組みが、APIなのです。
+        この講では、APIとは何か、ソフト同士はどんな"言葉"で会話するのか（リクエスト・レスポンス・JSON）、
+        そして「コードを書かずにアプリを作る」ノーコードの世界までを、身近な例から順に解き明かしていきます。
+        ふだん何気なく使っているアプリの便利さの正体が、きっと見えてくるはずです。
+        これは第1部第11講で学んだ「抽象化」「インターフェース」の考え方が、現実のサービス連携として花開く回です。</p>
+        <p>少し大きな視点で言えば、APIは<strong>現代のデジタル経済の"配管"</strong>のようなものです。
+        水道や電気が、見えないところで街じゅうに張り巡らされて生活を支えているように、
+        APIは、見えないところで無数のサービスをつなぎ、私たちの便利な体験を支えています。
+        ひとつのアプリの操作の裏で、何社ものサービスのAPIが一瞬のうちに呼び出され、結果が組み合わされて画面に表示される。
+        <span class="em">私たちが「ひとつのアプリ」だと思っているものの正体は、じつは無数のサービスの"合奏"</span>なのです。
+        この配管がどう敷かれているかを知ると、デジタルサービスの世界の見え方が、まるで変わってきます。
+        では、その配管をのぞいていきましょう。</p>
+        <p class="lead-in">APIとは（機能の窓口）→ リクエストとレスポンス → JSON → APIがつなぐ世界 → ノーコード。
+        「自分で全部作らない」という、現代のものづくりの作法が見えてきます。</p>
+      </section>
+
+      <!-- API -->
+      <section id="s-api">
+        <h2>APIとは ― 機能を呼び出すための「窓口」</h2>
+        <p>APIを理解する、いちばん分かりやすいたとえは<strong>レストランのメニューと注文</strong>です。
+        客（あるソフト）は、厨房（別のソフト）がどんな手順で料理を作っているかを知る必要はありません。
+        メニュー（API）に書かれた品名を、ウェイター（窓口）に注文すれば、料理（結果）が出てくる。
+        客は<strong>「何を頼めるか」と「どう頼むか」だけを知っていればよく、「どう作っているか」は知らなくていい</strong>。
+        この仕組みこそ、APIの本質です。</p>
+        <div class="def">
+          <p><b>API（Application Programming Interface）</b></p>
+          <p style="margin-bottom:0">ソフトウェアが持つ機能を、外部の別のソフトウェアから<strong>呼び出して使うための「窓口（接点）」</strong>。
+          「こう頼めば、こういう結果を返す」という<strong>約束（取り決め）</strong>として公開される。
+          利用する側は、内部の作りを知らなくても、その窓口を通じて機能を借りられる。</p>
+        </div>
+        <p>ここで思い出してほしいのが、第1部第11講・第7講で繰り返し登場した<strong>「使い方（インターフェース）と中身（実装）の分離」</strong>です。
+        APIは、まさにこの思想そのもの。
+        天気予報のAPIを使う側は、気象会社が世界中の観測データをどう集め、どう計算しているかを一切知らなくていい。
+        ただ「東京の明日の天気をください」とAPIに頼めば、答えが返ってくる。
+        <span class="em">「中身を隠して、窓口だけを公開する」――この抽象化が、世界中のソフトを部品のように組み合わせ可能にした</span>のです。
+        第1部で学んだ抽象化の思想が、企業や国境を越えた、巨大な協力のネットワークを生んでいるのです。</p>
+        <h3>身のまわりにもAPIはあふれている</h3>
+        <p>APIは、なにもインターネット越しの会話に限った話ではありません。
+        じつは、私たちが普段使うソフトの内側でも、あちこちでAPIが使われています。
+        たとえば、アプリが「写真へのアクセスを許可しますか？」と聞いてくるとき、
+        そのアプリは、スマホのOS（基本ソフト）が用意した「カメラやアルバムを使うためのAPI（窓口）」を呼び出そうとしているのです。
+        アプリが自分でカメラを直接動かすのではなく、OSが用意した窓口を通じて、安全に機能を借りる。
+        <span class="em">「中身を直接いじらせず、決められた窓口だけを通す」という仕組みは、安全管理の要</span>でもあります。
+        もし、どのアプリもカメラや連絡先を好き勝手に触れたら、大変なことになりますね。
+        APIという"窓口"を通すからこそ、「このアプリにはカメラを許可、でも位置情報は不許可」といった、きめ細かい管理ができるのです。</p>
+        <p>このように、APIには大きく2つの顔があります。
+        ひとつは、本講のメインである「インターネット越しに、別の会社のサービスを呼び出す」Web API。
+        もうひとつは、ひとつの機械の中で「OSや他のソフトの機能を借りる」ためのAPI。
+        どちらも本質は同じで、<strong>「中身を隠し、決められた窓口を通じて機能を提供する」</strong>という約束ごとです。
+        この共通の発想を押さえておくと、ニュースで聞く「API連携」も、スマホの「アクセス許可」も、同じ仕組みの表れだと見えてきます。</p>
+      </section>
+
+      <!-- リクエストとレスポンス -->
+      <section id="s-reqres">
+        <h2>リクエストとレスポンス ― お願いと、お返事</h2>
+        <p>では、ソフト同士は具体的にどうやって会話するのでしょう。
+        基本は、第1部第13講・第2部第1講で学んだWebの通信と同じ、<strong>「お願いして、お返事をもらう」</strong>という形です。</p>
+        <ul>
+          <li><strong>リクエスト（要求）</strong>：使う側が「これをやって」「このデータをください」と送るお願い。</li>
+          <li><strong>レスポンス（応答）</strong>：提供する側が「はい、結果はこれです」と返すお返事。</li>
+        </ul>
+        <p>たとえば、天気のAPIに「<code>東京の今日の天気</code>」というリクエストを送ると、
+        「<code>晴れ、最高28度</code>」といったレスポンスが返ってくる。
+        この一往復が、ソフト同士の会話の基本単位です。
+        多くの場合、このやり取りはWebの仕組み（HTTP、第2部第1講）の上で行われるため、
+        とくに<span class="term">Web API</span>と呼ばれます。
+        私たちがブラウザでページを「要求して受け取る」のと同じ仕組みを、
+        <span class="em">人間ではなく、プログラムが、別のプログラムに対して使っている</span>のです。
+        つまりWeb APIとは「機械が機械に向けて使う、Webの窓口」だと考えると分かりやすいでしょう。</p>
+        <figure>
+          <svg viewBox="0 0 540 150" role="img" aria-label="APIのリクエストとレスポンス">
+            <style>.bx{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}.bx2{fill:var(--accent2-soft);stroke:var(--accent2);stroke-width:2}.tt{font:13px sans-serif;fill:var(--ink);text-anchor:middle;font-weight:700}.ss{font:11px sans-serif;fill:var(--muted);text-anchor:middle}.aw{stroke:var(--accent);stroke-width:2;fill:none}</style>
+            <rect class="bx" x="20" y="50" width="150" height="50" rx="10"/><text class="tt" x="95" y="72">あなたのアプリ</text><text class="ss" x="95" y="90">（使う側／客）</text>
+            <rect class="bx2" x="370" y="50" width="150" height="50" rx="10"/><text class="tt" x="445" y="72">天気サービス</text><text class="ss" x="445" y="90">（提供側／厨房）</text>
+            <line class="aw" x1="172" y1="62" x2="368" y2="62"/><polygon points="368,57 380,62 368,67" fill="var(--accent)"/>
+            <text class="ss" x="270" y="54">リクエスト：「東京の天気は？」</text>
+            <line class="aw" x1="368" y1="90" x2="172" y2="90" stroke="var(--accent2)"/><polygon points="172,85 160,90 172,95" fill="var(--accent2)"/>
+            <text class="ss" x="270" y="108" style="fill:var(--accent2)">レスポンス：「晴れ、28度」</text>
+          </svg>
+          <figcaption>図1：APIの基本。使う側がリクエストを送り、提供側がレスポンスを返す。</figcaption>
+        </figure>
+        <p>このリクエストには、ただ「お願い」を書くだけでなく、いくつかの大事な要素が含まれます。
+        「誰からの依頼か（身元を示す合言葉）」「何をしてほしいか」「どんな条件で（東京の、今日の、など）」。
+        とくに重要なのが<strong>APIキー</strong>と呼ばれる合言葉です。
+        多くのAPIは、誰でも無制限に使えるわけではなく、利用者にあらかじめ専用の鍵（APIキー）を発行し、
+        リクエストのたびにそれを提示させます。
+        これによって「誰が、どれだけ使ったか」を把握し、使いすぎを防いだり、料金を計算したりできるのです。
+        第1部第10講で学んだ「鍵で本人確認をする」発想が、ここでも生きています。</p>
+        <p>そして、お返事（レスポンス）には、第2部第1講で学んだ<strong>状態コード</strong>も付いてきます。
+        「成功（200）」「そんなデータはない（404）」「あなたには権限がない（401）」「サーバー側の不具合（500）」――。
+        APIを使う側のプログラムは、この番号を見て「うまくいった」「失敗した、ではこう対処しよう」と判断します。
+        <span class="em">機械同士の会話にも、ちゃんと「了解」「ごめん、できません」といった作法が決められている</span>のです。
+        うまくいくときの処理だけでなく、失敗したときにどう振る舞うかを考えるのが、API連携の腕の見せどころになります。</p>
+      </section>
+
+      <!-- JSON -->
+      <section id="s-json">
+        <h2>JSON ― 機械同士の「共通語」</h2>
+        <p>ソフト同士がデータをやり取りするとき、その<strong>データの書き方</strong>にも、共通のルールが要ります。
+        人間同士が共通の言語で話すように、機械同士も共通の形式でデータを表す必要がある。
+        いま、その共通語として最も広く使われているのが<span class="term">JSON</span>（ジェイソン）です。</p>
+        <p>JSONは、第2部第2講で学んだ<strong>テキスト形式</strong>の一種で、
+        「項目名」と「値」をペアにして、データを表します。たとえば、こんなふうに。</p>
+        <pre><code>{
+  "都市": "東京",
+  "天気": "晴れ",
+  "最高気温": 28,
+  "降水確率": 10
+}</code></pre>
+        <p>波カッコの中に、「都市は東京」「天気は晴れ」と、項目と値が並んでいる。
+        人間が読んでも、だいたい意味が分かりますね。これがJSONの良いところです。
+        <span class="em">機械が効率よく処理でき、かつ人間にもギリギリ読める</span>――この絶妙なバランスが、JSONを普及させました。
+        第1部第12講の「表形式データ」やCSVと同じく、「データを、決まった形に整えて受け渡す」発想の仲間です。
+        APIのレスポンスの多くは、このJSONの形でデータを返してきます。
+        天気でも、地図でも、SNSの投稿でも、機械同士はこうした構造化されたテキストで、淡々と情報を交換しているのです。</p>
+        <p>かつてはXMLという、よりかっちりした形式も広く使われ、いまも分野によっては現役です。
+        どの形式を使うにせよ、大切なのは<strong>「送り手と受け手が、同じ形式の約束を共有している」</strong>こと。
+        これは第1部第2講の文字コード、第2部第2講のファイルフォーマットと、まったく同じ「解釈の約束」の話。
+        コンピュータの世界では、この「共通の約束ごと」が、あらゆる連携の土台になっているのです。</p>
+        <p>JSONのもうひとつの良さは、<strong>入れ子（ネスト）にできる</strong>ことです。
+        値の中に、さらに別のJSONを入れられるので、複雑な構造のデータも表現できます。
+        たとえば「ある人の情報」の中に「複数の住所」のリストを入れ、その住所のそれぞれに「郵便番号と都市」を入れる、というように。
+        これは第1部第7講・第8講で学んだ<strong>木構造</strong>そのもの。
+        データの親子・包含の関係を、そのまま表現できるのです。
+        だからJSONは、単純な表（CSV）では表しにくい、複雑で階層的なデータのやり取りに向いています。
+        <span class="em">「人間が読めるテキスト」でありながら「木構造を表せる」</span>――
+        この2つを両立させたことが、JSONが現代のデータ交換の主役になった理由なのです。</p>
+      </section>
+
+      <!-- APIがつなぐ世界 -->
+      <section id="s-connect">
+        <h2>APIがつなぐ世界 ― 組み合わせて作る時代</h2>
+        <p>APIの本当のすごさは、<strong>「他人の作った機能を、自分のサービスに取り込める」</strong>点にあります。
+        地図を表示したいなら、地図会社のAPIを呼べばいい。
+        決済をしたいなら、決済会社のAPIを使えばいい。
+        わざわざ自分で世界中の地図を作ったり、銀行と提携したりする必要はありません。
+        現代のアプリの多くは、<span class="em">こうした他社のAPIを部品のように組み合わせて作られている</span>のです。
+        複数のサービスを組み合わせて、新しい価値を生むこの作り方を、<strong>マッシュアップ</strong>と呼びます。</p>
+        <p>これは、ものづくりのあり方そのものを変えました。
+        かつてソフトを作るには、すべてを自前で開発する必要がありました。
+        しかしAPIの時代には、<strong>「世界中の優れた機能を借りてきて、つなぎ合わせる」</strong>ことで、
+        小さなチームでも、驚くほど高機能なサービスを、短期間で作れるようになった。
+        これは第1部第11講の「ライブラリ」や「巨人の肩の上に立つ」という話の、サービス全体への拡張版です。
+        <span class="em">「すべてを自分で作らない」ことが、むしろ賢いものづくりの作法になった</span>――
+        これが、API時代の大きな転換です。</p>
+        <p>もちろん、これには光と影があります。
+        便利な反面、自分のサービスが他社のAPIに<strong>依存</strong>することにもなる。
+        頼っていたAPIが、ある日、有料になったり、仕様が変わったり、提供を終了したりすれば、
+        自分のサービスも影響を受けてしまう。
+        「他人の機能を借りる」便利さと、「他人に依存する」リスク――
+        この綱引きは、第1部第11講の「共有の恩恵とリスク」とも通じる、現代のソフトウェアの宿命です。</p>
+      </section>
+
+      <!-- ノーコード -->
+      <section id="s-nocode">
+        <h2>ノーコード ― コードを書かずに作る</h2>
+        <p>APIの発想をさらに推し進めると、面白い世界が見えてきます。<span class="term">ノーコード</span>です。
+        これは、<strong>プログラムのコードを書かずに、用意された部品を画面上で組み合わせるだけで、アプリやWebサイトを作る</strong>仕組み。
+        ブロックを積むように、「ボタンを置く」「フォームを置く」「このAPIとつなぐ」といった操作を、
+        マウスでドラッグしながら組み立てていきます。</p>
+        <p>これは、第1部第11講で見た「抽象化の階段」の、さらに上の段だと考えられます。
+        機械語 → 高級言語 → そして「コードすら書かず、部品を組み合わせる」へ。
+        <span class="em">人間が考えなくていいことを、また一段、機械側に肩代わりさせた</span>のです。
+        ノーコードのおかげで、プログラミングの専門家でない人――現場の事務担当者や、小さな店のオーナーなど――でも、
+        自分の業務に合った道具を、自分で作れるようになりました。これは大きな民主化です。</p>
+        <p>ノーコードと相性がいいのが、本講のテーマであるAPIです。
+        ノーコードのツールは、たいてい「このサービスのAPIと、あのサービスのAPIを、こうつなぐ」という連携を、
+        コードを書かずに、画面上の線でつなぐだけで設定できます。
+        「フォームに入力があったら → その内容を表計算に記録し → 担当者にメッセージで通知する」といった自動化を、
+        部品を並べるだけで組める。
+        <span class="em">APIという"つなぐための窓口"が整っているからこそ、ノーコードという"つなぐ作業の簡略化"が成り立つ</span>のです。
+        この2つは、「専門知識がなくても、ソフトの力を使えるようにする」という同じ方向を向いた、現代の大きな潮流です。
+        そして、この潮流の先に、第1部第15講で見た「AIに言葉で頼んでアプリを作ってもらう」という、さらに上の段が続いていきます。</p>
+        <div class="trivia">
+          <p>とはいえ、ノーコードには「光」だけでなく「闇」もあります。
+          手軽に作れる反面、<strong>細かい調整がきかない、特定のサービスに縛られる、内部で何が起きているか分からない</strong>といった弱点があるのです。
+          用意された部品の枠を超えたことはできないし、そのノーコードサービス自体が終了すれば、作ったものごと失われかねない（第2部第2講の「独自形式」の問題と同じです）。
+          また「簡単に作れる」がゆえに、セキュリティや保守の知識がないまま重要なシステムを作ってしまい、後で問題が噴出することもあります。
+          <span class="em">手軽さの裏には、必ず「見えなくなったもの」がある</span>。
+          だからこそ、ノーコードを賢く使うにも、その下で何が起きているか――まさに本講義で学ぶような土台の理解――が役に立つのです。</p>
+        </div>
+      </section>
+
+      <!-- 歴史 -->
+      <section id="s-history">
+        <h2>歴史と背景 ― なぜAPIの時代が来たのか</h2>
+        <div class="history">
+          <p><strong>「公開する」という戦略。</strong>
+          APIという考え方自体は古くからありましたが、それが爆発的に重要になったのは、Webサービスの時代です。
+          ある企業が、自社の機能（地図、決済、SNS投稿など）をAPIとして<strong>外部に公開</strong>すると、
+          世界中の開発者が、それを使って新しいサービスを作りはじめます。
+          すると、その企業のサービスは、自社だけでは思いつかなかった無数の使われ方で広がっていく。
+          <span class="em">機能を「囲い込む」のではなく「開いて使ってもらう」ことが、結果的に大きな力になる</span>――
+          これは第2部第1講のWeb、第13講のインターネットで見た「開かれた約束が普及を生む」という法則の、ビジネス版です。
+          いまや「APIを公開しているか」は、プラットフォームとしての価値を測る重要な指標になっています。</p>
+          <p>その一方で、APIは企業の戦略の道具にもなります。
+          多くの開発者が自社APIに依存するようになった後で、突然、利用条件を変えたり有料化したりして、
+          開発者コミュニティとの間で軋轢が生まれる、という出来事も繰り返し起きてきました。
+          「開いて広げる」段階と「囲って回収する」段階――プラットフォームをめぐるこの力学は、
+          第2部の後半（インフラや社会制度の回）で、より大きなスケールで再び登場します。</p>
+        </div>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用</h2>
+        <h3>あなたのスマホは、API連携の塊</h3>
+        <p>気づいていないだけで、私たちは毎日APIのお世話になっています。
+        食事の宅配アプリは、地図API・決済API・通知APIを組み合わせて動いています。
+        SNSの「他のアプリでログイン」は、認証のAPI。
+        スマホの「この予定を、カレンダーに追加」も、アプリ間のAPI連携。
+        天気、乗換、株価、翻訳――こうした情報が、いろいろなアプリに横断的に現れるのは、
+        その大元のデータがAPIで提供されているからです。
+        <span class="em">現代のアプリは、単体で完結する"製品"ではなく、無数のサービスをつなぐ"結節点"になっている</span>のです。
+        ひとつの宅配アプリを開いている数秒のあいだに、お店の情報、地図、配達員の位置、決済、通知――と、
+        いくつもの別々のサービスのAPIが呼ばれ、その結果がひとつの画面に滑らかにまとめられている。
+        裏側を知ると、あの当たり前の便利さが、いかに多くの"協力"の上に成り立っているかが見えてきます。</p>
+        <h3>そしてAIも、APIでつながる</h3>
+        <p>近年は、AI（第1部第15講）もAPIで提供されるのが主流になりました。
+        高度なAIを一から作れなくても、AI企業が公開するAPIを呼び出せば、
+        自分のアプリに「文章の要約」「翻訳」「画像の生成」といったAI機能を組み込めます。
+        さらに、AIが外部のAPIを"自分で呼び出して"情報を取りに行く、という新しい使い方も広がっています
+        （第1部第15講で触れた「AIが道具を使う」の一例です）。
+        <span class="em">APIは、人間とソフト、ソフトとソフト、そしてAIと世界をつなぐ、共通の"接点"</span>として、
+        ますます重要になっているのです。
+        この「つなぐ仕組み」を理解することは、これからのデジタル社会を読み解く、大切な鍵になります。</p>
+        <h3>APIが止まると、世界が止まる</h3>
+        <p>APIによる連携が当たり前になった結果、ひとつの重要なサービスのAPIが止まると、
+        <strong>それに依存していた無数のサービスが、いっせいに不調になる</strong>という事態も起きるようになりました。
+        ある大手クラウドや認証サービスに障害が起きると、まったく無関係に見える多くのアプリやサイトが、同時に使えなくなる。
+        ニュースで「大規模なネット障害」と報じられる出来事の多くは、こうした"つながりすぎた"ことの裏返しでもあります。
+        <span class="em">便利につなぐほど、どこか一か所の不調が全体に波及しやすくなる</span>――
+        これは第1部第13講の「分散の頑健さ」とは逆に、「集中への依存」というもろさです。
+        効率と頑健さのトレードオフ、特定サービスへの依存の危うさは、第2部のインフラの回（データセンターやNVIDIAの話）で、
+        さらに大きなスケールで考えることになります。
+        APIは現代社会の便利な"配管"であると同時に、その配管が詰まったときの影響も、また大きいのです。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「APIを使うには、相手のソフトの中身（仕組み）を理解しないといけない」</p>
+          <p class="a">逆です。APIの利点は、まさに「中身を知らなくても、窓口を通じて機能を借りられる」こと。
+          レストランで料理の作り方を知らなくても注文できるのと同じ。これが「インターフェースと実装の分離」の恩恵です。</p>
+          <p class="q">誤解②：「APIは、エンジニアだけに関係する専門的な話」</p>
+          <p class="a">私たちが毎日使うアプリの多くが、裏でAPI連携で動いています。アプリ同士が協力できる仕組みを知ることは、
+          サービスがなぜ便利か、なぜ時々まとめて止まるのか、なぜ「他のアプリでログイン」ができるのか――といった、
+          日常の素朴な疑問を理解する助けになります。</p>
+          <p class="q">誤解③：「ノーコードなら、プログラミングの知識はまったく要らない」</p>
+          <p class="a">作るだけなら不要なこともありますが、トラブル対応・セキュリティ・他サービスとの連携を考えると、
+          土台の理解はやはり役立ちます。「見えなくなった部分」に何があるかを知る人ほど、ノーコードも上手に使えます。</p>
+          <p class="q">誤解④：「他社のAPIを使えば、もう何の心配もいらない」</p>
+          <p class="a">便利な反面、依存も生まれます。頼っていたAPIが有料化・仕様変更・終了すると、自分のサービスも影響を受ける。
+          「借りる便利さ」と「依存するリスク」は、つねにセットで考える必要があります。</p>
+          <p class="q">誤解⑤：「APIのやり取りは、JSONのような"特別な技術"でしか行われない」</p>
+          <p class="a">中身は、第1部・第2部で学んだ基本の組み合わせです。HTTPで通信し（第13講・第1講）、テキスト形式でデータを表し（第2講）、
+          状態コードで結果を伝える（第1講）。APIは新しい魔法ではなく、既存の仕組みを"機械同士の会話"に使い回したものなのです。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <div class="summary">
+          <ul>
+            <li>APIは、ソフトが別のソフトに機能を「お願い」するための窓口。中身を知らずに機能を借りられる。Web越しの連携にも、スマホOSのアクセス許可にも、同じ仕組みが使われている。</li>
+            <li>レストランの注文と同じ。客は「何を・どう頼むか」だけ知ればよく、厨房の「どう作るか」は知らなくていい（インターフェースと実装の分離＝抽象化）。</li>
+            <li>会話の基本はリクエスト（お願い）とレスポンス（お返事）。APIキー（合言葉）で本人確認し、状態コードで結果を伝える。Webの上で行うものをWeb APIと呼ぶ。</li>
+            <li>データの共通語はJSON（人間も読めるテキスト形式で、木構造も表せる）。「解釈の約束を共有する」点は、文字コードやファイル形式とまったく同じ発想。</li>
+            <li>他社のAPIを組み合わせて作る（マッシュアップ）のが現代のものづくりの作法。「借りる便利さ」と「依存するリスク」は、つねに表裏一体。</li>
+            <li>ノーコードは抽象化のさらに上の段で、ものづくりの民主化を進める。一方、手軽さの裏には、自由度の制限や特定サービスへの依存など「見えなくなるもの」もある。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>APIを「レストラン」にたとえると、客・メニュー・厨房は、それぞれ何にあたるか。</li>
+            <li>APIを使う側が「相手の中身を知らなくていい」のは、なぜ便利なのか。第1部第11講の言葉で説明せよ。</li>
+            <li>JSONが、機械同士のデータ交換の共通語として好まれるのはなぜか。その特徴を挙げよ。</li>
+            <li>他社のAPIに依存することの、利点とリスクを、それぞれ1つずつ挙げよ。</li>
+            <li>ノーコードの「手軽さ」と引き換えに失われやすいものは何か。1つ挙げよ。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) 客＝使う側のソフト、メニュー＝API（頼めることの一覧）、厨房＝機能を提供する側のソフト。ウェイター＝窓口。<br>
+            (2) 「インターフェース（使い方）と実装（中身）が分離」されているから。中身を気にせず使えるので、互いに独立して開発でき、組み合わせも自由になる。<br>
+            (3) テキスト形式で人間にも読め、かつ機械が効率よく処理できる。項目名と値をペアで構造的に表せる。<br>
+            (4) 利点：自分で作らずに高度な機能を借りられ、開発が速い。リスク：仕様変更・有料化・終了などで自分のサービスが影響を受ける。<br>
+            (5) 細かい調整の自由、内部で何が起きているかの理解、特定サービスへの非依存（移行のしやすさ）など。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">『Web API: The Good Parts』（水野貴明）</span>（オライリー・ジャパン）
+          ― Web APIの設計と考え方を、平易に解説する定番書。APIの「良い窓口とは何か」が分かる。</li>
+          <li><span class="bk">『Webを支える技術』（山本陽平）</span>（技術評論社）
+          ― HTTP・URL・REST（Web APIの基本様式）を体系的に学べる名著。第2部第1〜3講を貫いて読める。</li>
+          <li><span class="bk">『figmaやノーコードツールの公式チュートリアル』など</span>
+          ― ノーコードは、実際に触ってみるのが一番。代表的なツールの無料チュートリアルで、組み合わせる感覚をつかめる。</li>
+          <li><span class="bk">各サービスの「API ドキュメント（公式リファレンス）」</span>
+          ― 地図・天気・SNSなど、多くのサービスがAPIの使い方を公開している。「どう頼めば何が返るか」の実例集として面白い。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part2_lecture2.html"><span class="lab">← 前の講</span>第2部 第2講 ファイル・拡張子・フォーマット</a>
+        <a class="nx" href="part2_lecture4.html"><span class="lab">次の講 →</span>第2部 第4講 ソフトウェア開発の現場</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第2部 第3講「APIとソフトウェア同士の会話」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

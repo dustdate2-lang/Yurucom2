@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第2部 第4講 ソフトウェア開発の現場 ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="なぜソフト開発は遅れ、バグが出るのか。見積もり・90対90の法則・技術的負債・アジャイルを身近に学ぶ。ゆるコンピュータ科学講義 第2部 第4講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#2f6f6a; --accent-soft:#dcebe9;
+    --accent2:#c8503a; --accent2-soft:#f7e3dd;
+    --code-bg:#21302e; --code-ink:#eaf3f1;
+    --sidebar:#1f2b29; --sidebar-ink:#e3ece9; --sidebar-muted:#94a7a3;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#111413; --paper:#172220; --ink:#e6ece9; --muted:#9aa9a5;
+    --line:#283633; --accent:#6fb6ad; --accent-soft:#16302c;
+    --accent2:#e8775f; --accent2-soft:#3a221c;
+    --code-bg:#0c1413; --code-ink:#eaf3f1;
+    --sidebar:#0c1413; --sidebar-ink:#e3ece9; --sidebar-muted:#7d8e8a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#245a55 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"90/90";position:absolute;right:18px;bottom:-8px;font-family:ui-monospace,monospace;font-size:3.8rem;font-weight:800;color:rgba(255,255,255,.10)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.92;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent-soft);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent2);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent2-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#172220}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent2);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第2部 第4講 ソフトウェア開発</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第2部 第4講</span><br>ソフトウェア開発の現場</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-estimate">見積もりは、なぜ外れるのか</a></li>
+      <li><a href="#s-bug">バグはなぜなくならないか</a></li>
+      <li><a href="#s-debt">技術的負債</a></li>
+      <li><a href="#s-method">作り方の流儀 ― ウォーターフォールとアジャイル</a></li>
+      <li><a href="#s-team">チームで作る ― 協力の技術</a></li>
+      <li><a href="#s-history">歴史 ― 人月の神話</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第2部 応用・社会・現代技術編 ／ 第4講</div>
+        <h1>ソフトウェア開発の現場<br>― なぜ、こんなにうまくいかないのか</h1>
+        <p>「あと9割できています」が口癖の現場。ソフト作りは、なぜいつも遅れ、バグが出るのか。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― ものづくりとして見る、ソフトウェア</h2>
+        <p>これまでの講で、私たちはコンピュータの原理（第1部）と、その上で動くWeb・ファイル・API（第2部の前半）を見てきました。
+        この講では、少し視点を変えて、<strong>「ソフトウェアを、実際に人が作る現場」</strong>に光を当てます。
+        プログラムは、ひとりでに生まれるわけではありません。
+        人間が、チームを組み、納期と戦い、バグと格闘しながら、苦労して作り上げているのです。</p>
+        <p>そして、その現場には、ひとつの有名な"あるある"があります。
+        <span class="em">ソフトウェア開発は、ほぼいつも、予定より遅れ、予算を超え、バグが出る。</span>
+        橋やビルの建設に比べて、ソフト開発はなぜこんなにも見通しが立たないのでしょうか。
+        じつはこれは、個々の開発者の能力の問題ではなく、ソフトウェアという"もの"が持つ、本質的な性質に根ざしています。
+        この講では、「見積もりの難しさ」「バグがなくならない理由」「技術的負債」「開発手法」を通じて、
+        ソフトウェアづくりの<strong>本当の難しさ</strong>と、人類がそれにどう立ち向かってきたかを見ていきます。
+        プログラムを書かない人にとっても、「なぜシステムはよく遅れ、よく止まるのか」を理解する、格好の回です。</p>
+        <p>そもそも、なぜソフトウェアは橋やビルと違うのでしょうか。
+        いちばんの違いは、<strong>ソフトは「世界に一つだけの、新しいもの」を作ることが多い</strong>点です。
+        同じ規格の橋を何本も架けるのと違い、ソフト開発は、たいてい「まだ世の中にない、固有の問題」を解こうとします。
+        だから、過去の経験がそのまま使えず、「やってみないと分からない」ことだらけになる。
+        さらに、ソフトは<strong>完成後も変わり続ける</strong>。
+        橋は完成すれば基本的にそのままですが、ソフトは公開後も、新機能の追加や不具合の修正で、ずっと作り変えられ続けます。
+        <span class="em">「一品物で、形がなく、完成後も変わり続ける」</span>――
+        この3つの特徴が、ソフトウェア開発を、ほかのものづくりと根本的に違う、特異なものにしているのです。</p>
+        <p class="lead-in">見積もりの難しさ → バグがなくならない理由 → 技術的負債 → 開発手法 → チーム開発。
+        第1部第5講（バグ検出の限界）や第6講（見積もり）が、現場の問題として戻ってきます。</p>
+      </section>
+
+      <!-- 見積もり -->
+      <section id="s-estimate">
+        <h2>見積もりは、なぜ外れるのか ― 90対90の法則</h2>
+        <p>ソフト開発の難しさを象徴する、有名なジョークがあります。<strong>「90対90の法則」</strong>です。</p>
+        <div class="def">
+          <p><b>90対90の法則</b></p>
+          <p style="margin-bottom:0">最初の90%のコードが、開発時間の90%を使う。
+          そして、<strong>残りの10%のコードが、もう90%の時間を使う</strong>。
+          合計すると180%――つまり、ほぼ常に予定の倍近くかかる、という自虐的な経験則。</p>
+        </div>
+        <p>笑い話のようですが、現場の真実を突いています。
+        ソフト開発では、<strong>「だいたいできた（90%）」からが、異様に長い</strong>のです。
+        最後の細かい不具合、想定外のケース、他システムとの連携、性能の問題…。
+        「あとちょっと」のはずが、その「ちょっと」に、最初と同じだけの時間がかかる。</p>
+        <p>なぜ、こんなことになるのでしょうか。根っこには、ソフトウェアの<strong>「見えなさ」</strong>があります。
+        橋やビルなら、完成形が目に見え、必要な作業も部材も計算できます。
+        ところがソフトウェアは形がなく、「作ってみないと、何が難しいか分からない」ことが多い。
+        さらに、第1部第6講で学んだ通り、問題によっては<strong>計算量が爆発</strong>して現実的に解けなかったり、
+        想定外の組み合わせが無数に現れたりします。
+        <span class="em">「やってみないと分からないこと」を、やる前に正確に見積もるのは、原理的に難しい</span>のです。
+        だからソフトの見積もりは、しばしば希望的観測になり、そして外れます。</p>
+        <p>もうひとつ、見積もりを狂わせる大きな要因があります。<strong>「要求の変化」</strong>です。
+        建物なら、着工後に「やっぱり3階建てを5階建てに」と言われれば、誰もが無理だと分かります。
+        ところがソフトは形がないため、「画面をちょっと足すだけでしょ？」と、簡単に変更を求められがちです。
+        しかし、その"ちょっと"が、内部の構造を大きく揺るがすことは珍しくありません。
+        <span class="em">目に見えないからこそ、変更の影響も見えにくく、軽く考えられてしまう</span>。
+        作る側と頼む側の、この「難しさの感覚のズレ」こそが、ソフト開発のトラブルの大きな源です。
+        だから近年は、「最初に全部を見積もる」のをあきらめ、後述するように「小さく作りながら調整する」やり方が広まっているのです。</p>
+        <p>ちなみに、経験を積んだ開発者は、見積もりに<strong>「バッファ（余裕）」</strong>を持たせます。
+        「3日でできそう」と思っても、想定外は必ず起きると知っているので、多めに見積もる。
+        それでも外れるのが、ソフト開発の難しさです。
+        「楽観的に見積もり、悲観的な現実に殴られる」――これは、世界中の開発者が共有する、苦い"あるある"なのです。</p>
+      </section>
+
+      <!-- バグ -->
+      <section id="s-bug">
+        <h2>バグはなぜ、なくならないのか</h2>
+        <p>「テストをちゃんとすれば、バグはなくせるはずだ」――そう思いたくなりますが、現実はそう甘くありません。
+        <strong>どんなに優秀なチームが作っても、ある程度のバグは必ず残る</strong>。これには、深い理由があります。</p>
+        <p>第一に、第1部第5講で学んだ理論的な限界です。
+        チューリングが示したとおり、<span class="em">「あらゆるプログラムについて、バグがないことを完全に自動で証明する万能の方法」は、原理的に存在しません</span>。
+        だから、テストでバグを「減らす」ことはできても、「ゼロだと保証する」ことは、一般にはできない。
+        テストは「バグがある」ことは示せても、「バグがない」ことは証明できないのです。</p>
+        <p>第二に、組み合わせの爆発です。
+        少し複雑なソフトになると、ユーザーの操作の順番、入力の種類、他システムとの組み合わせは、天文学的な数になります（第1部第6講）。
+        その全パターンをテストし尽くすのは、現実的に不可能。
+        だから、開発者が思いもしなかった「まさかこんな使い方を」というケースで、バグが顔を出すのです。</p>
+        <p>第三に、人間が作っている、という事実です。
+        ソフトは人間が書く以上、勘違いや見落としは避けられません。
+        しかも、ひとつの修正が、別の場所に新たな不具合を生む（デグレード）こともある。
+        <span class="em">バグは「根絶するもの」ではなく、「うまく付き合い、減らし続けるもの」</span>――
+        これが、ソフトウェア開発の成熟した態度です。だからこそ、テスト、レビュー、修正の仕組みが、開発の中心を占めるのです。</p>
+        <p>バグの怖さは、その<strong>「直すコスト」が、見つかる時期によって桁違いに変わる</strong>点にもあります。
+        設計の段階で気づけば、紙の上で直すだけ。開発中なら、コードを直すだけ。
+        ところが、リリース後に世に出てから見つかると、影響は甚大です。
+        すでに使っている大勢のユーザーに被害が及び、信用を失い、緊急の修正に追われる。
+        だから「できるだけ早い段階でバグを見つける」ことが、開発では決定的に重要になります。
+        <span class="em">バグは、時間が経つほど"高くつく"</span>――この性質が、開発の早い段階でのテストやレビューを、これほど重視させているのです。
+        そして、人命や大金が関わるシステム（医療機器、金融、航空、ロケット）では、
+        第1部第5講で触れた、数学的にプログラムの正しさを検証する「形式手法」のような、より厳格な手段までもが使われます。
+        どこまで手間をかけるかは、「バグが出たときに何が失われるか」次第。ここにも、コストと安全のトレードオフがあります。</p>
+      </section>
+
+      <!-- 技術的負債 -->
+      <section id="s-debt">
+        <h2>技術的負債 ― 「あとで直す」のツケ</h2>
+        <p>開発の現場で、近年とても重視される考え方が<span class="term">技術的負債</span>です。
+        これは、<strong>「とりあえず動けばいい」と、その場しのぎで雑に作った部分が、後々まで開発の足を引っ張る</strong>ことを、
+        借金（負債）にたとえた言葉です。</p>
+        <p>納期に追われると、つい「きれいに作る時間がないから、とりあえず動く形で」と妥協してしまう。
+        それ自体は、ときに必要な判断です。借金が、ときに事業に必要なのと同じ。
+        しかし、その場しのぎのコードは、後から読みにくく、直しにくく、新機能を足しにくい。
+        <span class="em">そして、雑な部分を放置するほど、利子のように"直しにくさ"が積もっていく</span>。
+        やがて、ちょっとした修正にも膨大な時間がかかるようになり、開発全体が泥沼化していくのです。</p>
+        <p>大切なのは、技術的負債は<strong>必ずしも「悪」ではない</strong>ということ。
+        借金が、ときに事業のチャンスをつかむために必要なように、
+        「まず素早く出して、市場の反応を見る」ために、あえて負債を抱える判断は、しばしば正しい。
+        問題なのは、<span class="em">負債を抱えていることに無自覚なまま、返済もせずに積み上げ続ける</span>ことです。
+        優れたチームは、「ここは今、あえて手を抜いている」と意識し、後でちゃんと作り直す（リファクタリングする）時間を計画に組み込みます。
+        借金を計画的に返済するのと同じ。
+        無自覚な借金は身を滅ぼし、自覚した借金は武器になる――技術的負債も、まったく同じなのです。</p>
+        <div class="trivia">
+          <p>技術的負債は、目に見えないだけに厄介です。
+          外から見れば、アプリはちゃんと動いている。けれど内部は、つぎはぎだらけで、開発者は触るのが怖い――そんな状態が、世の中には無数にあります。
+          「動いているコードは触るな」という、現場の有名な格言があるほどです。
+          かつて世界を騒がせた「2000年問題」も、ある意味で巨大な技術的負債でした。
+          西暦を下2桁で節約して書いていた古いコードが、何十年も使われ続け、2000年に一斉に問題を起こしかけたのです。
+          <span class="em">過去の妥協は、未来へのツケになる</span>。
+          目先の速さのために雑に作るか、将来のために丁寧に作るか――ここにも、本講義おなじみの「速さと正確さ」のトレードオフがあります。
+          優れた開発チームは、この負債を意識的に管理し、ときどき「返済（リファクタリング）」の時間を取るのです。</p>
+        </div>
+      </section>
+
+      <!-- 開発手法 -->
+      <section id="s-method">
+        <h2>作り方の流儀 ― ウォーターフォールとアジャイル</h2>
+        <p>「見積もりが外れ、バグが残り、負債がたまる」――この難しさに、人類はどう立ち向かってきたのでしょうか。
+        その工夫の結晶が、<strong>開発手法（作り方の流儀）</strong>です。大きく2つの考え方があります。</p>
+        <h3>ウォーターフォール ― 計画通りに、滝のように</h3>
+        <p>古くからある<span class="term">ウォーターフォール（滝）</span>型は、
+        「企画 → 設計 → 開発 → テスト → リリース」と、工程を順番に、滝が上から下へ流れるように進める方式です。
+        最初にすべてを計画し、後戻りしないことを前提とします。
+        橋やビルの建設に近い考え方で、計画がきっちり立つ場合には有効です。
+        しかし、ソフトの「やってみないと分からない」性質とは相性が悪く、
+        途中で「やっぱり仕様を変えたい」となると、滝を逆流できず、大きな手戻りが発生します。</p>
+        <h3>アジャイル ― 小さく作って、確かめながら</h3>
+        <p>そこで生まれたのが<span class="term">アジャイル（俊敏な）</span>という考え方です。
+        全部を一度に作るのではなく、<strong>「小さな単位で、作っては動かし、確かめ、改善する」を素早く繰り返す</strong>。
+        2週間ごとに動くものを作り、ユーザーや顧客の反応を見て、次に何を作るかを調整していく。
+        <span class="em">「完璧な計画」を諦め、「変化に対応する力」を重視する</span>のが、アジャイルの精神です。
+        これは第1部第6講・第15講で見た「完璧をあきらめ、近似で賢く折り合う」という発想や、
+        本講のアジャイルでいう「作ってみないと分からないなら、早く作って早く学ぼう」という割り切りに通じます。
+        現代の多くの開発、とくにWebサービスは、このアジャイル的なやり方を採り入れています。
+        どちらが優れているということではなく、対象や状況に応じて使い分ける――ここでも適材適所の原則が効いています。</p>
+        <div class="trivia">
+          <p>アジャイルが生まれた背景には、現場の切実な反省がありました。
+          かつて、何年もかけて巨大な計画通りに作ったシステムが、いざ完成したら「もう時代遅れで使えない」「そもそも顧客が欲しかったものと違った」――
+          そんな大失敗が、世界中で繰り返されたのです。
+          長い時間をかけて完璧を目指すほど、その間に世界が変わってしまい、的を外す。
+          そこで、「<strong>そもそも、最初に正解は分からない</strong>」と認め、
+          「小さく作って、顧客に見せて、フィードバックを受けて、軌道修正する」を高速で回す方が、結局うまくいく――と気づいたのです。
+          <span class="em">「正解が分からない」ことを前提に、学びながら進む</span>。
+          この姿勢は、変化の激しい現代では、ソフト開発に限らず、あらゆる挑戦に通じる知恵かもしれません。
+          完璧な地図を描いてから出発するのではなく、歩きながら地図を描く――そんな発想の転換でした。</p>
+        </div>
+      </section>
+
+      <!-- チーム -->
+      <section id="s-team">
+        <h2>チームで作る ― 協力のための技術</h2>
+        <p>大きなソフトウェアは、何十人、何百人ものエンジニアが、力を合わせて作ります。
+        ところが、第1部第11講でも触れたとおり、<strong>大勢で1つのものを作るのは、それ自体が難問</strong>です。
+        同じファイルを複数人が同時に書き換えたら、どうなるのか。
+        誰かの変更が、別の誰かの作ったものを壊したら、どう気づくのか。
+        こうした混乱を防ぐために、いくつもの「協力の技術」が発達してきました。</p>
+        <ul>
+          <li><strong>バージョン管理</strong>：誰が、いつ、どこを変えたかをすべて記録し、必要なら過去の状態に戻せる仕組み（Gitが有名）。
+          複数人の変更を、矛盾なく統合できる。第1部第12講のトランザクションにも通じる「整合性を守る」工夫です。</li>
+          <li><strong>コードレビュー</strong>：書いたコードを、別の人が読んでチェックする。第1部第5講で学んだ「バグの完全自動検出は不可能」だからこそ、人間の目で確かめる。</li>
+          <li><strong>自動テスト</strong>：変更のたびに、機械が大量のテストを自動で走らせ、「前は動いていたものを壊していないか」を確認する。</li>
+        </ul>
+        <p>こうした仕組みは、どれも<span class="em">「人間は必ず間違える」という前提に立っている</span>のがポイントです。
+        間違えないように気をつけるのではなく、間違えても気づける・戻せる仕組みを作る。
+        これは第1部第12講の「壊れないように作るのではなく、壊れても大丈夫なように作る」という設計思想と、まったく同じ。
+        ソフトウェア開発の知恵の多くは、「人間の不完全さを、仕組みでカバーする」ことに費やされているのです。</p>
+        <p>とくに<strong>バージョン管理</strong>は、現代のソフト開発に欠かせない土台です。
+        Gitに代表されるこの仕組みは、コードの変更履歴を、いわば「セーブポイント」として無数に記録します。
+        だから「先週の状態に戻したい」「この機能を試したいが、失敗したら元に戻したい」が自由にできる。
+        さらに、各メンバーが手元で自由に試した変更を、後からきれいに1つに統合できる。
+        <span class="em">「失敗を恐れず、大胆に試せる」環境を、履歴の記録によって作り出している</span>のです。
+        これは第1部第7講のスタック（操作を戻す）や、第12講のトランザクション（全部やるか、何もしないか）と同じく、
+        「いつでも安全な状態に戻れる」という安心感を、技術で実現したもの。
+        この安心感があるからこそ、開発者は萎縮せずに挑戦でき、結果として良いものが生まれるのです。</p>
+        <p>そして、これらの「確認」を毎回自動でこなす仕組みも進化しました。
+        コードを更新するたびに、自動でテストを走らせ、問題なければ自動で公開まで行う――
+        この一連の自動化（継続的インテグレーション／デリバリー、CI/CD）によって、
+        ソフトの更新は、かつての「年に数回の一大イベント」から、「日に何度もの日常」へと変わりました。
+        人間が手作業でやっていた確認や公開を、機械に任せて高速・確実にする。
+        ここでも「単純な作業は機械に、判断は人間に」という、本講義を貫く役割分担が生きています。</p>
+      </section>
+
+      <!-- 歴史 -->
+      <section id="s-history">
+        <h2>歴史 ― 『人月の神話』という古典</h2>
+        <div class="history">
+          <p><strong>「遅れているプロジェクトに人を増やすと、もっと遅れる」。</strong>
+          ソフトウェア開発の難しさを論じた、最も有名な古典が、フレデリック・ブルックスの『人月の神話』（1975年）です。
+          彼は巨大なソフト開発プロジェクトを率いた経験から、痛烈な教訓を導きました。
+          そのひとつが<strong>「ブルックスの法則」</strong>――<span class="em">遅れているソフトウェアプロジェクトに人員を追加すると、かえってさらに遅れる</span>。</p>
+          <p>なぜでしょう。人を増やすと、その新人に教える時間が必要になり、
+          メンバー間の意思疎通の組み合わせ（第1部第8講のグラフ！）が爆発的に増えて、調整に追われるからです。
+          「9人の妊婦を集めても、赤ちゃんは1か月では生まれない」という、彼の有名なたとえもあります。
+          人手で割り算できる作業（人月）と、できない作業がある――この洞察は、半世紀近く経ったいまも古びていません。
+          ソフトウェア開発が抱える難しさの本質が、技術の進歩とは別の、人間と組織の問題に深く根ざしていることを、ブルックスは見抜いていたのです。</p>
+          <p>ブルックスはもうひとつ、「銀の弾丸はない」という有名な主張も残しました。
+          狼男を一発で倒す銀の弾丸のように、<strong>ソフト開発の難しさを一挙に解決する魔法の特効薬は存在しない</strong>、という意味です。
+          新しい言語も、新しい手法も、そしてAIも、開発を「助ける」ことはできても、本質的な難しさを「消す」ことはできない。
+          <span class="em">この冷静な認識こそ、過剰な期待に振り回されず、地道に良いものを作るための土台</span>です。
+          半世紀前の洞察が、AI時代のいまも光を放っているのは、それが技術ではなく人間の本質を突いていたからなのです。</p>
+        </div>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用</h2>
+        <h3>なぜ、あのアプリは急に重くなった／止まったのか</h3>
+        <p>私たちがニュースで見聞きする「大規模システム障害」「アプリの不具合」「リリースの遅延」――
+        その多くは、本講で見た問題が現実に噴き出したものです。
+        無理な納期が技術的負債を生み、テストしきれなかった組み合わせでバグが出て、
+        一か所の修正が別の不具合を呼ぶ。
+        <span class="em">システムのトラブルは、たいてい「技術力の不足」ではなく、「複雑さと、時間と、人間の限界」のせめぎ合いの結果</span>なのです。
+        この背景を知っていると、ニュースの「またシステム障害か」という出来事を、責めるだけでなく、構造的に理解できるようになります。</p>
+        <h3>AIは、開発の現場をどう変えるか</h3>
+        <p>第1部第15講で見たように、いまやAIがコードを書く時代です。
+        AIは、ありふれたコードを高速で生成し、開発を大きく助けてくれます。
+        しかし本講を踏まえると、楽観しすぎは禁物だと分かります。
+        AIが書いたコードにもバグはありうるし、それを<strong>見抜き、テストし、責任を持つのは、結局のところ人間</strong>です。
+        さらに、AIが手軽にコードを量産できる分、<strong>技術的負債が高速で積み上がる</strong>危険もあります。
+        <span class="em">道具が速くなるほど、それを賢く使い、品質を保つ人間の判断力が重要になる</span>――
+        本講義で繰り返してきたこの教訓は、ソフトウェア開発の現場でこそ、強く当てはまるのです。</p>
+        <h3>「動くもの」の裏にある、膨大な仕事</h3>
+        <p>私たちがアプリストアからダウンロードする、なめらかに動く一つのアプリ。
+        その裏には、本講で見てきた膨大な仕事が隠れています。
+        企画し、設計し、コードを書き、テストし、レビューし、バグを直し、何度も作り直し、公開し、そして公開後も保守し続ける。
+        多くの場合、目に見える「機能を作る」仕事より、<strong>見えない「品質を保ち、壊さないようにする」仕事のほうが、はるかに大きい</strong>のです。
+        <span class="em">完成したソフトの滑らかさは、その裏にある無数の地道な努力の氷山の一角</span>にすぎません。
+        この事実を知ると、ふだん何気なく使っているアプリやサービスへの見方が、少し変わるのではないでしょうか。
+        そして、「なぜ良いソフトには、それなりの時間とお金がかかるのか」も、腑に落ちるはずです。</p>
+        <p>同時に、本講のテーマは「技術」を超えた普遍性を持っています。
+        見積もりの難しさ、完璧を諦めて改善を繰り返す姿勢、人を増やせば早くなるとは限らないこと、その場しのぎが後で高くつくこと――
+        これらは、ソフト開発に限らず、<strong>あらゆる複雑な共同作業に共通する知恵</strong>です。
+        だから本講は、プログラマでない人にとっても、「不確かなものを、大勢で、限られた時間で作り上げる」という、
+        現代の仕事そのものを考えるヒントになるはずです。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「優秀なプログラマが作れば、バグはなくせる」</p>
+          <p class="a">減らせても、ゼロは保証できません。第1部第5講のとおり、バグがないことを完全に自動証明するのは原理的に不可能。
+          組み合わせも爆発します。だから一流の現場ほど、テストとレビューの仕組みを重視します。</p>
+          <p class="q">誤解②：「遅れているプロジェクトは、人を増やせば早く終わる」</p>
+          <p class="a">逆効果のことが多い（ブルックスの法則）。新人への教育や、増えたメンバー間の調整コストで、かえって遅れます。
+          人手で割り算できない作業がある、という洞察は半世紀色あせていません。</p>
+          <p class="q">誤解③：「ソフトは一度作れば完成。あとは使うだけ」</p>
+          <p class="a">ソフトは作って終わりではなく、直し、足し、保守し続けるもの。
+          雑に作った部分は「技術的負債」として後で重くのしかかり、丁寧な手入れ（リファクタリング）が必要になります。</p>
+          <p class="q">誤解④：「動いているなら、中身がどうなっていても問題ない」</p>
+          <p class="a">外から動いて見えても、内部が技術的負債だらけだと、ちょっとした変更すら困難になり、いずれ破綻します。
+          見えない品質を保つことが、長く使えるソフトの条件です。</p>
+          <p class="q">誤解⑤：「AIがコードを書けるなら、開発はもう簡単になる」</p>
+          <p class="a">コードを書く速さは上がりますが、本講で見た難しさ（見積もり・バグ・負債・要求変化・チーム調整）の多くは残ります。
+          むしろAIが高速にコードを量産する分、品質を見極め、負債の蓄積を防ぐ人間の判断が、いっそう重要になります。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <div class="summary">
+          <ul>
+            <li>ソフト開発はほぼ常に遅れ、バグが出る。これは個人の能力不足でなく、ソフトの「一品物・形がない・完成後も変わり続ける」性質と複雑さに根ざす、本質的な難しさ。</li>
+            <li>90対90の法則：「だいたいできた」からが異様に長い。やってみないと分からないもの、しかも途中で要求が変わるものは、正確に見積もれない。</li>
+            <li>バグは根絶できない（第1部第5講の限界＋組み合わせ爆発＋人間が作る）。減らし、付き合うのが正解。</li>
+            <li>技術的負債：その場しのぎの妥協が、利子のように開発の足かせになる。負債自体は悪ではないが、無自覚に積むと破綻し、自覚して計画的に「返済」すれば武器になる。</li>
+            <li>ウォーターフォール（計画重視・滝のように一方向）とアジャイル（小さく作って確かめ改善を繰り返す）。対象や状況に応じて使い分ける。</li>
+            <li>チーム開発の技術（バージョン管理・レビュー・自動テスト・CI/CD）は、すべて「人間は必ず間違える」という前提に立ち、間違えても気づける・戻せる仕組みで品質を守る。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>「90対90の法則」は、ソフト開発のどんな現実を皮肉ったものか。</li>
+            <li>「テストをすれば、バグはゼロにできる」が正しくないのは、なぜか。第1部第5講・第6講を踏まえて2つ挙げよ。</li>
+            <li>「技術的負債」とは何か。借金のたとえを使って説明せよ。</li>
+            <li>遅れているプロジェクトに人を足すと、かえって遅れることがあるのはなぜか（ブルックスの法則）。</li>
+            <li>バージョン管理やコードレビューといった仕組みが、共通して前提にしている「人間観」は何か。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) 「だいたいできた（90%）」からが異様に長く、残りわずかに最初と同じだけ時間がかかる、という現実。見積もりが倍近く外れがちなことの皮肉。<br>
+            (2) ①バグがないことの完全自動証明は原理的に不可能（第5講）。②操作や入力の組み合わせが爆発し、全パターンはテストし尽くせない（第6講）。<br>
+            (3) その場しのぎで雑に作った部分が、後から直しにくさ・足しにくさという"利子"を生み、開発の足を引っ張ること。借りた便利さに、後で利息を払う構図。<br>
+            (4) 新人への教育コストと、メンバー間の意思疎通の組み合わせ増加（調整コスト）で、かえって全体が遅れるから。<br>
+            (5) 「人間は必ず間違える」。だから、間違えないようにではなく、間違えても気づける・戻せる仕組みを作る。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">フレデリック・P・ブルックス『人月の神話』</span>（丸善出版）
+          ― ソフト開発の難しさを論じた不朽の古典。本講の「人と組織の問題」の原典。半世紀読み継がれる理由が分かる。</li>
+          <li><span class="bk">アンドリュー・ハント／デビッド・トーマス『達人プログラマー』</span>（オーム社）
+          ― 技術的負債やリファクタリングなど、良いコードを保つための心構えと実践を説く定番書。</li>
+          <li><span class="bk">トム・デマルコ／ティモシー・リスター『ピープルウエア』</span>（日経BP）
+          ― ソフト開発の問題の多くは「人」の問題、と喝破した名著。チームと生産性を考えたい人へ。</li>
+          <li><span class="bk">『アジャイルサムライ』（ジョナサン・ラスマセン）</span>（オーム社）
+          ― アジャイル開発の考え方を、やさしく実践的に学べる入門書。「小さく作って確かめる」の精神が分かる。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part2_lecture3.html"><span class="lab">← 前の講</span>第2部 第3講 APIとソフトウェア同士の会話</a>
+        <a class="nx" href="part2_lecture5.html"><span class="lab">次の講 →</span>第2部 第5講 セキュリティはなぜ敗北するのか</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第2部 第4講「ソフトウェア開発の現場」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

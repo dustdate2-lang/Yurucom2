@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第2部 第5講 セキュリティはなぜ敗北するのか ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="なぜ情報セキュリティは破られ続けるのか。攻防の非対称性、最弱の環としての人間、多層防御、組織の問題を学ぶ。ゆるコンピュータ科学講義 第2部 第5講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#2f6f6a; --accent-soft:#dcebe9;
+    --accent2:#c8503a; --accent2-soft:#f7e3dd;
+    --code-bg:#21302e; --code-ink:#eaf3f1;
+    --sidebar:#1f2b29; --sidebar-ink:#e3ece9; --sidebar-muted:#94a7a3;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#111413; --paper:#172220; --ink:#e6ece9; --muted:#9aa9a5;
+    --line:#283633; --accent:#6fb6ad; --accent-soft:#16302c;
+    --accent2:#e8775f; --accent2-soft:#3a221c;
+    --code-bg:#0c1413; --code-ink:#eaf3f1;
+    --sidebar:#0c1413; --sidebar-ink:#e3ece9; --sidebar-muted:#7d8e8a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#245a55 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"🔓";position:absolute;right:24px;bottom:-4px;font-size:4rem;font-weight:800;opacity:.14}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.92;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent-soft);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent2);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent2-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#172220}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent2);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第2部 第5講 セキュリティ</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第2部 第5講</span><br>セキュリティはなぜ敗北するのか</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-cia">守るべき3つの柱（CIA）</a></li>
+      <li><a href="#s-asymmetry">攻防の非対称性</a></li>
+      <li><a href="#s-human">最弱の環は「人間」</a></li>
+      <li><a href="#s-defense">多層防御という思想</a></li>
+      <li><a href="#s-org">組織と運用の問題</a></li>
+      <li><a href="#s-history">歴史 ― 攻防のいたちごっこ</a></li>
+      <li><a href="#s-apply">現代への応用 ― 私たちにできること</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第2部 応用・社会・現代技術編 ／ 第5講</div>
+        <h1>セキュリティはなぜ敗北するのか<br>― 守る側が、いつも不利な理由</h1>
+        <p>これだけ技術が進んでも、情報漏洩は後を絶たない。なぜ「守る」のは、こんなにも難しいのか。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― 「破られないシステム」は存在しない</h2>
+        <p>ニュースで、情報漏洩やサイバー攻撃の話を聞かない日はありません。
+        大企業も、政府機関も、最新の対策をしているはずの組織が、次々と被害に遭っています。
+        これだけ技術が発達し、第1部第10講で学んだ強力な暗号があるのに、なぜセキュリティは破られ続けるのでしょうか。</p>
+        <p>本講のタイトルは、少し挑発的です。「セキュリティはなぜ<strong>敗北</strong>するのか」。
+        これは、けっして悲観や諦めの話ではありません。
+        <span class="em">「完璧な防御は存在しない」という現実を直視することこそ、本当に賢く守るための第一歩</span>だからです。
+        セキュリティの専門家は皆、「破られないシステムは作れない」と知っています。
+        そのうえで、「どうすれば被害を最小にできるか」「どこに力を入れるべきか」を考えるのです。
+        この講では、なぜ守る側が構造的に不利なのか、最大の弱点はどこにあるのか、
+        そして私たち一人ひとりに何ができるのかを、防御する側の視点から見ていきます。
+        これは、攻撃の手口を学ぶ回ではなく、<strong>「なぜ守りは難しいのか」という構造を理解する</strong>回です。</p>
+        <p>少し意外かもしれませんが、セキュリティを理解する鍵は、技術そのものよりも<strong>「考え方」</strong>にあります。
+        どんなに新しい防御技術が登場しても、攻撃側はその裏をかいてきます。
+        だから、個々の手口を暗記するより、<span class="em">「守るとはどういうことか」「なぜ難しいのか」という原理を理解するほうが、ずっと役に立つ</span>のです。
+        この原理は、コンピュータの世界に限りません。
+        家の戸締まり、財布の管理、詐欺への警戒――「大切なものを、悪意から守る」という営みすべてに通じる、普遍的な知恵です。
+        本講は、デジタルセキュリティを入口にしながら、「守る」という行為そのものの本質を考える回でもあります。</p>
+
+        <p class="lead-in">守るべき3つの柱（CIA）→ 攻防の非対称性 → 最弱の環としての人間 → 多層防御 → 組織の問題。
+        第1部第10講（暗号）、第2部第4講（人間は間違える）が、ここで一つの絵になります。</p>
+      </section>
+
+      <!-- CIA -->
+      <section id="s-cia">
+        <h2>守るべき3つの柱 ― CIA</h2>
+        <p>「セキュリティ」と一言で言いますが、具体的には何を守るのでしょうか。
+        情報セキュリティの世界では、守るべきものを<strong>3つの柱</strong>に整理します。
+        頭文字をとって<span class="term">CIA</span>と呼ばれます（あの諜報機関とは無関係です）。</p>
+        <div class="def">
+          <p><b>情報セキュリティの3要素（CIA）</b></p>
+          <p style="margin:.2em 0"><b>機密性（Confidentiality）</b>：許された人だけが見られること。情報を盗み見されない（第1部第10講の暗号が守る）。</p>
+          <p style="margin:.2em 0"><b>完全性（Integrity）</b>：情報が勝手に書き換えられないこと。改ざんされない（第1部第10講のハッシュ・署名が守る）。</p>
+          <p style="margin-bottom:0"><b>可用性（Availability）</b>：使いたいときに使えること。サービスが止められない。</p>
+        </div>
+        <p>大事なのは、<span class="em">セキュリティは「秘密を守る」だけではない</span>ということ。
+        データが書き換えられないこと（完全性）、そしてサービスがちゃんと動き続けること（可用性）も、同じくらい重要です。
+        たとえば、銀行の残高が暗号で守られていても、勝手に書き換えられたら（完全性の崩壊）大問題。
+        いくら安全でも、システムが攻撃で止められて使えなければ（可用性の崩壊）意味がありません。
+        この3つは、ときに互いに対立します。たとえば、機密性を高めて何重にも認証を要求すると、可用性（使いやすさ）が下がる。
+        <strong>3つのバランスをどう取るか</strong>――ここにも、本講義おなじみのトレードオフがあります。
+        「何を、どこまで守るか」は、守る対象の価値と、失われたときの損害から決めるべき、経営的な判断なのです。</p>
+        <p>可用性への攻撃の代表例が、第1部第13講で学んだ通信を逆手に取った<strong>DoS攻撃</strong>です。
+        これは、大量のアクセスを一斉に送りつけてサーバーをパンクさせ、正規の利用者が使えないようにする攻撃。
+        中身を盗むわけでも、書き換えるわけでもなく、ただ<span class="em">「使えなくする」</span>ことそのものを狙います。
+        オンラインサービスにとって「止まる」ことは、それ自体が大きな損害。
+        だから、機密性・完全性だけでなく、可用性を守ることも、立派なセキュリティなのです。
+        ―― このように、ひとくちにセキュリティといっても、守るべき側面はさまざま。
+        「自分たちにとって、CIAのどれが、どれだけ大切か」を見極めることが、対策の出発点になります。</p>
+      </section>
+
+      <!-- 非対称性 -->
+      <section id="s-asymmetry">
+        <h2>攻防の非対称性 ― なぜ守る側が不利なのか</h2>
+        <p>セキュリティが「敗北」しやすい、最も根本的な理由。それが<strong>攻撃側と防御側の非対称性</strong>です。
+        この一点を理解すると、なぜ守りが構造的に難しいかが、すっと腑に落ちます。</p>
+        <div class="def">
+          <p><b>守る側が、構造的に不利な理由</b></p>
+          <p style="margin-bottom:0"><strong>防御側は、すべての穴をふさがなければならない。
+          だが攻撃側は、たった一つの穴を見つければいい。</strong></p>
+        </div>
+        <p>城の守りを思い浮かべてください。守る側は、正門も、裏門も、城壁も、地下も、すべてを完璧に守らねばなりません。
+        どこか一か所でも手薄なところがあれば、そこを突かれる。
+        一方、攻める側は、無数にある防御のうち、<strong>たった一つの弱点を見つけさえすればいい</strong>。
+        <span class="em">守る側は100点を取り続けなければ負けるが、攻める側は1点取れば勝つ</span>。
+        この圧倒的な非対称性が、セキュリティの宿命です。
+        コストの面でも、攻撃側が有利です。守る側は、何重もの防御に莫大な費用と人手をかけ続けねばなりません。
+        一方、攻撃側は、出回っている攻撃ツールを使えば、少ない元手で攻撃を仕掛けられる。
+        <span class="em">守るには大きなコストがかかり、攻めるには小さなコストで済む</span>――この経済的な非対称も、守る側を苦しめます。</p>
+        <p>しかも、現代のシステムは途方もなく複雑です。
+        第2部第4講で学んだとおり、大きなソフトには必ずバグが残り、組み合わせは爆発的に増えます。
+        OS、アプリ、通信、第2部第3講で見た無数のAPI連携、外部から借りた部品（第1部第11講）――
+        その全体に、ただ一つの欠陥もないことを保証するのは、第1部第5講の通り、原理的に不可能。
+        <span class="em">複雑さが増すほど「穴」は増え、攻撃側はますます有利になる</span>。
+        「破られないシステムは存在しない」と専門家が言うのは、この冷徹な構造があるからなのです。
+        だからこそ、目標は「絶対に破られないこと」ではなく、「破られにくくし、破られても被害を抑え、早く気づいて立て直すこと」になります。</p>
+        <p>この非対称性には、「時間」という残酷な要素も加わります。
+        攻撃側は、たった一つの欠陥が見つかるまで、何度でも、いつまでも試し続けられます。失敗しても、ほとんど痛みはありません。
+        一方、守る側は、24時間365日、すべての時間、すべての入り口を守り続けなければならない。
+        <span class="em">攻撃側が「いつか一度成功すればいい」のに対し、守る側は「ずっと失敗してはいけない」</span>のです。
+        さらに、まだ世界の誰にも知られていない未知の欠陥（ゼロデイ脆弱性）を突かれると、対策のしようがありません。
+        欠陥が見つかってから修正が行き渡るまでの「空白の時間」が、つねに攻撃側に味方します。
+        こうして並べると、守る側がいかに分の悪い戦いを強いられているかが見えてきます。
+        だからこそ、「完璧」を目指して消耗するのではなく、限られた力を「守る価値の高いもの」に集中させる――
+        この戦略的な割り切りが、現実のセキュリティでは決定的に重要になるのです。</p>
+      </section>
+
+      <!-- 人間 -->
+      <section id="s-human">
+        <h2>最弱の環は「人間」― ソーシャルエンジニアリング</h2>
+        <p>ここで、多くの人が抱く誤解を解いておきましょう。
+        サイバー攻撃というと、天才ハッカーが暗号を打ち破る、映画のような場面を想像しがちです。
+        しかし現実には、<span class="em">最も多く、最も効果的な攻撃は、暗号やシステムを破るのではなく、「人間」をだますもの</span>です。</p>
+        <p>どんなに頑丈な金庫（暗号）も、その鍵（パスワード）を持つ人間がだまされて鍵を渡してしまえば、開いてしまう。
+        <strong>セキュリティの鎖は、最も弱い環の強さしかない</strong>。
+        そして、たいていの場合、最も弱い環は技術ではなく<strong>人間</strong>なのです。
+        人間の心理的な隙を突いて情報を引き出す手口を、<span class="term">ソーシャルエンジニアリング</span>と呼びます。</p>
+        <ul>
+          <li><strong>フィッシング</strong>：本物そっくりの偽メールや偽サイト（第2部第1講のURLを思い出してください）で、パスワードを入力させる。</li>
+          <li><strong>なりすまし</strong>：上司やシステム管理者を装い、「至急、確認したいので教えて」と情報を聞き出す。</li>
+          <li><strong>心理的な揺さぶり</strong>：「アカウントが停止されます」と<strong>恐怖や焦り</strong>をあおったり、「あなただけ特別に」と<strong>欲</strong>を刺激したりして、冷静な判断を奪う。</li>
+        </ul>
+        <p>これらに共通するのは、<span class="em">技術ではなく、人間の「親切心」「恐怖」「焦り」「権威への服従」といった心理を攻撃している</span>点です。
+        だから、どんなに高価なセキュリティ製品を導入しても、社員一人が偽メールのリンクをクリックすれば、突破されてしまう。
+        第2部第4講で「人間は必ず間違える」と学びましたが、セキュリティでは、その人間の間違いこそが、最大の標的になるのです。
+        逆に言えば、<strong>一人ひとりの心構えと知識が、組織で最も重要な防御の一つ</strong>だということ。
+        セキュリティは、技術の問題であると同時に、深く「人間の問題」なのです。</p>
+        <div class="trivia">
+          <p>ソーシャルエンジニアリングの怖さは、その手口が<strong>「相手の善意や常識を逆手に取る」</strong>点にあります。
+          たとえば、宅配業者の制服を着て堂々と入ってくれば、多くの人は疑いません。
+          「両手がふさがっているから、ドアを開けてもらえますか」と頼まれれば、親切心から開けてしまう（共連れ、と呼ばれます）。
+          ゴミ箱に捨てられた書類から重要情報を拾う、という古典的な手口（トラッシング）すらあります。
+          <span class="em">攻撃者は、最新の技術より、人間の「親切でありたい」「波風を立てたくない」という自然な心理を突いてくる</span>のです。
+          だから対策も、「疑い深くなれ」と命じるだけでは不十分。
+          「本人確認の手順を、誰に対しても必ず踏む」といった、心理に左右されない仕組みとルールを、組織として用意することが大切になります。
+          人間の弱さを責めるのではなく、弱さを前提に守りを設計する――ここでも第2部第4講の発想が生きています。</p>
+        </div>
+      </section>
+
+      <!-- 多層防御 -->
+      <section id="s-defense">
+        <h2>多層防御という思想 ― 「破られる前提」で守る</h2>
+        <p>「完璧な防御はない」「いつか破られる」――この冷徹な前提に立ったとき、どう守ればいいのでしょうか。
+        その答えが<span class="term">多層防御（多重防御）</span>という思想です。</p>
+        <p>考え方はシンプルです。<strong>一枚の壁に頼らず、何枚もの壁を重ねる</strong>。
+        外側の壁を破られても、その内側にまた壁がある。さらにその奥にも。
+        一つ突破されても、すぐに全てが奪われるわけではない、という構えです。
+        中世の城が、堀・城壁・天守と何重もの守りを持っていたのと同じ発想です。</p>
+        <p>具体的には、こんな層が重ねられます。
+        通信を暗号化し（第1部第10講）、本人確認を厳重にし（次の第6講）、
+        アクセスできる範囲を必要最小限に絞り、あやしい動きを常に監視し、
+        万一に備えてデータを複製しておく（第1部第12講のバックアップ）。
+        そして、攻撃を防ぐ層だけでなく、<strong>「破られたことに、早く気づく」層</strong>と、<strong>「破られた後、すばやく立て直す」層</strong>も用意する。
+        <span class="em">現代のセキュリティの主眼は、「侵入を100%防ぐ」から「侵入される前提で、被害を最小化し、早く復旧する」へと移っている</span>のです。
+        これは、第2部第4講の「壊れないように作るのではなく、壊れても大丈夫なように作る」と、まったく同じ精神です。</p>
+        <div class="note">
+          <span class="lbl">ゼロトラストという考え方</span>
+          近年は「<strong>ゼロトラスト</strong>（何も信頼しない）」という発想も広がっています。
+          かつては「社内ネットワークの中は安全」と信頼していましたが、その内側に侵入されると一気に崩れました。
+          そこで「社内・社外を問わず、すべてのアクセスをいちいち確認する」という、性悪説に立った守り方が主流になりつつあります。
+          「最初から、誰も信頼しない」――手間は増えますが、非対称性に立ち向かうための、現代的な工夫の一つです。
+        </div>
+        <p>多層防御の発想には、もうひとつ重要な原則があります。<strong>「最小権限の原則」</strong>です。
+        これは、<span class="em">一人ひとり、一つひとつのプログラムに、その仕事に必要な最小限の権限しか与えない</span>という考え方。
+        たとえば、経理担当者に、システム全体を操作できる管理者権限まで与える必要はありません。
+        もし、必要以上の強い権限を持ったアカウントが乗っ取られると、被害は一気に全体へ広がってしまう。
+        だから、あらかじめ「触れる範囲」を絞っておけば、万一そこが破られても、被害をその範囲に封じ込められます。
+        第2部第3講で見た「アプリにカメラは許可、でも位置情報は不許可」というアクセス管理も、まさにこの最小権限の原則。
+        <strong>「もし破られたら、どこまで被害が及ぶか」をあらかじめ小さくしておく</strong>――
+        これが、破られる前提で守る、ということの具体的な中身なのです。</p>
+      </section>
+
+      <!-- 組織と運用 -->
+      <section id="s-org">
+        <h2>組織と運用の問題 ― 技術だけでは守れない</h2>
+        <p>セキュリティの敗北は、しばしば「最新の技術がなかったから」ではなく、
+        <strong>「あったはずの対策が、ちゃんと運用されていなかったから」</strong>起こります。
+        ここが、セキュリティの最も悩ましい点です。</p>
+        <p>たとえば、システムの欠陥を直す更新（アップデート）を、面倒だからと先延ばしにする。
+        退職した人のアカウントを消し忘れる。重要なパスワードを使い回す。
+        「便利だから」とルールを無視して、許可されていない方法でデータを持ち出す。
+        ――こうした<strong>日々の運用の小さな緩み</strong>が、最新の防御技術をすり抜けて、大きな事故につながります。
+        <span class="em">セキュリティは、一度導入して終わりの「製品」ではなく、組織が日々続ける「習慣」</span>なのです。</p>
+        <p>さらに難しいのは、セキュリティと利便性が、しばしば対立することです。
+        守りを固めるほど、現場の仕事はやりにくくなる。
+        「いちいち確認が面倒だ」「これでは仕事にならない」という現場の不満が、ルールの形骸化を招く。
+        だから、ただ厳しくすればいいわけではなく、<strong>現場が無理なく守れる、現実的な仕組み</strong>を設計することが肝心です。
+        そして万一、事故が起きたとき、「誰の責任だ」と犯人探しに走る組織は、隠蔽を生み、かえって弱くなる。
+        <span class="em">「失敗を責めず、そこから学んで仕組みを直す」文化</span>こそ、強い組織の条件です。
+        これは第2部第4講のソフト開発文化とも、深くつながっています。
+        セキュリティとは結局、技術と、人間と、組織の文化が一体となった、総合力の問題なのです。</p>
+        <p>もうひとつ、現代特有の難しさが「つながりすぎ」です。
+        第2部第3講で見たように、いまのシステムは無数のサービスやAPI、外部から借りた部品（第1部第11講）でできています。
+        すると、自分たちがどんなに気をつけても、<strong>取引先や、使っている部品の一つに穴があれば、そこから侵入されてしまう</strong>。
+        実際、直接は狙いにくい大企業を、その取引先の中小企業を踏み台にして攻撃する「サプライチェーン攻撃」が、深刻な脅威になっています。
+        <span class="em">自分の守りだけでなく、つながっている相手の守りまでが、自分の安全を左右する</span>時代なのです。
+        これは第2部第3講で触れた「つながりすぎることのもろさ」の、セキュリティ版。
+        便利につながる社会は、同時に、リスクもつながり合う社会でもあります。
+        だからこそ、社会全体で守りの底上げをしていく必要があり、それは第2部の後半で見る「社会制度」の話にもつながっていきます。</p>
+      </section>
+
+      <!-- 歴史 -->
+      <section id="s-history">
+        <h2>歴史 ― 終わらない、いたちごっこ</h2>
+        <div class="history">
+          <p><strong>「人をだます」名人・ミトニック。</strong>
+          1990年代、世界的に有名になったハッカー、ケビン・ミトニックは、
+          その手口の多くが高度な技術ではなく<strong>ソーシャルエンジニアリング</strong>――つまり「人をだますこと」だったことで知られます。
+          彼は電話一本で、社員から巧みに情報を聞き出し、システムに侵入しました。
+          後に彼はセキュリティの専門家（防御側）に転じ、「最大の脆弱性は人間である」という教訓を、身をもって広めました。
+          技術をいくら固めても、それを使う人間がだまされれば終わり――この古くて新しい真実を、彼の人生そのものが物語っています。</p>
+          <p><strong>身代金を要求する攻撃 ― ランサムウェア。</strong>
+          近年、社会問題化しているのが<strong>ランサムウェア</strong>です。
+          これは、組織のデータを勝手に暗号化して使えなくし（第1部第10講の暗号が、皮肉にも攻撃に悪用される）、
+          「元に戻してほしければ身代金を払え」と要求する攻撃です。
+          病院が機能停止に追い込まれ、人命に関わる事態も起きています。
+          ここでも、侵入の入り口の多くは、一通のあやしいメールを開いてしまった、という人間の隙でした。
+          <span class="em">攻撃の手口は進化し続け、防御も追いかけ続ける。この「いたちごっこ」に、終わりはありません</span>
+          （第1部第10講で見た、暗号の攻防の歴史と同じ構図です）。だからこそ、学び続けることが唯一の防御になります。</p>
+        </div>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用 ― 私たちにできること</h2>
+        <p>「守る側が構造的に不利」と聞くと、無力感を覚えるかもしれません。
+        しかし、私たち一人ひとりにできる、効果の高い基本があります。
+        派手ではありませんが、これらを守るだけで、被害に遭う確率は大きく下がります。</p>
+        <ul>
+          <li><strong>更新（アップデート）を、こまめに当てる</strong>：OSやアプリの更新の多くは、見つかった欠陥をふさぐためのもの。後回しにせず早めに当てることが、じつは最も効果的で、誰にでもできる防御の一つです。</li>
+          <li><strong>パスワードを使い回さない＋多要素認証を使う</strong>：一つ漏れても、ほかのサービスへ被害が広がるのを防げる（くわしくは次の第6講で）。</li>
+          <li><strong>あやしいメールやリンクは、開く前にひと呼吸おく</strong>：「至急」「アカウント停止」などと焦らせるもの、「あなただけ当選」などうますぎる話は、危険信号。送り主やURL（第2部第1講）を冷静に確認する。</li>
+          <li><strong>大切なデータは、複数の場所にバックアップしておく</strong>：万一、攻撃で暗号化されたり、機器の故障で消えたりしても、復旧できる（ランサムウェア対策としても、最も確実な備えの一つ）。</li>
+        </ul>
+        <p>これらに共通するのは、<span class="em">「絶対に防ぐ」ではなく「被害に遭いにくくし、遭っても立て直せるようにする」</span>という、多層防御の個人版だということ。
+        そして何より大切なのが、本講で学んだ<strong>「だまされる隙は、技術ではなく心理にある」という知識</strong>そのものです。
+        「自分は大丈夫」と思っている人ほど、油断を突かれます。
+        <span class="em">「完璧には守れない」と知り、しかし「基本を地道に守る」――この現実的な姿勢こそ、最強の防御</span>なのです。
+        セキュリティの知識は、もはや専門家だけのものではなく、デジタル社会を生きるすべての人の、基本的な護身術になっています。</p>
+        <h3>「便利さ」と「安全」のあいだで</h3>
+        <p>最後に、忘れてはならない視点があります。セキュリティは、つねに<strong>便利さとの綱引き</strong>だということです。
+        どんな入り口にも何重もの確認を求めれば、安全にはなりますが、使うのが苦痛になる。
+        パスワードを毎回30文字打たされ、5分ごとにログインし直させられたら、誰もそのサービスを使わないでしょう。
+        逆に、便利さを追い求めて守りを緩めれば、危険にさらされる。
+        <span class="em">「絶対に安全」も「完全に便利」も実現できず、どこかで折り合いをつけるしかない</span>――
+        これは本講義で何度も登場した、根源的なトレードオフです。
+        だから、良いセキュリティとは「いちばん厳しい」ものではなく、
+        <strong>「守る価値に見合った、人々が無理なく続けられる」ちょうどよい守り</strong>のこと。
+        この感覚は、次の第6講（認証・パスワード・パスキー）で、「いかに安全と便利を両立させるか」という形で、さらに具体的に見ていきます。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「最新のセキュリティ製品を入れれば、もう安全だ」</p>
+          <p class="a">製品は防御の一部にすぎません。最大の弱点はしばしば「人間」と「運用」。
+          社員一人が偽メールにだまされれば突破されます。セキュリティは製品でなく、日々続ける習慣です。</p>
+          <p class="q">誤解②：「ハッキングは、天才が高度な技術で暗号を破ること」</p>
+          <p class="a">現実の多くは、技術ではなく「人をだます」ソーシャルエンジニアリング。
+          頑丈な金庫も、鍵を持つ人がだまされれば開きます。攻撃の主な入り口は、人間の心理の隙です。</p>
+          <p class="q">誤解③：「うちは狙われるような重要な情報を持っていないから大丈夫」</p>
+          <p class="a">危険な油断です。攻撃の多くは特定の標的を狙うのでなく、弱いところを機械的に・無差別に探して襲います。
+          どんな個人・組織も、別の標的を攻撃するための踏み台にされたり、ランサムウェアの被害に遭ったりしうる。「自分は関係ない」という油断こそが、最も狙われやすい穴なのです。</p>
+          <p class="q">誤解④：「いつか破られるなら、対策しても無駄では？」</p>
+          <p class="a">逆です。完璧には防げなくても、対策で「破られにくく」し、「被害を小さく」し、「早く立て直せる」ようにはできます。
+          目標は完璧でなく、リスクを現実的なレベルまで下げること。基本の対策は、確実に効果があります。</p>
+          <p class="q">誤解⑤：「セキュリティを厳しくすればするほど、良い」</p>
+          <p class="a">厳しすぎると、現場が「使えない」と感じてルールを無視し、かえって危険になります（形骸化）。
+          安全と便利はトレードオフ。守る価値に見合い、人々が無理なく続けられる「ちょうどよさ」を設計することが、本当に強いセキュリティです。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <div class="summary">
+          <ul>
+            <li>守るべきは機密性（盗み見されない）・完全性（改ざんされない）・可用性（止められない）のCIA3要素。秘密を守るだけが、セキュリティではない。</li>
+            <li>攻防は非対称。守る側は全ての穴をふさぎ続ける必要があるが、攻める側は一つ見つければ勝つ。時間もコストも攻撃側に有利で、守りは構造的に不利。</li>
+            <li>最弱の環は「人間」。多くの攻撃は暗号でなく心理（親切心・恐怖・焦り）を突く（ソーシャルエンジニアリング）。鎖は最も弱い環の強さしかない。</li>
+            <li>完璧な防御はない前提で、何重にも守る多層防御。最小権限の原則（必要最小限の権限しか与えない）で、破られたときの被害範囲を小さくしておく。「侵入される前提で、被害を抑え早く復旧」へ。</li>
+            <li>技術だけでは守れない。日々の運用の緩みが事故を招き、つながった相手の穴（サプライチェーン）も自分の安全を左右する。セキュリティは習慣と組織文化、社会全体の問題。</li>
+            <li>安全と便利はトレードオフ。厳しすぎる守りは形骸化する。「守る価値に見合い、無理なく続けられる」ちょうどよさが肝心。</li>
+            <li>個人の基本：更新をこまめに当てる・パスワードを使い回さず多要素認証・あやしいものを疑う・バックアップ。地道さが最強の防御。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>セキュリティの3要素「CIA」とは何か。それぞれ一言で説明せよ。</li>
+            <li>「守る側が構造的に不利」と言われるのは、攻撃側とのどんな非対称性があるからか。</li>
+            <li>どんなに強力な暗号を使っても破られてしまう、最大の弱点は何か。なぜか。</li>
+            <li>「侵入を100%防ぐ」から、現代のセキュリティの主眼はどこへ移ったか。第2部第4講の発想と関連づけて。</li>
+            <li>個人が今日からできる、効果の高いセキュリティ対策を2つ挙げよ。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) 機密性＝許された人だけが見られる、完全性＝勝手に書き換えられない、可用性＝使いたいときに使える。<br>
+            (2) 守る側は全ての穴をふさがねばならないが、攻める側はたった一つの穴を見つければよい。100点を取り続けないと負ける構造。<br>
+            (3) 人間。鍵（パスワード等）を持つ人がだまされれば、金庫（暗号）が頑丈でも開いてしまうから。鎖は最も弱い環の強さしかない。<br>
+            (4) 「侵入される前提で、被害を最小化し、早く気づいて復旧する」へ。第2部第4講「壊れても大丈夫なように作る」と同じ発想。<br>
+            (5) 例：OS・アプリの更新をこまめに当てる／パスワードを使い回さず多要素認証を使う／あやしいリンクを疑う／バックアップを取る、など2つ。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">ケビン・ミトニック『欺術（ぎじゅつ）― 史上最強のハッカーが明かす禁断の技法』</span>（ソフトバンク）
+          ― 「最大の脆弱性は人間」を、当事者が解き明かす一冊。ソーシャルエンジニアリングを防御側の視点で学べる。</li>
+          <li><span class="bk">ブルース・シュナイアー『セキュリティはなぜやぶられたのか』</span>（日経BP）
+          ― セキュリティを「技術」でなく「トレードオフと人間の問題」として考える、視野の広い名著。本講の核心。</li>
+          <li><span class="bk">IPA（情報処理推進機構）『情報セキュリティ10大脅威』（毎年公開）</span>
+          ― 日本の公的機関が、その年の代表的な脅威と対策をまとめた無料資料。最新の現実を知るのに最適。</li>
+          <li><span class="bk">『うかる！情報セキュリティマネジメント』系の入門書</span>
+          ― CIAや多層防御、組織的対策など、セキュリティの基礎を体系的に学べる。資格対策書は良い入門になる。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part2_lecture4.html"><span class="lab">← 前の講</span>第2部 第4講 ソフトウェア開発の現場</a>
+        <a class="nx" href="part2_lecture6.html"><span class="lab">次の講 →</span>第2部 第6講 認証・パスワード・パスキー</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第2部 第5講「セキュリティはなぜ敗北するのか」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        本講は防御・対策の理解を目的としており、攻撃を助長する意図はありません。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>
