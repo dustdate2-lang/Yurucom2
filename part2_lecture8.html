@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第2部 第8講 ネット回線・Wi-Fi・通信の実用知識 ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="「ネットが遅い」の正体は何か。回線速度・Wi-Fi・ルーター・DHCP・公衆Wi-Fiの危険までを実用的に学ぶ。ゆるコンピュータ科学講義 第2部 第8講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#2f6f6a; --accent-soft:#dcebe9;
+    --accent2:#c8503a; --accent2-soft:#f7e3dd;
+    --code-bg:#21302e; --code-ink:#eaf3f1;
+    --sidebar:#1f2b29; --sidebar-ink:#e3ece9; --sidebar-muted:#94a7a3;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#111413; --paper:#172220; --ink:#e6ece9; --muted:#9aa9a5;
+    --line:#283633; --accent:#6fb6ad; --accent-soft:#16302c;
+    --accent2:#e8775f; --accent2-soft:#3a221c;
+    --code-bg:#0c1413; --code-ink:#eaf3f1;
+    --sidebar:#0c1413; --sidebar-ink:#e3ece9; --sidebar-muted:#7d8e8a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#245a55 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"))) Wi-Fi";position:absolute;right:14px;bottom:-6px;font-family:ui-monospace,monospace;font-size:3.2rem;font-weight:800;color:rgba(255,255,255,.10)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.92;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent-soft);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent2);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent2-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#172220}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent2);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第2部 第8講 ネット回線とWi-Fi</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第2部 第8講</span><br>ネット回線・Wi-Fi・通信の実用知識</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-speed">通信速度の正しい読み方</a></li>
+      <li><a href="#s-wifi">Wi-Fi ― 無線のしくみと特性</a></li>
+      <li><a href="#s-router">ルーターとDHCP</a></li>
+      <li><a href="#s-slow">なぜ速度が出ないのか</a></li>
+      <li><a href="#s-publicwifi">公衆Wi-Fiの危険</a></li>
+      <li><a href="#s-mobile">モバイル通信 ― 4Gと5G</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第2部 応用・社会・現代技術編 ／ 第8講</div>
+        <h1>ネット回線・Wi-Fi・通信の実用知識<br>― 「ネットが遅い」の正体</h1>
+        <p>「○Gbps」って結局どのくらい？ Wi-Fiが遅いのは誰のせい？ 日常の疑問に、原理から答える回。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― いちばん身近な「困りごと」から</h2>
+        <p>第1部第13講で、私たちはインターネットの「原理」――パケット・IP・DNS・TCP/IPを学びました。
+        この第8講では、その原理を土台に、もっと<strong>日常の実用</strong>に踏み込みます。
+        「ネットが遅い」「Wi-Fiが切れる」「○Gbpsって結局どれくらい？」「カフェのWi-Fiって安全なの？」――
+        誰もが一度は抱く、こうした素朴な疑問に、原理から答えていきます。</p>
+        <p>通信は、もはや電気や水道と並ぶ<strong>生活インフラ</strong>です。
+        にもかかわらず、その仕組みは見えにくく、「なんとなく遅い」「とりあえず再起動」で済ませがち。
+        でも、少し原理を知るだけで、<span class="em">「どこが原因で遅いのか」「どうすれば改善するのか」「どこに気をつければ安全か」</span>が、
+        自分で判断できるようになります。
+        この講は、第1部第1講（シャノンの通信路容量）や第13講（インターネット）の知識が、
+        まさに「家のWi-Fiが遅い理由」という、いちばん身近な形で役に立つ回なのです。</p>
+        <p class="lead-in">通信速度の読み方 → Wi-Fiの特性 → ルーターとDHCP → 遅さの正体 → 公衆Wi-Fiの危険 → 4G/5G。
+        生活インフラとしての通信を、自分でコントロールできる知識にしていきます。</p>
+      </section>
+
+      <!-- 速度 -->
+      <section id="s-speed">
+        <h2>通信速度の正しい読み方 ― bps とベストエフォート</h2>
+        <p>まず、通信速度の単位から。広告でよく見る「1Gbps」「100Mbps」の<strong>bps</strong>は、
+        第1部第2講で学んだとおり「ビット毎秒（bits per second）」――1秒間に何ビット送れるか、です。
+        ここで、第1部第2講の重要な注意が効いてきます。
+        <span class="em">通信速度は「ビット（小文字b）」、ファイルサイズは「バイト（大文字B）」で、8倍違う。</span>
+        だから「1Gbpsの回線」でも、ファイルのダウンロードは理論上でも毎秒約125メガ"バイト"どまり。
+        「1Gbpsなのに、思ったほど速くない」のは故障ではなく、この <code>÷8</code> の計算なのです。</p>
+        <p>もうひとつ大事なのが<span class="term">ベストエフォート</span>という言葉。
+        これは「最大でこれだけ出ます（が、保証はしません）」という意味です。
+        「最大1Gbps」とは「いつでも1Gbps出る」ではなく、「条件が最高に良ければ、そこまで出るかも」という上限値。
+        実際の速度は、時間帯の混雑、機器の性能、距離などで、つねに変動します。
+        <strong>カタログの数字は"理論上の最高速"であって、"いつもの実速"ではない</strong>――この感覚が、過剰な期待や誤解を防ぎます。</p>
+        <p>「上り」と「下り」の区別も知っておきましょう。
+        <strong>下り（ダウンロード）</strong>は、ネットから自分へ。動画視聴やWeb閲覧で使う。
+        <strong>上り（アップロード）</strong>は、自分からネットへ。写真の投稿やビデオ会議で使う。
+        多くの家庭向け回線は「下りが速く、上りは控えめ」に設計されています。
+        ふだんは下り中心なので問題ありませんが、「ビデオ会議で自分の映像が乱れる」ようなときは、上りの細さが原因のことがあるのです。</p>
+        <p>速度と並んで重要なのに見落とされがちなのが、<strong>遅延（レイテンシ、ping値）</strong>です。
+        速度が「1秒間に運べるデータの量（道路の広さ）」だとすれば、遅延は「データが届くまでの反応の速さ（信号が往復する時間）」。
+        この2つは別物です。たとえば、大きな荷物を大量に運ぶには道幅（速度）が要りますが、
+        オンラインゲームやビデオ通話のように「すぐ反応してほしい」用途では、道幅より<strong>反応の速さ（低遅延）</strong>が効きます。
+        「速度は出ているのに、ゲームの操作がもたつく」ようなときは、遅延が大きいことが原因かもしれません。
+        この遅延の根っこには、第1部第13講で触れた<span class="em">「信号は光の速さを超えられない」という物理の限界</span>があります。
+        地球の裏側のサーバーとは、どうしても往復の時間がかかる。
+        だから、反応速度が命のサービスは、利用者に近い場所にサーバーを置く工夫をします（この話は、次々講のデータセンターやCDNでくわしく扱います）。</p>
+      </section>
+
+      <!-- Wi-Fi -->
+      <section id="s-wifi">
+        <h2>Wi-Fi ― 無線のしくみと、避けられない特性</h2>
+        <p>家でネットを使うとき、多くの人はケーブルではなく<span class="term">Wi-Fi</span>（無線）でつないでいます。
+        Wi-Fiは「家の中の最後の数メートルを、電波で無線にする」技術でした（第1部第13講）。
+        便利ですが、電波であるがゆえの、避けられない特性があります。</p>
+        <p>第一に、<strong>距離と障害物に弱い</strong>。電波は、ルーターから離れるほど、また壁や床を隔てるほど弱くなります。
+        「2階のこの部屋だけ遅い」のは、たいてい電波が届きにくいから。
+        第二に、<strong>混信に弱い</strong>。電波は共有の資源で、近所のWi-Fiや、電子レンジ（同じ周波数帯を使う）と干渉することがあります。
+        第三に、<strong>みんなで分け合う</strong>。同じWi-Fiに10台つなげば、その帯域を分け合うので、一台あたりは細くなります。</p>
+        <p>Wi-Fiには、主に2つの<strong>周波数帯</strong>があり、性格が違います。
+        これを知っておくと、トラブルの切り分けに役立ちます。</p>
+        <table class="tbl">
+          <caption>表1：Wi-Fiの2つの周波数帯（ざっくりした傾向）</caption>
+          <tr><th>周波数帯</th><th>速さ</th><th>届きやすさ</th><th>向いている場面</th></tr>
+          <tr><td>2.4GHz帯</td><td>控えめ</td><td>遠く・壁に強い</td><td>離れた部屋、障害物が多い場所</td></tr>
+          <tr><td>5GHz帯</td><td>速い</td><td>近距離向き・壁に弱い</td><td>ルーターの近く、速度がほしいとき</td></tr>
+        </table>
+        <p>「速いはずの5GHzにつないだのに、遠い部屋だと逆に不安定」――こんなときは、壁に強い2.4GHzに切り替えると安定することがあります。
+        <span class="em">速さと、届きやすさは、ここでもトレードオフ</span>。
+        電波の物理特性を少し知るだけで、「なぜか遅い」が「こういう理由で遅いから、こう対処しよう」に変わるのです。</p>
+        <p>ちなみに「Wi-Fi」という名前には、意外な事実があります。じつは<strong>何かの略語ではありません</strong>。
+        オーディオの高音質を表す「Hi-Fi（ハイファイ）」の響きにあやかって、語呂で付けられた、いわば商標上の愛称なのです。
+        正式な技術名は別にあり、世界共通の規格（第1部第2講の文字コード、第13講のプロトコルと同じく、「みんなで決めた約束」）として定められています。
+        この共通規格があるからこそ、どの国のどのメーカーの機器でも、同じWi-Fiにつながる。
+        ここでも「開かれた標準が、世界をつなぐ」という、第2部を貫くテーマが効いています。
+        <span class="em">身近な技術ほど、その名前や成り立ちに、面白い物語が隠れている</span>ものです。</p>
+        <p>もうひとつ、無線ならではの注意点が<strong>セキュリティ</strong>です。
+        電波は空間に飛び交うので、有線より「盗み見されやすい」性質があります。
+        だから家庭のWi-Fiには必ずパスワード（暗号化）を設定し、初期設定のままにしないことが大切。
+        鍵をかけていないWi-Fiは、近所の誰かにタダ乗りされたり、通信をのぞかれたりする恐れがあります（くわしくは後述の公衆Wi-Fiの項で）。
+        便利な無線には、こうした目に見えないリスクが伴うことも、あわせて知っておきましょう。</p>
+      </section>
+
+      <!-- ルーター -->
+      <section id="s-router">
+        <h2>ルーターとDHCP ― 家庭内ネットワークの司令塔</h2>
+        <p>家庭内ネットワークの中心が<span class="term">ルーター</span>です（第1部第13講）。
+        ルーターは、家の中の機器と、外のインターネットをつなぐ"玄関"であり"交通整理係"。
+        その仕事のひとつが、家の中の各機器に<strong>住所（IPアドレス）を自動で配る</strong>ことです。
+        この自動配布の仕組みを<span class="term">DHCP</span>と呼びます。</p>
+        <p>もしDHCPがなければ、新しい機器をつなぐたびに、人間が手で「あなたは192.168.1.5番ね」とIPアドレスを設定しなければなりません。
+        DHCPは、これを自動でやってくれる。
+        だから私たちは、スマホやパソコンをWi-Fiにつなぐだけで、何も設定せずにネットが使える。
+        <span class="em">「つなぐだけで使える」という当たり前の便利さの裏で、DHCPという仕組みが、住所を自動で割り振っている</span>のです。
+        ちなみに、家庭内の機器のIPアドレスがよく <code>192.168.…</code> で始まるのは、これが「家の中だけで使う、内輪の住所」だと決められているから（第1部第13講のIPv4枯渇対策、NATの話）。</p>
+        <p>このルーターには、じつは前の講で学んだ<strong>セキュリティ</strong>の要素も詰まっています。
+        ルーターは、家の中と外の境界に立つ"門番"として、外からの不正なアクセスを防ぐ壁（ファイアウォール）の役割も果たしているのです。
+        だからこそ、ルーター自身の守りが甘いと、家全体が危険にさらされます。
+        <span class="em">ルーターの管理画面のパスワードを初期設定（「admin」など）のままにしておくのは、家の門の鍵を、メーカー出荷時のままにしておくようなもの</span>。
+        第2部第7講で見たとおり、攻撃者は、こうした「初期設定の放置」という、鍵のかかっていない裏口をまず探します。
+        ルーターの管理パスワードを変える、ファームウェア（ルーターを動かすソフト）を更新する――こうした地味な手入れが、家庭のネットワーク全体を守る土台になります。
+        ふだん意識しない箱ですが、ルーターは家のデジタルな安全の、最前線なのです。</p>
+        <div class="note">
+          <span class="lbl">「困ったら再起動」が効く理由</span>
+          ネットの調子が悪いとき「ルーターを再起動」が定番ですが、これには理由があります。
+          ルーターは小さなコンピュータで、長く動かすうちに、内部の一時的な情報が詰まったり、DHCPの割り当てが混乱したりすることがある。
+          再起動すると、これらがリセットされ、すっきりした状態でやり直せる。
+          第2部第4講の「コンピュータは複雑で、状態が乱れることがある」が、ここにも当てはまるのです。
+        </div>
+      </section>
+
+      <!-- 遅さの正体 -->
+      <section id="s-slow">
+        <h2>なぜ速度が出ないのか ― ボトルネックを探す</h2>
+        <p>「ネットが遅い」とき、原因は一か所とは限りません。
+        通信は、いくつもの区間が<strong>鎖のようにつながった経路</strong>で、その<span class="em">最も細い部分（ボトルネック）が、全体の速度を決めてしまう</span>のです。
+        第1部第4講のノイマン・ボトルネックと、まったく同じ考え方。
+        どんなに太い区間があっても、どこか一か所が細ければ、そこで頭打ちになります。</p>
+        <p>遅さの原因になりうる場所を、自分側から順にたどってみましょう。</p>
+        <ol>
+          <li><strong>自分の機器</strong>：古い・処理が重い・つなぎすぎ。</li>
+          <li><strong>Wi-Fiの電波</strong>：距離・障害物・混信（前述）。まずはここを疑うのが定番。</li>
+          <li><strong>ルーター</strong>：性能不足・状態の乱れ（再起動で改善することも）。</li>
+          <li><strong>契約回線・プロバイダ</strong>：契約速度の上限、時間帯の混雑（夜にみんなが使う）。</li>
+          <li><strong>相手側のサーバー</strong>：アクセス殺到で、向こうが重い（自分のせいではない）。</li>
+        </ol>
+        <p>大事なのは、<strong>「自分の手元から、外へ向かって、一つずつ切り分けていく」</strong>こと。
+        スマホは速いのにパソコンだけ遅いなら、原因はパソコン側。
+        どの機器も夜だけ遅いなら、回線の混雑かもしれない。
+        <span class="em">「とりあえず再起動」の前に、どこが細いのかを考える習慣</span>が、無駄な対処を減らします。
+        そして、究極の上限を決めているのが、第1部第1講で学んだ<strong>シャノンの通信路容量</strong>。
+        電波の帯域とノイズで決まる物理的な天井があり、それを超えることは原理的にできません。
+        「もっと速くしたい」という願いの根っこにも、情報理論の限界がいるのです。</p>
+        <div class="trivia">
+          <p>「夜になるとネットが遅い」と感じたことはありませんか。これは多くの場合、あなたのせいでも、機器の故障でもありません。
+          夜の時間帯は、みんながいっせいに動画を観たりゲームをしたりするため、回線が<strong>混雑</strong>するのです。
+          道路が夕方に渋滞するのと、まったく同じ理屈。
+          回線という"道路"は、近所や地域でみんなが分け合っているので、利用が集中する時間帯は、一人あたりの速度が落ちます。
+          <span class="em">「自分の回線の最大速度」と「実際に出る速度」がズレる大きな理由が、この"共有の混雑"</span>なのです。
+          だから、大きなファイルのダウンロードや更新は、すいている時間帯（深夜や早朝）にやると速い、という生活の知恵も生まれます。
+          通信の仕組みを知ると、こうした日常の「なぜ？」が、次々と腑に落ちていきます。</p>
+        </div>
+      </section>
+
+      <!-- 公衆Wi-Fi -->
+      <section id="s-publicwifi">
+        <h2>公衆Wi-Fiの危険 ― タダより怖いものはある</h2>
+        <p>カフェや駅、ホテルの<strong>無料Wi-Fi（公衆Wi-Fi）</strong>。便利ですが、第2部第5講のセキュリティの視点で見ると、注意が必要です。</p>
+        <p>危険は大きく2つ。ひとつは<strong>通信の盗み見</strong>。
+        暗号化されていない公衆Wi-Fiでは、同じネットワークにいる誰かに、通信の中身をのぞかれる恐れがあります。
+        もうひとつが<strong>偽アクセスポイント</strong>。
+        攻撃者が、お店の名前にそっくりな偽のWi-Fi（「Free_Cafe_Wifi」など）を設置し、
+        それと知らずつないだ人の通信を、まるごと盗み見る、という手口です（第2部第5講の「なりすまし」の無線版）。</p>
+        <p>では、どう守ればいいのか。答えは、すでに第1部・第2部で学んだ知識の中にあります。</p>
+        <ul>
+          <li><strong>HTTPS（鍵マーク）を確認する</strong>：通信が暗号化されていれば（第1部第10講）、たとえ盗み見されても中身は読まれない。多くのサイトは標準でHTTPS化されています。</li>
+          <li><strong>VPNを使う</strong>：自分の通信全体を暗号化のトンネルで包む技術。公衆Wi-Fiでも、安全に通信できる。</li>
+          <li><strong>重要な操作（ネット銀行など）は避ける</strong>か、モバイル通信（自分の回線）に切り替える。</li>
+        </ul>
+        <p><span class="em">「無料Wi-Fiは、信頼できないネットワークだ」と最初から思っておく</span>――これは第2部第5講のゼロトラスト（何も信頼しない）の、個人版です。
+        とくにVPN（Virtual Private Network）は、通信を暗号化して「自分専用の安全な通り道」を作る技術で、
+        第1部第10講の暗号と、第13講の通信が組み合わさった応用。
+        公衆Wi-Fiを使うなら、ぜひ覚えておきたい守りの道具です。
+        知識があれば、便利な公衆Wi-Fiを、危険を抑えて賢く使えるのです。</p>
+        <p>VPNは、ビジネスや国境を越えた場面でも活躍します。
+        会社の外から社内ネットワークに安全につなぐとき、あるいは海外から自国のサービスを使うときなどに、
+        「離れた場所どうしを、暗号化されたトンネルで結び、あたかも同じネットワークにいるかのように扱う」のがVPNです。
+        ただし、第2部第7講で学んだとおり、VPN自体も善悪両面の道具。
+        プライバシーを守る正当な使い方がある一方、規制を回避する目的でも使われ、議論を呼ぶこともあります。
+        <span class="em">技術は使い手しだい</span>――ここでも、本講義を貫く視点が当てはまります。
+        大切なのは、その仕組みと限界を理解したうえで、自分の目的に合わせて、正しく使うことです。</p>
+      </section>
+
+      <!-- モバイル -->
+      <section id="s-mobile">
+        <h2>モバイル通信 ― 4Gと5G、そしてその先</h2>
+        <p>外出先でスマホがネットにつながるのは、<strong>モバイル通信</strong>（携帯電話の回線）のおかげです。
+        街中に立つ基地局（アンテナ）と電波でやり取りし、移動しても、次々と基地局を引き継いでつながり続けます。
+        この技術は世代を重ねてきました。<strong>3G → 4G → 5G</strong>と、おおむね10年ごとに進化し、速度は桁違いに上がってきました。</p>
+        <p>最新の<span class="term">5G</span>の特徴は、「速い」だけではありません。3つの強みがあります。
+        <strong>①超高速</strong>（大容量データを一瞬で）、<strong>②低遅延</strong>（反応が速い。遠隔操作や自動運転に重要）、
+        <strong>③多数同時接続</strong>（たくさんの機器を一度につなげる。あらゆるモノがネットにつながるIoTの土台）。
+        とくに「低遅延」は、第1部第13講で触れた「光の速さの限界」とも関わる、重要な進化です。
+        <span class="em">5Gは、人と人の通信を超えて、「あらゆるモノがつながる社会」を支えるインフラ</span>として期待されているのです。</p>
+        <p>ただし、5Gにも課題があります。超高速な電波ほど直進性が強く、遠くまで届きにくいため、たくさんの基地局が必要になる。
+        だから「5G対応エリア」がなかなか広がらない、という現実もあります。
+        ここでも「速さ」と「届きやすさ（カバー範囲）」のトレードオフが顔を出しています。
+        技術は、いつも良いことずくめではなく、得たものの裏に、必ず代償がある――本講義を貫くこの視点は、最新の5Gにも、ちゃんと当てはまるのです。</p>
+        <p>「Wi-Fiとモバイル通信、何が違うの？」という疑問も、ここで整理しておきましょう。
+        どちらも電波で無線通信する点は同じですが、役割が違います。
+        <strong>Wi-Fi</strong>は、自宅や店の「玄関（ルーター）」まで届いた回線を、その周囲の数メートル〜十数メートルに無線で配るもの。
+        <strong>モバイル通信</strong>は、街じゅうに立つ基地局と直接つながり、移動しながらでも使えるもの。
+        スマホは、自宅ではWi-Fi、外ではモバイル通信、と自動で切り替えています。
+        <span class="em">Wi-Fiは「決まった場所で、契約データ量を気にせず使える」、モバイルは「どこでも使えるが、データ量に上限がある」</span>のが一般的な特徴。
+        この違いを知っておくと、「外出中はWi-Fiに見せかけた偽物に注意」「動画は自宅のWi-Fiで見てデータ量を節約」など、賢い使い分けができます。
+        2つの無線を、場面に応じて使い分ける――これも、通信を生活の道具として乗りこなす知恵です。</p>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用 ― 自分で切り分け、賢く選ぶ</h2>
+        <p>本講の知識は、すぐに日常で役立ちます。いくつか、具体的な応用を見ておきましょう。</p>
+        <h3>「遅い」を自分で診断する</h3>
+        <p>「ネットが遅い」とき、やみくもに再起動する前に、本講の切り分けを思い出してください。
+        スマホは速いか？　Wi-Fiの電波は強いか？　ルーターに近づくと改善するか？　夜だけ遅いか？――
+        こうして一つずつ確かめれば、原因が「自分の機器」「Wi-Fi」「回線の混雑」「相手のサーバー」のどこにあるか、自分で見当をつけられます。
+        <span class="em">原因が分かれば、対処も的確になる</span>。これだけで、無駄なイライラと出費が、ぐっと減ります。</p>
+        <h3>料金プランや回線を、賢く選ぶ</h3>
+        <p>「最大○Gbps」の数字に踊らされず、自分の使い方に合った契約を選べるようにもなります。
+        動画や大容量データをよく扱うなら速度（とくに安定性）を、外で軽く使う程度ならデータ容量を重視する。
+        「ベストエフォート＝理論上の最高速」だと知っていれば、「実際にはそこまで出ない」と織り込んで判断できる。
+        通信は生活インフラだからこそ、その知識は、毎月の支出と、日々の快適さに、直接効いてくるのです。
+        ―― そして安全面では、本講の「公衆Wi-Fiは信頼しない」を忘れずに。便利さと安全を、自分の判断で両立させていきましょう。</p>
+        <h3>通信は、見えないけれど生活を支えている</h3>
+        <p>最後に、視野を少し広げておきましょう。
+        私たちが「遅い」「つながらない」とイライラする通信は、いまや電気・水道と並ぶ、生活に不可欠なインフラです。
+        災害時に通信が途絶えると、安否確認も情報収集もできず、命に関わることもあります。
+        だからこそ、通信事業者は、一部が壊れても全体が止まらないよう、第1部第13講で学んだ「分散」と「冗長化」で、ネットワークを設計しています。
+        <span class="em">ふだん意識しない「つながって当たり前」の裏には、それを支える膨大な設備と、人々の努力がある</span>のです。
+        本講で学んだ実用知識は、単に「自分が快適に使う」ためだけでなく、
+        この巨大なインフラがどう成り立っているかを理解し、賢い利用者・市民になるための、第一歩でもあります。
+        通信を当たり前と思わず、その仕組みに少し目を向けてみる――それが、デジタル社会を生きるうえでの、確かな足場になるのです。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「1Gbpsの回線なら、1秒で1GBのファイルをダウンロードできる」</p>
+          <p class="a">できません。bps（ビット）とB（バイト）は8倍違うので、理論上でも毎秒約125MB。
+          さらにベストエフォートなので、実際はもっと控えめです。単位の取り違えに注意。</p>
+          <p class="q">誤解②：「Wi-Fiは5GHzのほうが新しくて速いから、常にそっちが良い」</p>
+          <p class="a">場面しだいです。5GHzは速いが壁に弱く、遠い部屋では不安定なことも。
+          障害物の多い場所や離れた部屋では、遅くても壁に強い2.4GHzが安定します。速さと届きやすさはトレードオフ。</p>
+          <p class="q">誤解③：「鍵マーク（HTTPS）があれば、公衆Wi-Fiでも完全に安全」</p>
+          <p class="a">通信の中身は守られますが、万能ではありません。偽サイトやアプリの脆弱性などのリスクは残ります。
+          重要な操作は公衆Wi-Fiを避けるか、VPNやモバイル通信を併用するのが安心です。</p>
+          <p class="q">誤解④：「ネットが遅いのは、いつも契約回線（プロバイダ）のせい」</p>
+          <p class="a">原因は経路のどこにでもありえます。自分の機器、Wi-Fiの電波、ルーター、相手のサーバー…。
+          いちばん細い部分（ボトルネック）が全体を決めるので、手元から一つずつ切り分けるのが解決の近道です。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <div class="summary">
+          <ul>
+            <li>通信速度はbps（ビット毎秒）。ファイル（バイト）と8倍違う。「最大○Gbps」はベストエフォート（理論上限）で、実速はつねに変動する。反応の速さを表す「遅延」は速度とは別物。</li>
+            <li>Wi-Fiは電波ゆえに距離・障害物・混信・分け合い（混雑）に弱い。2.4GHz（遠く・壁に強い）と5GHz（速いが近距離向き）を、場面で使い分ける。家庭のWi-Fiは必ず暗号化を。</li>
+            <li>ルーターが家庭内ネットの司令塔であり、外との境界を守る門番（ファイアウォール）。DHCPがIPアドレスを自動配布するから「つなぐだけ」で使える。管理パスワードと更新の手入れが大切。</li>
+            <li>遅さは経路の最も細い部分（ボトルネック）で決まる（第1部第4講）。自分の機器→Wi-Fi→ルーター→回線の混雑→相手のサーバー、と手元から外へ一つずつ切り分けるのが診断の基本。夜に遅いのは"共有の混雑"。</li>
+            <li>公衆Wi-Fiは「信頼しない」前提で使う。盗み見や偽アクセスポイントに注意し、HTTPS確認・VPN・重要操作は避ける（第2部第5講）。通信の最終的な上限は、第1部第1講のシャノンの通信路容量で決まる。</li>
+            <li>モバイルは3G→4G→5Gへ進化。5Gは超高速・低遅延・多数同時接続（IoTの土台）だが、高速な電波ほど届きにくく、エリア拡大に課題（速さと範囲のトレードオフ）。Wi-Fiとモバイルは役割が違い、場面で使い分ける。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>「500Mbpsの回線」で、800MB（メガバイト）の動画は、理論上最短で何秒かかるか。単位に注意して概算せよ。</li>
+            <li>速いはずの5GHzのWi-Fiが、離れた部屋では不安定になりやすいのはなぜか。</li>
+            <li>「DHCP」がなかったら、新しい機器をネットにつなぐとき、何が面倒になるか。</li>
+            <li>「ネットが遅い」とき、原因を効率よく特定するには、どんな順番で切り分けるとよいか。</li>
+            <li>カフェの無料Wi-Fiで、ネット銀行にログインするのが危ういのはなぜか。安全に使うにはどうするか。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) 800MB＝<code>800×8＝6400メガビット＝6.4ギガビット</code>。500Mbps＝0.5Gbpsなので <code>6.4÷0.5＝約12.8秒</code>（実際はベストエフォートでもう少しかかる）。<br>
+            (2) 5GHzの電波は壁などの障害物に弱く、距離が離れると急に弱まるから。遠い部屋では、壁に強い2.4GHzのほうが安定することがある。<br>
+            (3) 機器ごとに、手作業でIPアドレス（住所）を設定しなければならない。DHCPはこれを自動化し、「つなぐだけ」を実現している。<br>
+            (4) 手元から外へ。自分の機器→Wi-Fiの電波→ルーター→契約回線/混雑→相手のサーバー、と一つずつ。最も細い部分（ボトルネック）を探す。<br>
+            (5) 暗号化されていないWi-Fiや偽アクセスポイントで、通信を盗み見られる恐れがあるから。HTTPSを確認し、VPNを使うか、モバイル通信に切り替えるのが安全。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">『マスタリングTCP/IP 入門編』（井上直也ほか）</span>（オーム社）
+          ― 通信の基礎を体系的に学べる定番。本講の実用知識の土台にある原理を、きちんと押さえられる。</li>
+          <li><span class="bk">『図解でわかるネットワークのすべて』系の実用書</span>
+          ― ルーター・Wi-Fi・回線の仕組みを、図解でやさしく整理した一冊。家庭のトラブル対処にも役立つ。</li>
+          <li><span class="bk">総務省・各通信事業者の「公衆無線LAN利用に関する注意」</span>
+          ― 公衆Wi-Fiの危険と対策を、公的機関がまとめた無料の解説。第2部第5講と合わせて。</li>
+          <li><span class="bk">『あたらしい通信（5G/IoT）』系の入門書</span>
+          ― 5GやIoTが社会をどう変えるかを、平易に展望する一冊。本講の先（第2部後半のインフラ）にもつながる。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part2_lecture7.html"><span class="lab">← 前の講</span>第2部 第7講 ハッキングと攻撃者の世界</a>
+        <a class="nx" href="part2_lecture9.html"><span class="lab">次の講 →</span>第2部 第9講 匿名通信・暗号通貨・信頼の設計</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第2部 第8講「ネット回線・Wi-Fi・通信の実用知識」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

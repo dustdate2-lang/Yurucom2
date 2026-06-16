@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第2部 第10講 半導体・メモリ・GPU・TPU ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="砂から生まれる頭脳。トランジスタ・ムーアの法則・メモリの階層・CPU/GPU/TPUを「物理と情報の出会い」という視点で学ぶ。ゆるコンピュータ科学講義 第2部 第10講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#2f6f6a; --accent-soft:#dcebe9;
+    --accent2:#c8503a; --accent2-soft:#f7e3dd;
+    --code-bg:#21302e; --code-ink:#eaf3f1;
+    --sidebar:#1f2b29; --sidebar-ink:#e3ece9; --sidebar-muted:#94a7a3;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#111413; --paper:#172220; --ink:#e6ece9; --muted:#9aa9a5;
+    --line:#283633; --accent:#6fb6ad; --accent-soft:#16302c;
+    --accent2:#e8775f; --accent2-soft:#3a221c;
+    --code-bg:#0c1413; --code-ink:#eaf3f1;
+    --sidebar:#0c1413; --sidebar-ink:#e3ece9; --sidebar-muted:#7d8e8a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#245a55 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"▦";position:absolute;right:26px;bottom:-4px;font-size:4rem;font-weight:800;opacity:.14}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.92;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent-soft);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent2);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent2-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#172220}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent2);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第2部 第10講 半導体</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第2部 第10講</span><br>半導体・メモリ・GPU・TPU</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-transistor">トランジスタ ― すべての土台</a></li>
+      <li><a href="#s-moore">微細化とムーアの法則</a></li>
+      <li><a href="#s-memory">メモリの階層</a></li>
+      <li><a href="#s-cpugpu">CPUとGPU ― 万能と並列</a></li>
+      <li><a href="#s-tpu">専用チップとAIの時代</a></li>
+      <li><a href="#s-fab">どうやって作るのか</a></li>
+      <li><a href="#s-geo">現代への応用 ― 半導体地政学</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第2部 応用・社会・現代技術編 ／ 第10講</div>
+        <h1>半導体・メモリ・GPU・TPU<br>― 砂から生まれた「考える石」</h1>
+        <p>スマホもAIも、その正体は一枚の石。砂を精製した結晶の上に、想像を絶する数の小さなスイッチを刻んだもの。物理と情報が出会う場所をのぞいてみよう。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <section id="s-intro">
+        <h2>はじめに ― いちばん身近で、いちばん見えないもの</h2>
+        <p>あなたが今この文章を読んでいる画面の奥には、必ず<strong>半導体チップ</strong>があります。
+        スマートフォン、パソコン、テレビ、自動車、炊飯器、エレベーター、信号機――現代社会で電気を使って「何かを判断する」機械には、ほぼ例外なくチップが入っています。
+        それなのに、私たちはふだん、その姿をまったく見ることがありません。
+        プラスチックの筐体に覆われ、さらにその中の黒い樹脂に封じられた、数ミリ角の灰色の石。それが世界を動かしているとは、なかなか実感がわきません。</p>
+        <p>第1部では、コンピュータを<span class="em">「0と1で情報を表し、論理で計算する仕組み」</span>として、いわば<strong>情報の側</strong>から眺めてきました。
+        足し算がどう論理回路になるか（第1部第3講）、CPUが命令をどう実行するか（第1部第11講）、メモリがどう情報を蓄えるか（第1部第12講）。
+        しかしそこには、ひとつ大きな問いが残っていました。
+        <span class="em">そもそも、その「論理」や「0と1」は、現実の世界では何でできているのか？</span>という問いです。</p>
+        <p>本講のテーマは、まさにそこです。
+        抽象的だった「スイッチ」や「ビット」が、現実には<strong>トランジスタ</strong>という小さな部品として、砂からできた結晶の上に刻まれている。
+        その物理的な実体に、いよいよ踏み込みます。
+        そして、なぜAIの時代になって「GPU」や「半導体」という言葉がニュースをにぎわせ、国家間の争いの種にまでなっているのか――その理由も、この一枚の石から解き明かしていきましょう。
+        本講の合言葉は、第1部から続く四つのテーマのうちの一つ、<strong>「すべては情報」、そしてそれを支える「物理」</strong>です。</p>
+        <div class="lead-in">情報は、どこかで必ず物質に宿る。紙の上のインク、空気の振動、電線を流れる電子。コンピュータにとって、その「宿り先」が半導体なのです。</div>
+      </section>
+
+      <section id="s-transistor">
+        <h2>トランジスタ ― すべての土台にある小さなスイッチ</h2>
+        <p>コンピュータの正体を一言でいえば、<strong>「ものすごくたくさんのスイッチの集まり」</strong>です。
+        第1部第3講で、0と1だけであらゆる計算ができること、そしてそれが「オンとオフ」を切り替えるスイッチの組み合わせで作れることを見ました。
+        では、その「スイッチ」を、現実にはどうやって用意するのでしょうか。</p>
+        <p>昔のコンピュータは、本物の機械式スイッチや、<strong>真空管</strong>という電球のような部品を使っていました。
+        しかし真空管は、大きく、熱く、壊れやすく、電気を大量に食う。
+        世界初級の大型計算機ENIAC（1945年）は、約1万8千本の真空管を使い、部屋いっぱいの大きさで、しょっちゅう真空管が切れて止まったといいます。
+        この「スイッチ問題」を一気に解決したのが、1947年に発明された<strong>トランジスタ</strong>でした。</p>
+        <div class="def"><b>トランジスタとは</b><br>電気の流れを、別の電気信号で「流す／止める」と切り替えられる、ごく小さな半導体の部品。機械的に動く部分がなく、電圧をかけるだけでオン・オフできる「電子のスイッチ」。現代のチップは、これを数十億〜数百億個も一枚に詰め込んでいる。</div>
+        <p>ここで鍵になるのが<strong>「半導体」</strong>という言葉です。
+        世の中の物質は、電気をよく通す<strong>導体</strong>（金属など）と、まったく通さない<strong>絶縁体</strong>（ゴムやガラスなど）に大きく分かれます。
+        その<span class="em">ちょうど中間で、条件によって「通したり、通さなかったり」できる</span>のが半導体で、その代表が<strong>シリコン（ケイ素）</strong>です。
+        シリコンは、地球の地殻にありふれた元素――つまり<strong>砂や石英の主成分</strong>です。
+        この「通す／通さないを切り替えられる」という性質こそ、スイッチを作るのに理想的でした。
+        電気を流したいときは通し、止めたいときは絶縁体になる。これを電圧ひとつで操れるのです。</p>
+        <div class="history">
+        <p>トランジスタは1947年、アメリカのベル研究所で、ジョン・バーディーン、ウォルター・ブラッテン、ウィリアム・ショックレーの三人によって発明され、後にノーベル物理学賞をもたらしました。
+        当初は補聴器やラジオの部品として広まり（「トランジスタラジオ」という言葉を聞いたことがあるかもしれません）、やがてコンピュータの心臓になっていきます。
+        この発明がなければ、手のひらに乗るコンピュータは永遠に夢のままでした。20世紀でもっとも重要な発明の一つに数えられるのも当然と言えるでしょう。</p>
+        </div>
+        <p>大切なのは、トランジスタは<span class="em">機械のように物理的に動く部品ではない</span>という点です。
+        スイッチといっても、カチッと動く接点があるわけではありません。電圧のかけ方を変えるだけで、内部の電子の振る舞いが変わり、電流が流れたり止まったりする。
+        動く部品がないからこそ、すり減らず、超高速で、しかも限界まで小さく作れる。
+        この「動かないスイッチ」という発想の転換が、その後の爆発的な小型化への扉を開いたのです。</p>
+      </section>
+
+      <section id="s-moore">
+        <h2>微細化とムーアの法則 ― なぜ毎年速くなったのか</h2>
+        <p>トランジスタ一個ではスイッチ一個ぶんですが、これをたくさん並べて配線でつなぐと、第1部で見た論理回路や、さらにはCPUまるごとが作れます。
+        この「たくさんのトランジスタと配線を、一枚のシリコン板の上にまとめて作り込んだもの」が<strong>集積回路（IC）</strong>であり、その極端に高密度なものが、私たちが「チップ」や「プロセッサ」と呼ぶものです。</p>
+        <p>ここで、20世紀後半の技術史を貫く有名な経験則が登場します。<strong>ムーアの法則</strong>です。</p>
+        <div class="def"><b>ムーアの法則</b><br>「一枚のチップに詰め込めるトランジスタの数は、おおよそ2年ごとに2倍になる」という経験則。1965年にインテルの創業者の一人ゴードン・ムーアが指摘した。物理の法則ではなく、産業界が長年かけて実現し続けてきた「目標」に近い。</div>
+        <p>2年で2倍ということは、10年で約32倍、20年でおよそ1000倍です。
+        実際この法則は半世紀近くにわたっておおむね成り立ち、その結果が、部屋いっぱいだった計算機が手のひらのスマホになり、しかも比べものにならないほど高性能になった、という現実です。
+        <span class="em">トランジスタが小さくなれば、同じ面積にもっと詰め込め、配線も短くなって速く動き、消費電力も下がる</span>。
+        だから「微細化」こそが、半導体産業がひたすら追い求めてきた目標でした。
+        今や最先端のトランジスタは、数ナノメートル（1ナノメートル＝100万分の1ミリ）という、ウイルスより小さい、原子を数十個並べた程度のスケールにまで到達しています。</p>
+        <div class="trivia">
+        <p>「ナノメートル」という数字は、最近では必ずしも実際のトランジスタの物理的な大きさを表しているわけではなく、世代を示す一種の<strong>呼び名（マーケティング上の名前）</strong>になっている面があります。
+        とはいえ、「より小さく、より多く」という方向に各社がしのぎを削ってきたことに変わりはありません。
+        数字の細かい意味より、「人類は原子レベルにまで加工技術を突き詰めてきた」という事実そのものに、素直に驚いておきたいところです。</p>
+        </div>
+        <p>しかし、第1部から繰り返してきた本講義のテーマを思い出してください。<strong>限界</strong>です。
+        微細化は無限には続きません。トランジスタが原子数個ぶんにまで近づくと、電子が壁をすり抜けてしまう「量子トンネル効果」など、物理法則そのものが壁として立ちはだかります。
+        また、これほど微細な加工をするための工場（後述）は、建設に数兆円という途方もない費用がかかるようになりました。
+        <span class="em">「これ以上小さくするのが、物理的にも経済的にも難しくなってきた」</span>――これが、近年「ムーアの法則は終わりに近づいている」と言われる理由です。
+        そして、まさにこの限界こそが、後で見る「GPUや専用チップの時代」を生む引き金になっていきます。</p>
+      </section>
+
+      <section id="s-memory">
+        <h2>メモリの階層 ― 速さと大きさのトレードオフ</h2>
+        <p>チップの話を、計算する部分（CPU）から、覚えておく部分（メモリ）へ広げましょう。
+        第1部第12講で、コンピュータが情報を蓄える「メモリ」の基本を学びました。
+        ここでは、その続きとして、実際のコンピュータが<strong>何種類ものメモリを使い分けている</strong>という、とても重要な工夫を見ます。
+        なぜ一種類で済ませないのか。そこには、本講義でおなじみの<strong>トレードオフ</strong>が、見事な形で現れています。</p>
+        <p>メモリには、おおざっぱに言って次のような厳しいジレンマがあります。
+        <span class="em">「速いメモリは、高価で、容量を大きくできない。容量が大きく安いメモリは、遅い」</span>。
+        速さと容量と値段を、すべて同時には満たせないのです。
+        そこで人類が編み出した答えが、性質の違うメモリを<strong>階層</strong>に積み重ね、適材適所で使い分けるという作戦でした。</p>
+        <figure>
+        <svg viewBox="0 0 520 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="メモリ階層のピラミッド">
+          <polygon points="260,20 200,80 320,80" fill="#2f6f6a"/>
+          <rect x="200" y="80" width="120" height="44" fill="#3f8079"/>
+          <rect x="160" y="124" width="200" height="48" fill="#5a9a93"/>
+          <rect x="110" y="172" width="300" height="52" fill="#86b8b2"/>
+          <rect x="60" y="224" width="400" height="56" fill="#b9d6d2"/>
+          <text x="260" y="62" text-anchor="middle" font-size="13" fill="#fff" font-weight="bold">レジスタ</text>
+          <text x="260" y="108" text-anchor="middle" font-size="13" fill="#fff" font-weight="bold">キャッシュ</text>
+          <text x="260" y="153" text-anchor="middle" font-size="13" fill="#fff" font-weight="bold">主記憶(RAM)</text>
+          <text x="260" y="203" text-anchor="middle" font-size="13" fill="#1f2b29" font-weight="bold">SSD</text>
+          <text x="260" y="257" text-anchor="middle" font-size="13" fill="#1f2b29" font-weight="bold">ハードディスク・クラウド</text>
+          <text x="475" y="50" text-anchor="end" font-size="10" fill="#6b6459">速い・小さい・高い</text>
+          <text x="475" y="275" text-anchor="end" font-size="10" fill="#6b6459">遅い・大きい・安い</text>
+        </svg>
+        <figcaption>上にいくほど速くて小さく高価、下にいくほど遅くて大きく安い。CPUは上から順に探す。</figcaption>
+        </figure>
+        <p>この階層を、図書館でたとえてみましょう。
+        いま手元の机に開いている本が<strong>レジスタ</strong>。CPUがまさに今この瞬間に使っている、ほんのわずかなデータです。最速ですが、ほんの数個ぶんしか置けません。
+        机のすぐ脇の小さな本棚が<strong>キャッシュ</strong>。よく使う本を手の届く範囲に置いておく場所で、CPUのすぐ隣に作られています。
+        部屋全体の本棚が<strong>主記憶（RAM、メインメモリ）</strong>。そこそこ速く、そこそこ大きい、作業の主戦場です。
+        そして地下の巨大書庫が<strong>ストレージ（SSDやハードディスク）</strong>。遅いけれど安価で大量に保存でき、電源を切っても消えません。
+        さらにその先には、別の建物にある国立図書館――<strong>クラウド</strong>（第2部第7講）が控えています。</p>
+        <p>CPUは何かデータが必要になると、<span class="em">まず一番上(速いが小さい)を探し、なければ一段下、それでもなければさらに下</span>、と順にたどります。
+        よく使うデータほど上の階層に置いておけば、ほとんどの場合は速い場所で見つかり、全体として高速に動く。
+        この「よく使うものを手元に」という発想は、第2部第7講で学んだ<strong>キャッシュやCDN</strong>とまったく同じ考え方です。
+        メモリ階層は、その原理をチップの内部で実践したものに他なりません。
+        一種類の完璧なメモリが存在しないからこそ、人類は「組み合わせ」で問題を解いた。トレードオフを正面から受け止め、設計の知恵で乗り越えた好例です。</p>
+        <div class="note"><span class="lbl">なぜ電源を切ると消えるメモリがあるのか</span>
+        RAMは、ごく小さなコンデンサ（電気をためる部品）に電荷があるかないかで0と1を覚えています。電気は自然に逃げていくため、絶えず充電し直さないと内容が消えてしまう。だからパソコンの電源を切るとRAMの中身は失われ、保存していない作業は消えるのです。一方SSDは、電源を切っても消えない仕組み（不揮発性）になっており、長期保存を担当します。役割が違うのです。</div>
+      </section>
+
+      <section id="s-cpugpu">
+        <h2>CPUとGPU ― 万能な秀才と、並列の大群</h2>
+        <p>同じ半導体チップでも、設計思想によってまるで性格が変わります。
+        その代表的な対比が、<strong>CPU</strong>と<strong>GPU</strong>です。
+        この二つの違いを理解することは、「なぜAIにGPUが必要なのか」を理解するための、いちばんの近道です。</p>
+        <p><strong>CPU（中央処理装置）</strong>は、第1部第11講で学んだ、コンピュータの司令塔です。
+        少数の非常に賢いコア（計算の中心）を持ち、複雑で込み入った処理を、ものすごい速さで順番にこなしていきます。
+        たとえるなら<span class="em">「何でもこなせる、ごく少数の天才秀才チーム」</span>。
+        OSを動かし、アプリの複雑な判断を下し、次に何をすべきかを臨機応変に決める――こうした「頭の良さ」が要る仕事が得意です。</p>
+        <p>一方<strong>GPU（画像処理装置）</strong>は、もともと<strong>3Dゲームの画面を描くため</strong>に生まれました。
+        画面は何百万個もの画素（ピクセル）でできており、その一つひとつの色を計算する必要があります。
+        一個ずつの計算は単純ですが、とにかく数が膨大。
+        そこでGPUは、<span class="em">CPUほど賢くはないが単純な計算が得意なコアを、何千個も並べる</span>という、まったく逆の方向に進化しました。
+        たとえるなら<strong>「単純作業を一斉にこなす、何千人もの大群」</strong>です。</p>
+        <table class="tbl">
+          <caption>CPUとGPUの性格の違い</caption>
+          <tr><th></th><th>CPU</th><th>GPU</th></tr>
+          <tr><th>コアの数</th><td>少数(数個〜数十個)</td><td>多数(数千個)</td></tr>
+          <tr><th>一個の賢さ</th><td>とても賢い</td><td>単純</td></tr>
+          <tr><th>得意なこと</th><td>複雑で順番が大事な処理</td><td>同じ計算の大量同時並列</td></tr>
+          <tr><th>たとえ</th><td>少数の天才</td><td>大群の作業員</td></tr>
+        </table>
+        <p>長らくGPUはゲーム機やグラフィックス用の専門部品でした。
+        ところが2010年代、ある事実に人々が気づきます。
+        <span class="em">AI（とくに深層学習）の計算の正体は、画像処理とよく似た「単純な掛け算と足し算を、とてつもない回数くり返すこと」だった</span>のです。
+        まさにGPUが大群で得意とする仕事そのもの。
+        こうしてゲーム用だったGPUが、AI時代の主役へと一気に躍り出ました。
+        この劇的な転換と、その波に乗って世界有数の企業になったNVIDIAの物語は、次の第2部第11講でじっくり扱います。
+        ここでは<strong>「賢さで勝つCPU」と「数で勝つGPU」という二つの戦略がある</strong>という、設計思想の対比をしっかり押さえておきましょう。</p>
+        <p>これもまた、トレードオフの話です。
+        一個のコアを賢くするのにも、たくさん並べるのにも、限られたチップ面積と電力という予算があります。
+        その予算を「少数精鋭」に振るか「数の暴力」に振るか。
+        どちらが優れているという話ではなく、<span class="em">解きたい問題の性質によって、最適な設計が変わる</span>。
+        順番が大事な仕事にはCPU、同じ計算の大量くり返しにはGPU。適材適所こそが答えなのです。</p>
+      </section>
+
+      <section id="s-tpu">
+        <h2>専用チップとAIの時代 ― 万能をあきらめるという戦略</h2>
+        <p>ムーアの法則が限界に近づき、「微細化でただ速くする」という王道が通用しにくくなった今、半導体の世界では新しい潮流が起きています。
+        それが<strong>専用チップ</strong>の台頭です。</p>
+        <p>CPUは「何でもできる」万能選手ですが、何でもできるということは、<span class="em">どれにも特化していない</span>ということでもあります。
+        そこで、「この計算だけは、ものすごく速く・省電力でやる」という<strong>目的特化のチップ</strong>を作る発想が強まってきました。
+        その代表が、グーグルがAI計算のために自社開発した<strong>TPU（Tensor Processing Unit）</strong>です。
+        TPUは、AIで多用される行列の計算だけにねらいを絞って設計されており、その用途では汎用チップより高速・低電力をねらえます。</p>
+        <div class="def"><b>専用チップ(ASIC)という考え方</b><br>汎用性を捨て、特定の処理だけに最適化した半導体。AI用のTPU、暗号通貨のマイニング用チップ、スマホの画像処理専用回路などが例。「何でもできる」をあきらめる代わりに、「その仕事に限れば圧倒的に効率がよい」を手に入れる戦略。</div>
+        <p>ここにあるのは、第1部からおなじみの<strong>「抽象化と特化のトレードオフ」</strong>です。
+        汎用CPUは、どんなソフトでも動かせるという素晴らしい柔軟性（抽象化の勝利）を持つ代わりに、特定用途では無駄が多い。
+        専用チップは、その柔軟性を捨てる代わりに、狙った用途での効率を極限まで高める。
+        スマートフォンの中にも、実は汎用CPUのほかに、写真をきれいにする専用回路、動画を再生する専用回路、AI処理の専用回路などが同居していて、仕事に応じて使い分けています。
+        <span class="em">一枚のチップの中で「万能」と「専用」が役割分担している</span>のが、現代の姿なのです。</p>
+        <p>なぜ今これが重要なのか。
+        微細化という「全員が一律に速くなる」時代が終わりに近づいたぶん、<span class="em">「設計の工夫」で性能を伸ばす</span>ことの価値が上がったからです。
+        AIの計算需要は爆発的に伸び続けており、その膨大な計算をいかに速く・省電力でこなすかが、企業や国家の競争力に直結します。
+        だからこそ、グーグル、アップル、アマゾン、そして各国が、こぞって自前の専用チップ設計に乗り出している。
+        半導体はもはや単なる部品ではなく、AI時代の<strong>戦略物資</strong>になったのです。次節でその「地政学」を見ていきましょう。</p>
+      </section>
+
+      <section id="s-fab">
+        <h2>どうやって作るのか ― 砂を原子の精度で彫る</h2>
+        <p>これほど重要なチップは、いったいどうやって作られるのでしょうか。
+        その製造工程は、人類の技術の到達点とも言える、おそろしく精密なものです。
+        おおまかな流れを、つかんでおきましょう。</p>
+        <p>出発点は、ありふれた<strong>砂(シリコン)</strong>です。
+        これを超高純度に精製し、巨大な単結晶のかたまり（インゴット）に育て、ハムのように薄く輪切りにします。
+        この円盤を<strong>ウエハー</strong>と呼びます。
+        次に、その表面に<strong>フォトリソグラフィ</strong>という技術で、回路の模様を焼き付けていきます。
+        これは、写真の現像によく似た原理です。
+        光に反応する薬剤をウエハーに塗り、回路のパターンを描いた「型」を通して光を当て、当たった部分（または当たらなかった部分）を化学的に削る。
+        これを材料や光のパターンを変えながら<span class="em">何百回も積み重ねて</span>、立体的に配線とトランジスタを彫り込んでいくのです。</p>
+        <p>ここで途方もないのが、その<strong>精度</strong>です。
+        数ナノメートルの構造を描くには、ごく波長の短い特殊な光（極端紫外線、EUV）と、ほこり一粒も許されない超清浄な工場（クリーンルーム）が要ります。
+        そして、この最先端のEUV露光装置を作れる会社は、世界に事実上<strong>オランダのASML一社しかない</strong>。
+        その装置一台が数百億円もし、最先端の工場全体では数兆円規模の投資になります。
+        <span class="em">人類は、砂を原子数十個の精度で彫る技術を手に入れた</span>――しかし、それができる場所は地球上にごくわずかしかない。この「作れる者の少なさ」が、次の地政学の話に直結します。</p>
+        <div class="trivia">
+        <p>半導体製造は、よく「世界でもっとも難しいものづくり」と言われます。
+        一枚のウエハーに数百個のチップを同時に作りますが、わずかなほこりや誤差で不良になるため、「どれだけ良品が取れたか（歩留まり）」が死活問題になります。
+        最先端の工場では、人間の髪の毛一本どころか、目に見えない微粒子すら大敵。
+        作業員が全身を覆う防塵服を着るのは、ウエハーを守るためであって、人体を守るためではないのです。守られているのは、人ではなく石のほうなのですね。</p>
+        </div>
+      </section>
+
+      <section id="s-geo">
+        <h2>現代への応用 ― 半導体地政学という新しい現実</h2>
+        <p>ここまで来ると、なぜ近年「半導体」がニュースの一面を飾り、国家のトップが半導体工場の誘致に必死になっているのかが見えてきます。
+        理由は、半導体が<strong>「現代社会のあらゆる機能を支える、作るのが極端に難しいもの」</strong>になったからです。</p>
+        <p>現代の半導体産業は、世界中に役割が分散した、長く複雑な<strong>サプライチェーン(供給網)</strong>で成り立っています。</p>
+        <ul>
+          <li><strong>設計</strong>：どんな回路にするかを考える。アメリカの企業（NVIDIA、アップル、クアルコムなど）が大きな存在感を持つ。</li>
+          <li><strong>製造装置</strong>：チップを作る機械。オランダのASML、日本やアメリカの企業が支える。</li>
+          <li><strong>素材</strong>：超高純度のシリコンや特殊な化学薬品、フォトレジストなど。日本企業が高いシェアを持つ分野が多い。</li>
+          <li><strong>製造（受託生産）</strong>：設計図をもとに実際に作る。台湾のTSMCが最先端の製造で圧倒的なシェアを握る。</li>
+        </ul>
+        <p>注目すべきは、<span class="em">どの国も、一国だけでは最先端の半導体を作れない</span>という事実です。
+        アメリカが設計し、オランダが装置を作り、日本が素材を供給し、台湾が製造する。
+        この分業は、世界がうまく協力していれば効率的ですが、いったん対立が起きると、<strong>とてつもない弱点(急所)</strong>にもなります。
+        とくに、最先端チップの製造が台湾の一社に集中している状況は、地震や災害、あるいは国際的な緊張によって供給が止まれば、世界中のスマホも車もAIも作れなくなる、という危うさをはらんでいます。</p>
+        <p>だから今、アメリカ、ヨーロッパ、日本をはじめ各国が、巨額の補助金を出して自国に半導体工場を呼び込もうと競い合っています。
+        半導体は石油や食料と並ぶ<strong>戦略物資</strong>とみなされ、その輸出を制限することが外交カードに使われるまでになりました。
+        <span class="em">一枚の灰色の石が、世界の勢力図を左右する</span>。
+        これは、技術が社会や政治と切り離せないことを示す、現代でもっとも鮮やかな実例です。
+        本講義の最終盤、第2部第15講で扱う「コンピュータ科学と社会」というテーマの、これは重要な布石でもあります。
+        技術を学ぶことは、それが置かれた社会を読み解くことでもあるのです。</p>
+      </section>
+
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">Q. CPUの「GHz(クロック周波数)」の数字が大きいほど、性能が高い？</p>
+          <p class="a">A. 一概には言えません。クロック周波数は「1秒間に何回拍子を刻むか」ですが、性能は「コアの数」「一拍でこなせる仕事量」「キャッシュの賢さ」「省電力性」など多くの要素で決まります。近年は周波数を上げると発熱と消費電力が急増するため、周波数を無理に上げるより、コアを増やしたり設計を工夫したりする方向に進化しています。数字ひとつで性能は測れません。</p>
+          <p class="q">Q. メモリ(RAM)とストレージ(SSD)は同じもの？</p>
+          <p class="a">A. 役割がまったく違います。RAMは「作業机の広さ」、SSDは「本棚の大きさ」にあたります。RAMが大きいと一度にたくさんの作業を広げられ、SSDが大きいとたくさんのファイルを保存できる。RAMは電源を切ると消え、SSDは消えません。「メモリを増やす」と言うとき、どちらの話かで意味が変わります。</p>
+          <p class="q">Q. ムーアの法則は物理法則だから、これからも自動的に性能が上がり続ける？</p>
+          <p class="a">A. ムーアの法則は物理法則ではなく、産業界が努力して実現してきた「経験則・目標」です。そして微細化は物理と経済の限界に近づいています。今後の性能向上は、ただ小さくするのではなく、専用チップ・並列化・新しい材料・チップの積層など、設計の工夫が主役になっていきます。「黙っていても速くなる時代」は、終わりつつあるのです。</p>
+        </div>
+      </section>
+
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <div class="summary">
+        <ul>
+          <li>コンピュータの正体は「膨大な数のスイッチ」であり、そのスイッチを担うのが半導体（シリコン）でできた<strong>トランジスタ</strong>。砂から生まれた「考える石」である。</li>
+          <li><strong>ムーアの法則</strong>（2年で2倍）という経験則のもと、トランジスタの微細化が進み、部屋いっぱいの計算機が手のひらに乗るまで小型・高性能化した。だが、その微細化は物理と経済の<strong>限界</strong>に近づいている。</li>
+          <li>メモリは「速い・小さい・高い」から「遅い・大きい・安い」まで<strong>階層</strong>をなし、よく使うデータを上位に置く。これは第2部第7講のキャッシュと同じ、トレードオフを設計で乗り越える知恵。</li>
+          <li><strong>CPU</strong>は「少数の天才」、<strong>GPU</strong>は「単純作業の大群」。AI計算がGPUの得意分野と一致したことが、AI時代の幕を開けた（→第11講へ）。</li>
+          <li>微細化の限界を背景に、特定用途に特化した<strong>専用チップ（TPUなど）</strong>が台頭。「万能」と「特化」のトレードオフが鮮明になっている。</li>
+          <li>半導体は世界分業のサプライチェーンで作られ、もはや<strong>戦略物資</strong>。一枚の石が世界の勢力図を左右する「半導体地政学」の時代に入った（→第15講へ）。</li>
+        </ul>
+        </div>
+      </section>
+
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+        <ol>
+          <li>あなたの身のまわりにある「半導体チップが入っていそうな機械」を、コンピュータらしくないものほど高得点として、5つ挙げてみよう。それぞれ、チップは何を「判断」しているだろうか。</li>
+          <li>「速いメモリは小さく高価、大きいメモリは遅く安い」というトレードオフを、図書館以外の身近なもの（たとえば冷蔵庫と食料品店、財布と銀行口座など）でたとえ直してみよう。</li>
+          <li>「何でもできる万能チップ(CPU)」と「ひとつのことに特化したチップ(専用チップ)」。この対立は、人間の働き方（ゼネラリストとスペシャリスト）にも似ている。どんな場面でどちらが有利か、自分の言葉で説明してみよう。</li>
+        </ol>
+        <details class="ans"><summary>考えるヒント</summary>
+        <p>1. 信号機（車や歩行者を検知して切り替える）、エアコン（温度を測って制御する）、自動ドア、エレベーター、電子レンジ、自動車（数十〜百個以上のチップが入っている）など。「電気で何かを判断・制御している」ものには、ほぼ必ず入っている、と気づければ十分です。</p>
+        <p>2. たとえば「冷蔵庫＝手近だがすぐ尽きる速いメモリ」「近所のスーパー＝もう少し大きいが行くのに時間がかかる」「ネット通販の倉庫＝巨大だが届くのに最も時間がかかる」。よく使うものを手近に置く、という原理が共通します。</p>
+        <p>3. 仕事の種類が頻繁に変わるなら万能型(CPU)が有利。決まった大量の仕事を効率よくこなすなら特化型(専用チップ)が有利。正解を一つに絞る必要はなく、「柔軟性と効率のトレードオフ」という観点で語れていればよい。</p>
+        </details>
+        </div>
+      </section>
+
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">『半導体戦争』クリス・ミラー（著）</span>― 半導体が世界の覇権を左右してきた歴史と地政学を描いた話題作。本講の「半導体地政学」をもっと深く知りたい人に最適。</li>
+          <li><span class="bk">『チップ・ウォー』関連の解説記事・ドキュメンタリー</span>― 映像で半導体サプライチェーンの全体像をつかみたい人へ。NHKなどの特集番組もわかりやすい。</li>
+          <li><span class="bk">『コンピュータはなぜ動くのか』矢沢久雄（著）</span>― トランジスタからCPU、メモリまで、ハードの基本を平易に解説。第1部の復習にも。</li>
+          <li><span class="bk">『The New Turing Omnibus』／『コンピュータシステムの理論と実装(Nand2Tetris)』</span>― 論理ゲートからCPUを自分で組み上げる体験ができ、「スイッチからコンピュータができる」実感が得られる。</li>
+          <li><span class="bk">各社・各国の半導体に関するニュース解説</span>― TSMC、ASML、NVIDIAなどの動向は日々のニュースで追える。本講の知識があれば、報道の意味がぐっと立体的に読めるはず。</li>
+        </ul>
+        <p>次の第2部第11講では、本講で登場した<strong>GPU</strong>を武器にAI時代の主役へ駆け上がった企業・NVIDIAと、世界中のデータセンターを動かす「AIインフラ」の話に進みます。砂の石が、どうやって知能の土台になったのか――その物語の続きです。</p>
+      </section>
+
+      <nav class="pager">
+        <a class="pv" href="part2_lecture9.html">← 第9講 匿名通信・暗号通貨・信頼の設計</a>
+        <a class="nx" href="part2_lecture11.html">第11講 NVIDIAとAIインフラ →</a>
+      </nav>
+
+    </div>
+
+    <footer>
+      <div class="wrap">
+        <p>ゆるコンピュータ科学講義 ／ 第2部 応用・社会・現代技術編 ／ 第10講「半導体・メモリ・GPU・TPU」</p>
+        <p>本講は半導体技術の入門的な理解を目的とした教育用コンテンツです。製造プロセスや産業動向は簡略化して説明しています。</p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

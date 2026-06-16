@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第2部 第6講 認証・パスワード・パスキー ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="「あなたが本人だ」をどう証明するか。パスワードの限界、多要素認証、そしてパスワードのない未来「パスキー」を学ぶ。ゆるコンピュータ科学講義 第2部 第6講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#2f6f6a; --accent-soft:#dcebe9;
+    --accent2:#c8503a; --accent2-soft:#f7e3dd;
+    --code-bg:#21302e; --code-ink:#eaf3f1;
+    --sidebar:#1f2b29; --sidebar-ink:#e3ece9; --sidebar-muted:#94a7a3;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#111413; --paper:#172220; --ink:#e6ece9; --muted:#9aa9a5;
+    --line:#283633; --accent:#6fb6ad; --accent-soft:#16302c;
+    --accent2:#e8775f; --accent2-soft:#3a221c;
+    --code-bg:#0c1413; --code-ink:#eaf3f1;
+    --sidebar:#0c1413; --sidebar-ink:#e3ece9; --sidebar-muted:#7d8e8a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#245a55 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"••••••";position:absolute;right:20px;bottom:-2px;font-family:ui-monospace,monospace;font-size:4rem;font-weight:800;color:rgba(255,255,255,.12)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.92;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent-soft);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent2);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent2-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#172220}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent2);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第2部 第6講 認証とパスキー</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第2部 第6講</span><br>認証・パスワード・パスキー</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-three">認証の3要素</a></li>
+      <li><a href="#s-pw">パスワードの仕組みと限界</a></li>
+      <li><a href="#s-mfa">多要素認証</a></li>
+      <li><a href="#s-manager">パスワードマネージャー</a></li>
+      <li><a href="#s-passkey">パスキー ― パスワードのない未来</a></li>
+      <li><a href="#s-history">歴史 ― パスワードの誕生</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第2部 応用・社会・現代技術編 ／ 第6講</div>
+        <h1>認証・パスワード・パスキー<br>― 「あなたが本人だ」をどう証明するか</h1>
+        <p>覚えきれないパスワード。その面倒の正体と、ついに来た「パスワードのない世界」の話。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― 顔の見えない相手を、どう信じるか</h2>
+        <p>ネットの向こうにいる相手の顔は見えません。
+        にもかかわらず、銀行は「あなたが口座の持ち主だ」と信じてお金を動かし、
+        SNSは「あなたがそのアカウントの本人だ」と信じて投稿させてくれます。
+        この<strong>「あなたが、確かにあなた本人である」ことを確かめる手続き</strong>を<span class="term">認証</span>と呼びます。
+        前の第5講で見たセキュリティの最前線にあって、この認証は、いわば<strong>「正しい人だけを通す関所」</strong>です。</p>
+        <p>そして、その関所をくぐるために、私たちは日々<strong>パスワード</strong>と格闘しています。
+        覚えきれないほどの数、複雑さの要求、定期変更の強制――。
+        多くの人が「パスワードは面倒で、うんざりするもの」と感じているでしょう。
+        じつは、その"うんざり"には、ちゃんとした理由があります。
+        それは私たちの怠慢のせいではなく、パスワードという仕組みそのものに、避けがたい矛盾が組み込まれているからです。
+        そして近年、ついに<strong>「パスワードのない世界（パスキー）」</strong>が、現実のものになりつつあります。
+        この講では、認証とは何か、パスワードはなぜこんなに厄介なのか、どうすれば安全に管理できるのか、
+        そして第1部第10講で学んだ公開鍵暗号が、いかにして私たちをパスワードから解放しようとしているのかを見ていきます。</p>
+        <p>ここで、よく混同される「認証」と「認可」という言葉を、整理しておきましょう。
+        <strong>認証（Authentication）</strong>は「あなたが、確かにあなた本人か」を確かめること。
+        <strong>認可（Authorization）</strong>は「その本人に、何をする権限を与えるか」を決めること。
+        会社にたとえれば、入り口で社員証を確認するのが認証、
+        「あなたは経理部だから、このフロアまで」と立ち入れる範囲を決めるのが認可です。
+        本講で扱うのは前者の「認証」ですが、この2つはセットで、第2部第5講の「最小権限の原則」（認可の話）とも深くつながっています。
+        「誰か」を確かめ、「何ができるか」を絞る――この組み合わせが、安全なシステムの土台になるのです。</p>
+        <p class="lead-in">認証の3要素 → パスワードの仕組みと限界 → 多要素認証 → パスワードマネージャー → パスキー。
+        第1部第1講（エントロピー）と第10講（公開鍵暗号・ハッシュ）が、ここで日常の道具として戻ってきます。</p>
+      </section>
+
+      <!-- 認証の3要素 -->
+      <section id="s-three">
+        <h2>認証の3要素 ― 本人確認の3つの方法</h2>
+        <p>「本人であること」を確かめる方法は、突き詰めると<strong>3種類</strong>しかありません。
+        これを<span class="term">認証の3要素</span>と呼びます。</p>
+        <div class="def">
+          <p><b>認証の3要素</b></p>
+          <p style="margin:.2em 0"><b>① 知識（What you know）</b>：本人だけが「知っている」もの。パスワード、暗証番号、秘密の質問。</p>
+          <p style="margin:.2em 0"><b>② 所持（What you have）</b>：本人だけが「持っている」もの。スマホ、ICカード、専用の鍵。</p>
+          <p style="margin-bottom:0"><b>③ 生体（What you are）</b>：本人の「身体的な特徴」。指紋、顔、虹彩、声。</p>
+        </div>
+        <p>銀行のキャッシュカードを思い出してください。
+        「カード（所持）」と「暗証番号（知識）」の両方がそろって、はじめてお金を引き出せます。
+        スマホのロック解除なら、「指紋・顔（生体）」や「パスコード（知識）」。
+        <span class="em">私たちが日々使っている認証は、すべてこの3要素のどれか、または組み合わせ</span>でできています。</p>
+        <p>それぞれに長所と短所があります。
+        知識（パスワード）は、漏れたら誰でも使えてしまうし、忘れることもある。
+        所持（スマホなど）は、なくしたり盗まれたりする。
+        生体は、変更できない（指紋が漏れても、指は替えられません）という弱点がある。
+        <strong>どれか一つだけでは、完璧ではない</strong>。だからこそ、後で見る「複数を組み合わせる」発想が重要になるのです。</p>
+        <p>とくに「生体認証」については、よくある誤解を解いておきましょう。
+        スマホの指紋認証や顔認証は、便利で安全に思えますが、万能ではありません。
+        生体情報は<strong>「変えられない」</strong>という、決定的な弱点を持っています。
+        パスワードは漏れたら変更できますが、指紋や顔は、一度データが漏れても替えがききません。
+        また、生体認証は「だいたい一致しているか」で判定するため、ごくまれに他人を受け入れたり、本人を拒否したりもします
+        （第1部第14講の「近似」の話に通じます）。
+        だから、生体認証は単独の最終防壁というより、<span class="em">「手軽に本人確認する手段」</span>として、ほかの要素と組み合わせて使うのが基本。
+        実際、スマホでも、生体認証が失敗したときの"最後の砦"は、結局パスコード（知識）になっていますね。
+        どの要素にも一長一短がある――この理解が、賢い使い分けの出発点です。</p>
+      </section>
+
+      <!-- パスワード -->
+      <section id="s-pw">
+        <h2>パスワードの仕組みと、その限界</h2>
+        <p>もっとも身近な認証である<strong>パスワード</strong>（知識）。その仕組みと弱点を、きちんと押さえておきましょう。</p>
+        <p>まず、第1部第10講で学んだとおり、まともなサービスは、あなたのパスワードを<strong>そのまま保存していません</strong>。
+        保存しているのは、パスワードをハッシュ関数に通した「ハッシュ値」と、一人ずつ違うソルトだけ。
+        だから、万一データが流出しても、生のパスワードは簡単には逆算されない。
+        ここまでは、サービス側の守りの話です。
+        問題は、<strong>利用者側のパスワードの「強さ」と「使い回し」</strong>にあります。</p>
+        <h3>パスワードの「強さ」は、エントロピーで決まる</h3>
+        <p>第1部第1講を思い出してください。パスワードの強さは、<span class="em">エントロピー（予測のしにくさ）＝総当たりで試すべき組み合わせの数</span>で決まります。
+        短く、単純で、よくある単語のパスワードは、組み合わせが少なく、すぐに破られる。
+        逆に、長く、多様な文字を使い、規則性のないパスワードは、組み合わせが天文学的に増え（第1部第6講の指数爆発！）、総当たりが事実上不可能になります。</p>
+        <table class="tbl">
+          <caption>表1：パスワードの組み合わせ数のイメージ（長く・多様なほど安全）</caption>
+          <tr><th>パスワードの例</th><th>強さの傾向</th></tr>
+          <tr><td>数字4桁（暗証番号）</td><td>1万通り。非常に弱い</td></tr>
+          <tr><td>よくある単語・名前・誕生日</td><td>すぐ破られる（辞書攻撃）</td></tr>
+          <tr><td>短く単純な英数字</td><td>弱い</td></tr>
+          <tr><td>長く、多様な文字の無規則な並び</td><td>強い（総当たりが事実上不能）</td></tr>
+        </table>
+        <p>ポイントは、<strong>「複雑さ」より「長さ」が効く</strong>こと。
+        記号を1つ足すより、文字数を増やすほうが、組み合わせ数（エントロピー）は大きく伸びます。
+        だから近年は、「覚えやすい複数の単語をつなげた、長いパスフレーズ」が推奨されることもあります。</p>
+        <h3>最大の問題は「使い回し」</h3>
+        <p>しかし、パスワードの<strong>本当の弱点は、強さ以上に「使い回し」</strong>にあります。
+        どんなに強いパスワードでも、複数のサービスで同じものを使っていると、致命的です。
+        あるサービスからパスワードが流出すると、攻撃者はその同じ組み合わせを、他の有名サービスに片っ端から試します（パスワードリスト攻撃）。
+        <span class="em">一か所の流出が、使い回した全サービスの乗っ取りにつながる</span>のです。
+        第2部第5講の「一つの穴」が、ここでも牙をむきます。
+        「強いパスワードを、サービスごとに別々に」――これが鉄則ですが、人間にそんなものを何十個も覚えるのは不可能。
+        この「人間には無理」という限界こそ、パスワードという仕組みが抱える、根本的なジレンマなのです。</p>
+        <p>このジレンマは、パスワードという仕組みの<strong>本質的な矛盾</strong>に根ざしています。
+        安全なパスワードは「長く・複雑で・ランダムで・使い回さない」もの。しかし、それは<strong>「人間が覚えられない」</strong>もの、ということです。
+        逆に、人間が覚えやすいパスワードは、たいてい予測しやすく（第1部第1講のエントロピーが低い）、安全ではありません。
+        <span class="em">「安全であること」と「人間が覚えられること」が、根本的に両立しない</span>――
+        これがパスワードの宿命です。
+        この矛盾を、人間ががんばって乗り越えようとしてきたのが、これまでの歴史でした。
+        しかし、がんばりには限界がある。
+        そこで発想を変え、「人間が覚える」という前提そのものを手放したのが、次に見るパスワードマネージャーであり、その究極形がパスキーなのです。</p>
+      </section>
+
+      <!-- 多要素認証 -->
+      <section id="s-mfa">
+        <h2>多要素認証 ― 一つ漏れても、突破させない</h2>
+        <p>パスワード（知識）だけでは破られうる。ならば、<strong>異なる種類の要素を組み合わせよう</strong>――
+        これが<span class="term">多要素認証（MFA）</span>です。
+        ログイン時に、パスワード（知識）に加えて、スマホに届く確認コード（所持）や、指紋（生体）を要求する。</p>
+        <p>これが強力なのは、第2部第5講の「攻防の非対称性」を、守る側に有利に傾けるからです。
+        攻撃者がパスワードを盗んでも、それだけでは入れません。
+        さらに「あなたのスマホ」という、物理的に持っているものまで奪わなければならない。
+        <span class="em">2つの異なる種類の要素を同時に突破するのは、一気に難しくなる</span>。
+        パスワードが漏れる事故は頻繁に起きますが、「パスワードも漏れ、かつスマホも奪われる」となると、ぐっと確率は下がります。
+        だから、<strong>多要素認証は、いま個人ができる最も効果的なセキュリティ対策の一つ</strong>とされています。
+        重要なアカウント（メール、銀行、SNS）では、ぜひ有効にしておきたい仕組みです。
+        とくに<strong>メール</strong>は最優先です。多くのサービスは「パスワードを忘れたら、登録メールに再設定リンクを送る」仕組みのため、
+        メールを乗っ取られると、そこを起点に他のサービスまで芋づる式に奪われかねないからです。
+        <span class="em">メールアカウントは、いわば"全ての鍵を保管する親玉の金庫"</span>。ここの守りを固めることが、何より効きます。</p>
+        <div class="note">
+          <span class="lbl">「2段階」と「2要素」</span>
+          似た言葉に「2段階認証」がありますが、厳密には少し違います。
+          「2段階」は単に確認を2回行うこと、「2要素（多要素）」は<strong>異なる"種類"の要素</strong>（知識＋所持など）を組み合わせること。
+          パスワードを2回聞くのは2段階ですが、同じ「知識」なので強くはなりません。
+          大事なのは「違う種類を組み合わせる」こと。攻撃者にとって、まったく別の壁を2枚越えさせる点に意味があるのです。
+        </div>
+        <p>ただし、多要素認証も万能ではありません。
+        たとえば、巧妙な偽サイト（第2部第5講のフィッシング）で、パスワードだけでなく、本人がその場で入力したワンタイムコードまで、
+        リアルタイムに盗んで悪用する手口も現れています。
+        「コードを誰かに教える」のはもちろん、「偽サイトに自分で入力してしまう」ことでも突破されうる。
+        <span class="em">どんな対策にも、それを上回ろうとする攻撃が現れる</span>――第2部第5講の「いたちごっこ」は、ここでも続いています。
+        だからこそ、後で見るパスキーのように「そもそも盗める合言葉やコードを送らない」仕組みが、次の一手として期待されているのです。</p>
+      </section>
+
+      <!-- パスワードマネージャー -->
+      <section id="s-manager">
+        <h2>パスワードマネージャー ― 記憶を、道具に任せる</h2>
+        <p>「強いパスワードを、サービスごとに別々に」――人間には無理なこの要求を、解決する道具が<span class="term">パスワードマネージャー</span>です。
+        これは、<strong>たくさんのパスワードを、暗号化して安全に保管してくれる金庫</strong>のようなソフト。
+        利用者は、その金庫を開ける「マスターパスワード」一つだけを覚えればよい。
+        中身は、サービスごとに自動生成された、長くてランダムで強いパスワードが、安全に格納されています。</p>
+        <p>これは発想の転換です。<span class="em">「人間が覚える」のをあきらめ、「道具に覚えさせ、人間は一つの鍵だけを管理する」</span>。
+        本講義で何度も登場した、「人間の苦手なことは、仕組みに肩代わりさせる」という考え方（第2部第4講）そのものです。
+        「金庫を一つにまとめるなんて、そこが破られたら全部終わりでは？」と不安に思うかもしれません。
+        もちろんマスターパスワードは厳重に守る必要がありますが、
+        <strong>「弱いパスワードを使い回す」よりは、「強い金庫に一つの鍵」のほうが、はるかに安全</strong>だというのが、専門家の一致した見解です。
+        実際、多くのスマホやブラウザにも、この機能が標準で組み込まれるようになっています。</p>
+        <div class="trivia">
+          <p>「パスワードを定期的に変更しましょう」――長年、常識とされてきたこのルールが、近年では<strong>見直されています</strong>。
+          理由は、人間心理にあります。頻繁に変更を強いられると、人は <code>Password1</code> → <code>Password2</code> のように、
+          覚えやすい小変更で済ませてしまい、かえって弱くなる。さらに「変更が面倒」という不満が、ルール全体の形骸化を招く（第2部第5講）。
+          そこで現在は、「<strong>漏洩の兆候がない限り、強いパスワードを使い続け、無理な定期変更は求めない</strong>」のが、
+          公的機関も推奨する新しい考え方になっています。
+          <span class="em">「よかれと思ったルールが、人間の行動を通じて逆効果になる」</span>――
+          セキュリティが技術だけでなく人間の問題である、という第2部第5講の教訓が、ここにも表れています。
+          常識とされることも、ときに根拠から問い直す必要があるのです。</p>
+        </div>
+      </section>
+
+      <!-- パスキー -->
+      <section id="s-passkey">
+        <h2>パスキー ― パスワードのない未来へ</h2>
+        <p>そして、いよいよ本命です。
+        「パスワードは、強くしても、使い回しても、覚えても、結局どこかに無理がある」――
+        ならば、<strong>そもそもパスワードをやめてしまえばいい</strong>。
+        この大胆な発想から生まれたのが<span class="term">パスキー（Passkey）</span>です。
+        その正体は、第1部第10講で学んだ<strong>公開鍵暗号</strong>の、見事な応用なのです。</p>
+        <div class="def">
+          <p><b>パスキーの仕組み（公開鍵暗号の応用）</b></p>
+          <p style="margin-bottom:0">アカウントを作るとき、あなたの端末が<strong>鍵のペア（秘密鍵と公開鍵）</strong>を作る。
+          <strong>公開鍵（南京錠）はサービスに預け</strong>、<strong>秘密鍵（本物の鍵）はあなたの端末から決して出ない</strong>。
+          ログイン時、サービスから送られた"お題"に、端末が秘密鍵で署名して返す。
+          サービスは預かった公開鍵で「確かに本人の署名だ」と確認する。<strong>パスワードという"合言葉"を、一度も送らない</strong>。</p>
+        </div>
+        <p>この仕組みの何がすごいのか。第1部第10講の知識で読み解いてみましょう。</p>
+        <ul>
+          <li><strong>盗む合言葉が、そもそも存在しない</strong>：秘密鍵は端末から出ないので、フィッシング（第2部第5講）で偽サイトに入力させようがない。盗ませる"パスワード"が、もうないのです。</li>
+          <li><strong>サービス側が漏れても安全</strong>：サービスが預かっているのは公開鍵（南京錠）だけ。それが流出しても、秘密鍵がなければ何の役にも立たない（第1部第10講）。</li>
+          <li><strong>使い回しの問題が消える</strong>：サービスごとに別の鍵ペアが自動で作られるので、「使い回し」という概念自体がなくなる。</li>
+        </ul>
+        <p>実際の使い心地は、驚くほど簡単です。
+        ログインしようとすると、スマホやパソコンが<strong>指紋や顔（生体）</strong>であなたを確認し、それだけでログインが完了する。
+        パスワードを打つ必要も、覚える必要もありません。
+        <span class="em">面倒なパスワードが消え、しかもフィッシングにも強く、より安全になる</span>――
+        第2部第5講で見た「安全と便利のトレードオフ」を、パスキーは見事に乗り越えようとしているのです。
+        第1部で学んだ公開鍵暗号という美しい数学が、私たちを日々のパスワードの苦労から解放する。
+        理論と応用がつながる、本講義のクライマックスの一つです。</p>
+        <p>パスキーの賢さは、第2部第5講で見た「攻防の非対称性」への、根本的な答えにもなっている点です。
+        これまでの認証は、「正しい合言葉を知っているか」で本人を判定していました。
+        だから、その合言葉を盗めば、誰でもなりすませた。守る側は「合言葉が漏れないこと」を、ずっと祈り続けるしかなかったのです。
+        パスキーは、この前提を覆します。
+        <span class="em">「秘密を共有して、それを守り続ける」のではなく、「秘密を一度も渡さずに、本人だと証明する」</span>。
+        盗むべき秘密が通信路にもサーバーにも存在しないので、攻撃側が突くべき「穴」そのものが、大きく減るのです。
+        これは第1部第10講で触れた「ゼロ知識証明」――中身を明かさずに証明する――の精神とも響き合います。
+        数学的な発想の転換が、長年の宿題を、力ずくでなく"そもそも問題が起きない形"へと作り変えた好例なのです。</p>
+        <div class="note">
+          <span class="lbl">パスキーはどこに保管される？</span>
+          「秘密鍵が端末から出ないなら、スマホをなくしたら終わり？」と心配になるかもしれません。
+          実際には、パスキーはクラウド経由で自分の複数の端末に安全に同期されたり、別の端末で復旧できる仕組みが用意されています。
+          利便性と安全性を両立させるための、こうした地道な工夫もまた、パスキー普及の鍵になっています。
+        </div>
+      </section>
+
+      <!-- 歴史 -->
+      <section id="s-history">
+        <h2>歴史 ― パスワードの誕生と、その終わりの始まり</h2>
+        <div class="history">
+          <p><strong>世界初のパスワードと、世界初の漏洩。</strong>
+          コンピュータのパスワードは、1960年代、複数の人が一台の大型計算機を共同利用する際に、
+          「各自のファイルを他人に見られないように」と導入されたのが始まりとされます。
+          ところが興味深いことに、パスワードが生まれて間もなく、すでに"漏洩"も起きていました。
+          ある研究者が、他人のパスワードを盗み見て、割り当て時間より長く計算機を使った、という記録が残っています。
+          <span class="em">パスワードは、誕生したその瞬間から、破られる運命とともにあった</span>のです。
+          以来半世紀以上、私たちはパスワードと、その漏洩との、終わりなき戦いを続けてきました。</p>
+          <p><strong>「もう、パスワードはやめよう」。</strong>
+          長年、専門家たちは「パスワードは本質的に欠陥のある仕組みだ」と指摘し続けてきました。
+          人間の記憶に頼る限り、強さと使いやすさは両立しない。
+          そこで、大手IT企業や標準化団体が協力し、公開鍵暗号を使った新しい認証（その実用形がパスキー）を整備しました。
+          いま、私たちは「パスワードの時代」が静かに終わり始める、歴史的な転換点に立っているのかもしれません。
+          半世紀以上、私たちを悩ませてきた仕組みが、第1部で学んだ数学によって、ついに置き換えられようとしているのです。</p>
+        </div>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用 ― 今日からできること</h2>
+        <p>認証の知識は、すぐに行動に移せる、実用性の高いものです。本講のまとめとして、今日からできることを整理しましょう。</p>
+        <ul>
+          <li><strong>重要なアカウントで、多要素認証を有効にする</strong>：メール・銀行・SNSなど。一つ漏れても突破されにくくなる、最も費用対効果の高い対策。</li>
+          <li><strong>パスワードマネージャーを使う</strong>：サービスごとに強いパスワードを使い回さずに済む。記憶は道具に任せ、人間はマスターの鍵だけを守ればよい。</li>
+          <li><strong>パスキーが使えるサービスでは、積極的に使ってみる</strong>：従来より安全で、しかも指紋や顔でさっとログインできて楽。対応サービスは少しずつ増えている。</li>
+          <li><strong>「本人確認」をうたう連絡を、うのみにしない</strong>：本物の認証はあなたの端末で行われる。電話やメールで暗証番号やコードを聞かれたら、それは詐欺（第2部第5講）。</li>
+        </ul>
+        <p>とくに最後の点は重要です。
+        「銀行員を名乗る電話で暗証番号を聞かれる」「サポートを装うメールで確認コードを入力させられる」――
+        正規の認証は、<strong>あなた自身の端末が、あなた自身に対して行う</strong>もの。
+        <span class="em">第三者があなたに暗証番号やワンタイムコードを尋ねてきたら、それは100%詐欺</span>です。
+        どんなに認証技術が進歩しても、最後にそれを使うのは人間。
+        第2部第5講で学んだ「最弱の環は人間」を忘れず、技術と知識の両輪で、自分の身を守っていきましょう。</p>
+        <p>こうして見ると、認証技術の進化は、第2部第5講で学んだ「安全と便利のトレードオフ」を、少しずつ乗り越えてきた歴史だと分かります。
+        パスワードは、安全にしようとすると不便になった。
+        多要素認証は、少しの手間で安全性を大きく高めた。
+        パスワードマネージャーは、記憶の負担をなくしつつ安全を実現した。
+        そしてパスキーは、より安全で、しかもより簡単という、両立の理想形に近づいている。
+        <span class="em">「安全か、便利か」の二者択一に見えた問題を、技術の工夫が少しずつ"両取り"に変えてきた</span>のです。
+        私たちが日々ログインするとき、その裏では、半世紀にわたる試行錯誤の積み重ねが働いている。
+        次に指紋でさっとログインするとき、その手軽さの裏にある、第1部からの長い物語を、少し思い出してみてください。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「パスワードは、複雑な記号を混ぜれば混ぜるほど安全」</p>
+          <p class="a">複雑さより「長さ」が効きます。記号を1つ足すより、文字数を増やすほうが組み合わせ（エントロピー）は大きく伸びる。
+          覚えやすい単語をつなげた長いパスフレーズも、有効な選択肢です。</p>
+          <p class="q">誤解②：「強いパスワードを1つ作れば、全サービスで使い回しても安全」</p>
+          <p class="a">最も危険なパターンです。一か所流出すれば、同じパスワードで全サービスを試される。
+          強さ以前に「使い回さない」ことが鉄則。だからパスワードマネージャーが要るのです。</p>
+          <p class="q">誤解③：「多要素認証は面倒なだけで、たいして意味がない」</p>
+          <p class="a">逆で、個人ができる最も効果的な対策の一つ。パスワードが漏れても、もう一つの要素（スマホ等）がなければ突破されません。
+          重要アカウントでは必ず有効にしたい仕組みです。</p>
+          <p class="q">誤解④：「パスキーも、結局はパスワードの一種でしょう？」</p>
+          <p class="a">別物です。パスキーは公開鍵暗号を使い、合言葉を一切送りません。秘密鍵は端末から出ず、フィッシングにも強い。
+          「覚える・入力する・盗まれる」というパスワードの弱点を、根本からなくす仕組みです。</p>
+          <p class="q">誤解⑤：「パスワードは、定期的に変えるほど安全」</p>
+          <p class="a">いまは見直されています。強制的な定期変更は、人が小さな変更で済ませて弱くなったり、ルールが形骸化したりして逆効果になりがち。
+          現在は「漏洩の兆候がない限り、強いものを使い続け、無理に変えない」のが、公的機関も推奨する考え方です。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <div class="summary">
+          <ul>
+            <li>認証＝「あなたが本人か」の確認、認可＝「その本人に何の権限を与えるか」。認証の要素は知識（パスワード）・所持（スマホ）・生体（指紋）の3つで、どれも一長一短。</li>
+            <li>パスワードの強さはエントロピー＝総当たりすべき組み合わせの数（第1部第1講）で決まる。記号を足すより「長さ」を増やすほうが効く。生体は変えられないという弱点がある。</li>
+            <li>パスワード最大の弱点は「使い回し」。一か所の流出が、同じものを使った全サービスの乗っ取りにつながる（パスワードリスト攻撃）。</li>
+            <li>「安全なパスワード（長く複雑で使い回さない）」と「人が覚えられるパスワード」は本質的に両立しない。だから、記憶を道具に任せるか、いっそパスワードをやめる発想が要る。</li>
+            <li>多要素認証＝異なる種類の要素（知識＋所持など）を組み合わせる。一つ漏れても突破されにくい、個人にできる最も効果的な対策の一つ。とくにメールは最優先で守る。</li>
+            <li>パスワードマネージャーで「記憶は道具に任せ、人間はマスターの鍵一つだけを守る」。強いパスワードの使い回しを根絶できる、現実的な解。</li>
+            <li>パスキーは公開鍵暗号の応用。秘密鍵は端末から出ず、合言葉を一度も送らないので、フィッシングに強い。「安全か便利か」の二者択一を、技術が"両取り"へと変えてきた到達点。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>認証の3要素を挙げ、それぞれ身近な例を1つずつ示せ。</li>
+            <li>パスワードの安全性を高めるには、「複雑さ」と「長さ」のどちらがより効くか。第1部第1講の言葉で説明せよ。</li>
+            <li>強いパスワードでも「使い回し」が危険なのはなぜか。流出時に何が起きるかで説明せよ。</li>
+            <li>パスキーが「フィッシングに強い」のはなぜか。第1部第10講の公開鍵暗号を使って説明せよ。</li>
+            <li>「銀行員を名乗る電話で、ワンタイムコードを聞かれた」。どう対応すべきか、その理由とともに。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) 知識＝パスワード／暗証番号、所持＝スマホ／ICカード、生体＝指紋／顔。<br>
+            (2) 「長さ」。文字を1つ増やすと組み合わせ（エントロピー）が桁違いに増え、総当たりが急速に困難になる。記号1つ足すより効果が大きい。<br>
+            (3) 一か所のサービスから流出したパスワードを、攻撃者が他の有名サービスに片っ端から試す（パスワードリスト攻撃）。同じものを使い回していると、全部が乗っ取られる。<br>
+            (4) パスキーは秘密鍵が端末から出ず、合言葉も送らない。だから偽サイトに「入力させて盗む」対象が存在しない。盗めるパスワードがそもそもない。<br>
+            (5) 教えず、電話を切る。正規の認証は自分の端末が自分に対して行うもので、第三者がコードを尋ねてくることはありえない＝それは詐欺だから。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">結城浩『暗号技術入門（第3版）』</span>（SBクリエイティブ）
+          ― ハッシュ・公開鍵暗号・認証の仕組みを、初学者向けにていねいに解説。パスキーの土台が理解できる。</li>
+          <li><span class="bk">IPA（情報処理推進機構）の「パスワード」「多要素認証」解説ページ</span>
+          ― 公的機関による、信頼できる最新の実践ガイド。何をすべきかが具体的に分かる無料資料。</li>
+          <li><span class="bk">FIDOアライアンス／各社のパスキー解説</span>
+          ― パスキーを推進する標準化団体や、対応サービスの公式解説。仕組みと使い方を一次情報で確認できる。</li>
+          <li><span class="bk">ブルース・シュナイアー『セキュリティはなぜやぶられたのか』</span>（日経BP）
+          ― 認証を含むセキュリティ全体を「人間とトレードオフ」の視点で考える名著（第5講と共通の必読書）。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part2_lecture5.html"><span class="lab">← 前の講</span>第2部 第5講 セキュリティはなぜ敗北するのか</a>
+        <a class="nx" href="part2_lecture7.html"><span class="lab">次の講 →</span>第2部 第7講 ハッキングと攻撃者の世界</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第2部 第6講「認証・パスワード・パスキー」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>
