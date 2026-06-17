@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第1部 第14講 数値計算と誤差 ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="なぜ 0.1+0.2 は 0.3 にならないのか。浮動小数点、丸め誤差、乱数の正体を身近に学ぶ。ゆるコンピュータ科学講義 第1部 第14講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#c8503a; --accent-soft:#f7e3dd;
+    --accent2:#2f6f6a; --accent2-soft:#dcebe9;
+    --code-bg:#2b2722; --code-ink:#f3ead9;
+    --sidebar:#262320; --sidebar-ink:#e9e2d4; --sidebar-muted:#a59c8a;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#16140f; --paper:#1f1c16; --ink:#ece6d8; --muted:#a79e8c;
+    --line:#332f27; --accent:#e8775f; --accent-soft:#3a221c;
+    --accent2:#6fb6ad; --accent2-soft:#1c2c2a;
+    --code-bg:#100e0a; --code-ink:#f3ead9;
+    --sidebar:#100e0a; --sidebar-ink:#e9e2d4; --sidebar-muted:#8d8472;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#a83c2c 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"0.1+0.2";position:absolute;right:10px;bottom:-8px;font-family:ui-monospace,monospace;font-size:3.6rem;font-weight:800;color:rgba(255,255,255,.08)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.9;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent2);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent2-soft);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent2)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:var(--accent2-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#2b2722}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent2-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent2-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent2);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent2-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent2);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+  /* --- ゆるラジオ版の追加スタイル --- */
+  .yhook{margin:24px 0;padding:18px 24px;border-radius:18px;background:radial-gradient(circle at top left,var(--accent-soft),var(--paper));border:1px solid var(--accent);line-height:1.95}
+  .yhook .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.08em;color:#fff;background:var(--accent);padding:3px 12px;border-radius:999px;margin-bottom:8px}
+  .yhook p{margin:.5em 0}.yhook p:last-child{margin-bottom:0}
+  .ybox{margin:24px 0;padding:4px 22px 16px;border-radius:14px;border:1px solid var(--line);border-left:5px solid var(--accent);background:var(--paper)}
+  .ybox .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin:14px 0 4px}
+  .ybox p{margin:.6em 0}.ybox p:last-child{margin-bottom:0}
+  .ybox.alt{border-left-color:var(--accent2)}.ybox.alt .ylbl{color:var(--accent2);background:var(--accent2-soft)}
+  .ydlg{margin:24px 0;padding:10px 20px;border-radius:16px;background:var(--accent-soft);border:1px solid var(--line)}
+  .ydlg p{margin:.6em 0;line-height:1.8}.ydlg p:last-child{margin-bottom:0}
+  .spk{display:inline-block;font-weight:800;margin-right:.5em;padding:.08em .7em;border-radius:999px;font-size:.72em;white-space:nowrap;vertical-align:.08em}
+  .spk-a{background:var(--accent);color:#fff}.spk-b{background:var(--accent2);color:#fff}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第14講 数値計算と誤差</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第1部 第14講</span><br>数値計算と誤差</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-binary">小数を二進で表す難しさ</a></li>
+      <li><a href="#s-float">浮動小数点 ― 桁を浮かせる</a></li>
+      <li><a href="#s-accumulate">誤差の蓄積と事故</a></li>
+      <li><a href="#s-random">乱数 ― 機械が偶然を作る矛盾</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第1部 基礎教養編 ／ 第14講</div>
+        <h1>数値計算と誤差<br>― 「0.1+0.2＝0.3」にならない理由</h1>
+        <p>几帳面なはずの計算機が、なぜこんな初歩的な足し算を"間違える"のか。その奥には深い理由がある。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― コンピュータは計算を間違える？</h2>
+        <div class="yhook">
+          <span class="ylbl">この講を一言でいうと</span>
+          <p>電卓アプリで <code>0.1 + 0.2</code> を計算させると、たまに <code>0.30000000000000004</code> という不気味な答えが返ってきます。バグでも故障でもありません。<strong>コンピュータは、小数がわりと苦手</strong>なのです。</p>
+          <p>「正確さの権化」だと思っていた機械が、しれっと誤差を出す。そして、その小さな誤差が積もり積もって、現実に人命に関わる事故まで起こしてきました。本講は、<strong>万能に見える機械の"そそっかしい一面"</strong>と、それでも賢く付き合う方法の話です。</p>
+        </div>
+        <p>多くのプログラミング言語で <code>0.1 + 0.2</code> を計算させると、
+        画面には <code>0.30000000000000004</code> という、奇妙な答えが返ってきます。
+        コンピュータは計算が大の得意なはずなのに、なぜこんな小学生でも解ける足し算を"間違える"のでしょうか。</p>
+        <p>結論から言うと、これは<strong>バグでも故障でもなく、原理的に避けられない現象</strong>です。
+        そしてこの小さな"ズレ"は、ときに笑い話では済まない、現実の事故にもつながってきました。
+        この講では、「コンピュータは正確だ」という私たちの素朴な思い込みに、ひびを入れていきます。
+        テーマは2つ。ひとつは<strong>「小数を二進法で扱うことの限界（誤差）」</strong>、
+        もうひとつは<strong>「決まりきった動きをする機械が、どうやって"でたらめ（乱数）"を作るのか」</strong>。
+        どちらも、第2講で学んだ「すべては0と1」という土台と、第5講の「計算とは何か」に、深く根ざした話です。
+        コンピュータの"得意"の裏にある"弱点"を知ることは、それを正しく使うための必須教養です。</p>
+        <p>なぜ、この回をわざわざ立てるのか。それは、<strong>「コンピュータは万能で完璧」という思い込みが、
+        ときに危険だから</strong>です。
+        私たちはつい、画面に出た数字を疑いなく信じてしまいます。
+        しかし、その数字は「有限のビットに押し込められた近似値」かもしれないし、
+        「でたらめのフリをした、本当は予測可能な乱数」かもしれない。
+        コンピュータが何を得意とし、どこに原理的な限界を抱えているのか――
+        それを知ったうえで使うのと、知らずに信じ込むのとでは、大きな差が生まれます。
+        本講は、いわば<span class="em">「コンピュータを過信しないための予防接種」</span>のような回なのです。</p>
+        <p>この講は、これまでの講ともしっかりつながっています。
+        誤差や乱数の話は、第2講の「すべては0と1（有限のビット）」という土台の、いわば"副作用"。
+        第3講では「計算機は決まった桁数の中でしか計算できない」と学び、
+        第5講では「原理的に解けない問題がある」という計算の限界を見ました。
+        本講で扱うのは、その限界が<strong>「数値」という最も身近な形で表れたもの</strong>です。
+        <span class="em">どんなに進歩しても、コンピュータには"できないこと"や"苦手なこと"がある</span>――
+        この一貫したメッセージが、数の世界でどう現れるかを、本講で確かめていきましょう。</p>
+        <p class="lead-in">小数の二進表現 → 浮動小数点 → 誤差の蓄積と事故 → 乱数。
+        「機械は完璧」という幻想を解きほぐし、その限界とのつき合い方を学びます。</p>
+      </section>
+
+      <!-- 二進 -->
+      <section id="s-binary">
+        <h2>小数を二進で表す難しさ</h2>
+        <div class="ybox alt">
+          <span class="ylbl">まず捨てたい誤解</span>
+          <p><strong>「コンピュータが、計算を間違えるわけないでしょ?」</strong>――気持ちは分かりますが、こと小数に関しては、堂々と間違えます。</p>
+          <p>理由は単純で、私たちが <code>1/3 = 0.3333…</code> と十進できれいに書けないのと同じこと。二進の世界では、<code>0.1</code> のようなありふれた小数が<strong>割り切れず、無限に続いてしまう</strong>。コンピュータは限られた桁で打ち切るしかないので、ほんのわずかな誤差が必ず残る。「間違い」というより「四捨五入の宿命」なのです。</p>
+        </div>
+        <p>「0.1 + 0.2 ≠ 0.3」の謎を解く鍵は、第2講にあります。
+        コンピュータは、すべての数を二進法（0と1）で持っていました。
+        整数なら問題ありませんが、<strong>小数</strong>になると、思わぬ落とし穴があります。</p>
+        <p>たとえば十進法の <code>1/3</code> は、小数で書くと <code>0.3333…</code> と、いつまでも割り切れません。
+        これと同じことが、二進法の世界でも起きます。
+        私たちにとってキリのいい <code>0.1</code> は、じつは<span class="em">二進法で書くと <code>0.000110011001100…</code> と、
+        無限に循環してしまう小数</span>なのです。
+        十進法で <code>1/3</code> が割り切れないのとまったく同じ理屈。
+        「キリがいい数」は記数法によって違うので、十進で簡単な <code>0.1</code> が、二進では厄介者になるのです。</p>
+        <p>コンピュータのメモリは有限なので、無限に続く桁を、どこかで打ち切るしかありません。
+        この<strong>打ち切りによって生じるわずかな誤差</strong>を<span class="term">丸め誤差</span>と呼びます。
+        <code>0.1</code> も <code>0.2</code> も、内部ではほんの少しだけズレた値で保存されており、
+        それを足し合わせると、ズレも一緒に積もって、<code>0.30000000000000004</code> のような答えになる。
+        <span class="em">コンピュータが間違えたのではなく、「正確に表せない数を、無理やり有限の桁に押し込んだ」結果</span>なのです。</p>
+        <p>面白いのは、<strong>どの数が「キリよく」表せるかが、記数法によって違う</strong >ことです。
+        二進法でキリよく表せるのは、<code>0.5（＝1/2）</code>、<code>0.25（＝1/4）</code>、<code>0.75（＝1/2+1/4）</code> のように、
+        「2の分の1」の足し算で作れる数だけ。
+        <code>0.5 + 0.25 ＝ 0.75</code> のような計算なら、二進法でもぴったり正確で、誤差は出ません。
+        ところが <code>0.1</code> や <code>0.3</code> は、この「2の分の1」の組み合わせでは作れないので、循環してしまう。
+        私たちが日常で「キリがいい」と感じる十進の感覚と、機械にとっての「キリがいい」がズレている――
+        これが、小数の計算で直感に反する結果が出る、根本の理由なのです。</p>
+      </section>
+
+      <!-- 浮動小数点 -->
+      <section id="s-float">
+        <h2>浮動小数点 ― 小数点を「浮かせる」工夫</h2>
+        <div class="ybox">
+          <span class="ylbl">雑なたとえ</span>
+          <p>浮動小数点は、かなり雑に言うと<strong>「理科で習った、1.23×10⁴ みたいな書き方」</strong>です。</p>
+          <p>"中身の数字（1.23）"と"小数点の位置（×10⁴）"を別々に持つ。こうすると、地球の重さみたいな巨大な数も、原子みたいな極小の数も、同じ限られた桁数で表せます。小数点が左右に"浮く"から、浮動小数点。ただし、桁数は有限なので、表せる精度には限界がある。<strong>「広い範囲を表す代わりに、細かさはほどほどで我慢する」</strong>という、いさぎよい妥協なのです。</p>
+        </div>
+        <p>では、原子のサイズから宇宙の大きさまで、桁が極端に違う実数を、限られたビット数でどう表すのでしょうか。
+        ここで使われるのが<span class="term">浮動小数点数</span>という、巧妙な表現方法です。</p>
+        <p>発想は、理科で習う指数表記と同じです。
+        <code>0.0000123</code> を <code>1.23 × 10⁻⁵</code> と書くように、
+        <strong>「有効数字（仮数）」と「小数点の位置（指数）」を分けて持つ</strong>のです。
+        小数点の位置を固定せず、指数によって自由に動かせる――だから「浮動（floating）小数点」と呼ばれます。</p>
+        <p>対になる考え方が<strong>「固定小数点」</strong>です。これは小数点の位置を、たとえば「下2桁は必ず小数」と固定する方式。
+        金額（円や銭）のように、扱う桁の範囲があらかじめ決まっている場面では、固定小数点（や整数）が向いています。
+        一方、科学計算では、極小から極大まで桁が大きく変わるので、小数点を"浮かせて"広い範囲をカバーできる浮動小数点が便利。
+        <span class="em">「広い範囲を、ほどほどの精度で」表したいなら浮動小数点、「決まった範囲を、きっちり正確に」なら固定小数点や整数</span>。
+        ここにも、本講義でおなじみの「用途に応じた使い分け」「何を取り、何を捨てるか」というトレードオフが見てとれます。</p>
+        <div class="def">
+          <p><b>浮動小数点の鉄則</b></p>
+          <p style="margin-bottom:0">浮動小数点数は、実数を「だいたいの値」で表す<strong>近似</strong>である。
+          限られたビットで超広範囲を表せるが、その代償として、表せるのは<strong>飛び飛びの値</strong>だけ。
+          その隙間に落ちる数は、いちばん近い表現可能な値に丸められる。
+          だから <code>==</code> での厳密な等値比較は禁物で、「差が十分小さいか」で判定するのが定石。</p>
+        </div>
+        <p>仮数と指数に分けることで、ごく小さな数も、とてつもなく大きな数も、同じ仕組みで効率よく表せます。
+        その代わり、表現できるのは「とびとびの目盛り」だけ。
+        目盛りと目盛りのあいだの値は、いちばん近い目盛りに丸められてしまいます。
+        だから、お金の計算のように<strong>1円のズレも許されない場面では、浮動小数点を避ける</strong>のが鉄則。
+        金額は、最小単位（円やセント）を<strong>整数</strong>として扱えば、丸め誤差を完全に防げます。
+        「正確さが命のデータは整数で、近似でよい科学計算は浮動小数点で」――この使い分けが、実務の知恵です。</p>
+        <p>浮動小数点には、用意するビット数によって精度の違いがあります。
+        よく使われる「倍精度」（64ビット）では、十進にしておよそ15〜16桁の有効数字を保てます。
+        ふだんの計算なら十分すぎる精度ですが、それでも"無限"ではない、という点が肝心です。
+        この有効桁数を超える細かい違いは、容赦なく丸められて消えてしまう。
+        たとえば、とても大きな数（たとえば10億）に、とても小さな数（たとえば0.0000001）を足しても、
+        桁数が足りずに小さい数が"飲み込まれて"消え、答えが10億のまま変わらない、ということが起こります。
+        だから、小さな値をたくさん足し合わせるときは、足す順序を工夫するだけで、最終結果の精度が変わることさえあるのです。
+        とくに注意が必要なのが<strong>「桁落ち」</strong>という現象です。
+        <span class="em">非常に近い2つの数を引き算すると、有効な桁がごっそり失われてしまう</span>のです。
+        たとえば <code>1.2345678 − 1.2345677</code> のような計算では、
+        上位の揃った桁が消え、残るわずかな差にしか情報がなく、誤差の影響が一気に拡大します。
+        「大きな数から大きな数を引いて、小さな答えを得る」ような計算は危険――
+        これは数値計算を扱う人が、まず最初に叩き込まれる注意点のひとつです。</p>
+      </section>
+
+      <!-- 蓄積 -->
+      <section id="s-accumulate">
+        <h2>誤差の蓄積と事故 ― 0.34秒の悲劇</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-b">聞き役</span>でも、ほんの小数点以下の誤差でしょう? そんなの、実際には誤差みたいなもんじゃ……あ、誤差か。</p>
+          <p><span class="spk spk-a">説明役</span>そこなんです。一回ぶんは無視できる。でも、その微小な誤差を何万回も足し続けたら? ちりも積もれば山となる、を地でいくんです。</p>
+          <p><span class="spk spk-b">聞き役</span>小さなズレが積み重なって、気づいたときには取り返しがつかない……なんだか、生活の失敗そのものですね。</p>
+        </div>
+        <p>1回1回の丸め誤差は、ごくわずかです。気にならないことがほとんどでしょう。
+        しかし、その小さな誤差が<strong>長時間・何百万回と積み重なる</strong>と、無視できない大きさに育つことがあります。
+        これが<span class="term">誤差の蓄積</span>です。</p>
+        <div class="trivia">
+          <p>この誤差の蓄積が、現実の悲劇を招いた有名な事例があります。
+          1991年の湾岸戦争で、アメリカの迎撃ミサイル「パトリオット」が、飛来する敵ミサイルの迎撃に失敗し、
+          多数の死傷者が出ました。原因のひとつが、<strong>浮動小数点の丸め誤差の蓄積</strong>だったとされます。
+          システムは、起動からの時間を浮動小数点で数えていました。
+          1回あたりの誤差はごく小さくても、長時間連続で稼働するうちに、それが積もりに積もって時刻が約0.34秒ずれた。
+          秒速で飛ぶ標的にとって、0.34秒のズレは、予測位置が大きく外れることを意味しました。
+          <span class="em">わずか0.34秒。されど0.34秒。</span>
+          「コンピュータは正確」という思い込みが、いかに危ういか――エンジニアが叩き込まれる教訓です。</p>
+        </div>
+        <p>大切なのは、誤差を「あってはならないもの」と恐れることではなく、
+        <strong>「数を有限のビットで表す以上、誤差は必ずついてまわる」と理解し、それを前提に設計する</strong>ことです。
+        誤差がどれくらい生じ、どう蓄積し、どこで問題になるかを見積もる――
+        これは<strong>数値計算</strong>という、地味ですが極めて重要な分野のテーマです。
+        ロケットの軌道計算、天気予報、橋の強度シミュレーション、AIの学習――
+        現代の大規模な計算は、すべてこの「誤差とどう付き合うか」という問題の上に成り立っています。
+        第3講で「計算機は決まった桁数の中でしか計算できない」と学びましたが、その限界が、小数の世界では誤差という形で表れるのです。</p>
+        <p>誤差を甘く見た事故は、ほかにもあります。
+        ある株式市場で、株価指数の計算に小さな丸め誤差が積もり、長い年月のあいだに指数の値が実態より下振れしていた、という事例。
+        ロケットの打ち上げで、数値の扱いのミスから機体が制御を失い、爆発に至った事例。
+        これらに共通するのは、<span class="em">「1回ごとは無視できるほど小さな誤差」が、規模や時間とともに牙をむいた</span>という点です。
+        だからこそ、大規模・長時間・人命に関わる計算ほど、誤差の見積もりと管理が、設計の最重要課題になります。
+        「だいたい合っていればいい」で済む場面と、「わずかなズレも許されない」場面を見極める目――
+        それが、コンピュータを道具として使いこなす人に求められる、成熟した態度なのです。</p>
+        <div class="history">
+          <p><strong>誤差を飼いならす標準・IEEE 754。</strong>
+          かつては、コンピュータのメーカーごとに小数の表し方がバラバラで、
+          同じプログラムでも機械が違うと計算結果が微妙に食い違う、という困った時代がありました
+          （第2講の文字コード乱立と、よく似た混乱です）。
+          そこで1985年、浮動小数点の表現方法を世界で統一する標準規格<strong>「IEEE 754」</strong>が定められました。
+          仮数と指数に何ビット割り当てるか、丸め方をどうするか、といった細かなルールを統一したのです。
+          この策定を主導した数学者ウィリアム・カハンは、その功績でコンピュータ科学最高の栄誉とされる
+          チューリング賞を受けています。
+          <span class="em">「誤差をなくす」のではなく「誤差の出方を世界で揃え、予測可能にする」</span>――
+          この地道な標準化のおかげで、いまの私たちは、どの機械でも同じ計算結果を得られているのです。</p>
+        </div>
+      </section>
+
+      <!-- 乱数 -->
+      <section id="s-random">
+        <h2>乱数 ― 決定論的な機械が「でたらめ」を作る矛盾</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-a">説明役</span>ここで、ちょっと哲学的な矛盾が出てきます。コンピュータは「決められた手順どおりにしか動かない」機械ですよね。</p>
+          <p><span class="spk spk-b">聞き役</span>はい。同じ入力なら、毎回きっちり同じ答えを返す、くそ真面目なやつだと。</p>
+          <p><span class="spk spk-a">説明役</span>なのに、ゲームやくじには「でたらめな数（乱数）」が要る。<strong>くそ真面目な機械に、どうやってデタラメを作らせるか</strong>。じつは多くの場合、本物のデタラメではなく、"デタラメそっくりの規則的な数"でごまかしてるんです。</p>
+        </div>
+        <p>本講のもうひとつのテーマが<strong>乱数</strong>です。
+        ゲームのサイコロやガチャ、暗号の鍵（第10講）、統計シミュレーション、抽選――
+        コンピュータには「でたらめな数（乱数）」が、大量に必要とされます。
+        ところが、ここには根本的な矛盾が潜んでいます。</p>
+        <p>第5講で学んだとおり、コンピュータは<span class="em">「同じ入力からは、必ず同じ出力を出す」きっちりした機械</span>です。
+        手順がすべて決まっている、几帳面そのものの存在。
+        そんな機械が、いったいどうやって<strong>予測不能な"でたらめ"</strong>を生み出せるのでしょうか。
+        決まりきった計算からは、決まりきった結果しか出ないはずなのに。</p>
+        <p>答えは、「本物のでたらめは作れないので、<strong>でたらめのフリ</strong>をする」です。
+        これを<span class="term">疑似乱数</span>と呼びます。
+        ある初期値（シード）を出発点に、複雑な計算で次々と数を作っていく。
+        計算式で完全に決まっているので<strong>本当はランダムではない</strong>のですが、
+        人間の目には規則性がまったく見抜けないほど、バラバラに見える。
+        だから、実用上は「乱数」として通用するのです。</p>
+        <p>仕組みのイメージをつかむために、ごく素朴な作り方を紹介しましょう。
+        「いまの数に、ある決まった数をかけて、別の決まった数を足し、大きな数で割った余りを、次の数とする」――
+        これを繰り返すだけでも、出てくる数列は、人間にはかなりデタラメに見えます
+        （線形合同法と呼ばれる古典的な方法です）。
+        式はずっと同じなのに、余りを取るたびに値が大きく飛び跳ねるので、規則性が見えにくくなるのです。
+        ただし、しょせんは計算なので、長く続ければ必ずどこかで<strong>同じ数列が繰り返され（周期）</strong>ますし、
+        質の悪い方法だと、偏りやパターンが現れて"バレて"しまいます。
+        だから、用途に応じて「どれくらい良い疑似乱数か」が重要になる。
+        ゲームのサイコロ程度なら素朴な方法で十分でも、シミュレーションや暗号では、もっと高品質な乱数が求められるのです。</p>
+        <div class="def">
+          <p><b>疑似乱数の性質</b></p>
+          <p style="margin-bottom:0">計算で作るので、<strong>同じシード（初期値）を与えれば、毎回まったく同じ数列が出る</strong>。
+          これは一見欠点のようだが、ゲームのリプレイの再現や、プログラムのデバッグ（同じ状況を再現してバグを追う）には、
+          むしろ好都合な性質でもある。</p>
+        </div>
+        <p>ただし、暗号の用途では、この「フリ」が命取りになります。
+        疑似乱数のシードや計算式が攻撃者に予測されると、生成される暗号鍵まで予測され、暗号が破られてしまうからです。
+        過去には、乱数の質が悪かったせいで暗号が破られる事故が、実際に何度も起きています。
+        そこで、本当に予測不能な乱数が必要なときは、<strong>計算ではなく物理現象</strong>から「種」を採取します。
+        電子回路の熱雑音、放射性物質が崩壊するタイミング、マウスの微妙な動きやキー入力の間隔――
+        こうした<span class="em">自然界の予測不能なゆらぎ</span>を借りてくるのです。
+        几帳面な機械が真の偶然を手に入れるには、外の世界の気まぐれに頼るしかない、というわけです。
+        ここでも第1講のエントロピー（予測のしにくさ）が、「良い乱数の条件」として顔を出しています。</p>
+        <div class="trivia">
+          <p>ゲームの「ガチャ」や、ネットの抽選も、この乱数で動いています。
+          だからこそ、「本当に公平なのか」が、たびたび議論になります。
+          疑似乱数の質が悪かったり、確率の設定が偏っていたりすれば、結果に不公平が生じうるからです。
+          そこで一部のサービスでは、抽選に使った"種"や条件を事後に公開し、
+          「誰でも結果を検算できる」ことで公平性を証明する、という工夫も生まれています
+          （第10講のハッシュやブロックチェーンの考え方が応用されています）。
+          <span class="em">「でたらめ」を扱う技術が、かえって「公平さの証明」という社会的な問題に直結する</span>――
+          乱数は、技術と信頼が交わる、意外に奥深いテーマなのです。</p>
+        </div>
+        <p>そもそも「本物のランダムとは何か」という問いも、第1講のエントロピーと深く結びついています。
+        良い乱数とは、<strong>次に何が出るか、まったく予測できない（エントロピーが最大の）数列</strong>のこと。
+        疑似乱数が"偽物"なのは、計算式という規則性が隠れていて、見破られれば次が予測できてしまうからです。
+        皮肉なことに、コンピュータは「規則正しさ」が取り柄の機械なのに、
+        乱数においては、その規則正しさこそが弱点になる。
+        <span class="em">几帳面さが武器にも弱点にもなる</span>――ここに、決定論的な機械が"偶然"を扱うことの、根本的な難しさと面白さが凝縮されています。</p>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用</h2>
+        <h3>シミュレーション ― 計算で未来を覗く</h3>
+        <p>誤差と上手につき合う技術の集大成が<strong>シミュレーション</strong>です。
+        天気予報は、大気の状態を膨大な数値で表し、物理法則に従って少し先の状態を計算し、それを何度も繰り返して未来を予測します。
+        橋や建物の設計では、地震の揺れをコンピュータの中で再現し、壊れないかを確かめる。
+        新薬の開発、自動車の衝突実験、宇宙船の軌道計算、感染症の拡大予測――
+        現実で試すには危険・高価・不可能なことを、計算の中で何度でも"試す"ことができる。
+        現代の科学は、理論と実験に加えて、この「シミュレーション」を第三の柱とする、とまで言われます。
+        <span class="em">コンピュータは、現実を数値の世界に写し取り、未来や「もしも」を覗く道具</span>でもあるのです。
+        ただし、その予測の信頼性は、本講で学んだ誤差の管理にかかっています。
+        「シミュレーションの結果」を鵜呑みにせず、どんな前提と誤差の上に成り立っているかを問う姿勢が大切です。
+        どれだけ精密に見えるシミュレーションも、しょせんは「現実を単純化したモデル」の上での計算。
+        モデルが現実を取りこぼしていれば、いくら計算が正確でも、予測は外れます。
+        「すべてのモデルは間違っている。だが、いくつかは役に立つ」という統計学者の言葉は、まさにこのことを言い当てています。</p>
+        <p>この姿勢は、じつは本講義全体を貫く態度でもあります。
+        コンピュータは、無限の数直線を有限のビットに、複雑な現実を単純なモデルに、本物の偶然を疑似乱数に――と、
+        つねに「何かを近似し、何かを割り切って」動いています。
+        その割り切りがあるからこそ、高速で実用的な計算ができる。
+        けれど、割り切った"ぶん"がどこかに誤差やズレとして残っていることを、使う側は忘れてはいけません。
+        <span class="em">道具の便利さと、その裏にある割り切りの両方を理解してこそ、コンピュータを正しく使いこなせる</span>。
+        この成熟した態度は、次の最終講――万能に見えて、実は数々の限界を抱えるAI――を考えるうえでも、きっと役立つはずです。</p>
+        <h3>乱数があってこそできること</h3>
+        <p>乱数は、ゲームの演出だけのものではありません。
+        複雑すぎて式では解けない問題を、「ランダムにたくさん試して、その結果から答えを推定する」という手法
+        （モンテカルロ法）は、科学や金融で広く使われています。
+        円周率を、乱数を使って求めることさえできる。
+        第15講で扱うAIの学習でも、乱数は重要な役割を果たします。
+        <span class="em">「でたらめ」を上手に使うことが、かえって難問を解く力になる</span>――
+        これは、決定論的な機械であるコンピュータの、意外で奥深い一面です。</p>
+        <p>モンテカルロ法のイメージを、ひとつ紹介しましょう。
+        正方形の中に、ぴったり収まる円を描きます。この正方形に、目をつぶってランダムに点をたくさん打つと、
+        「円の中に入った点の割合」が、だいたい円と正方形の面積比に近づきます。
+        この割合から、逆算して<strong>円周率（π）を推定できる</strong>のです。
+        点をたくさん打つほど、推定はどんどん正確になっていく。
+        計算式で真正面から解くのが難しい問題を、<span class="em">「ランダムにたくさん試して、統計的に答えに迫る」</span>――
+        この発想は、複雑な金融商品の価格評価から、原子炉の設計、AIの探索まで、驚くほど広く使われています。
+        まじめな計算と、でたらめな乱数。一見正反対の2つを組み合わせるところに、コンピュータの面白さがあります。</p>
+        <h3>整数にも、限界はある ― オーバーフロー</h3>
+        <p>誤差というと小数の話だと思われがちですが、整数にも落とし穴があります。
+        第2講・第3講で学んだとおり、コンピュータは決まった桁数（ビット数）で数を扱うため、
+        その範囲を超える大きな数を計算すると、桁があふれて値が一周し、突然マイナスや0に化けてしまう。
+        これが<strong>整数オーバーフロー</strong>です。
+        ゲームでスコアを稼ぎすぎると点数がマイナスになる「カンスト」現象や、
+        第2講で触れた「2038年問題」も、この整数の桁あふれが原因でした。
+        <span class="em">小数には丸め誤差、整数には桁あふれ</span>――
+        どちらも「有限のビットで数を表す」というコンピュータの宿命から来る、避けられない限界なのです。
+        だから、扱う数の大きさをあらかじめ見積もり、適切な"器"（ビット数）を選ぶことが、堅実なプログラムの基本になります。</p>
+        <p>こうして見ると、第14講の主題は「コンピュータの数は、つねに有限の器に入っている」という一点に尽きます。
+        小数は飛び飛びの目盛りでしか表せず、整数は決まった範囲しか持てない。
+        私たちが頭の中で考える「どこまでも続く数直線」とは、根本的に違うのです。
+        この違いを意識せずにコンピュータを信じきると、思わぬ事故に足をすくわれる。
+        <span class="em">「計算機の数は、数学の数とは少し違う」</span>――この一見地味な事実こそ、本講で持ち帰ってほしい、いちばん大切な気づきです。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「コンピュータは計算機なのだから、計算は完璧に正確」</p>
+          <p class="a">整数なら正確ですが、小数は「だいたいの値（近似）」で扱われ、丸め誤差が生じます。
+          「0.1+0.2≠0.3」は、その証拠。コンピュータの計算には、原理的な限界があります。</p>
+          <p class="q">誤解②：「0.1+0.2≠0.3 は、プログラムのバグだ」</p>
+          <p class="a">バグではありません。0.1が二進法で正確に表せないことによる、原理的な現象です。
+          どの言語・どの機械でも（浮動小数点を使う限り）起こります。</p>
+          <p class="q">誤解③：「お金の計算も、小数（浮動小数点）でやればよい」</p>
+          <p class="a">危険です。丸め誤差が積もって1円ずれる事故が起きえます。
+          金額は最小単位（円・セント）を整数で扱うのが定石。「正確さが命のデータは整数で」が鉄則です。</p>
+          <p class="q">誤解④：「コンピュータの乱数は、本物のランダムだ」</p>
+          <p class="a">多くは計算で作る「疑似乱数」で、本当はランダムではありません（同じシードなら同じ数列）。
+          暗号など予測不能性が命の用途では、物理現象から採取した本物の乱数を使います。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <div class="ybox">
+        <span class="ylbl">この発想、生活にも出ます</span>
+        <p>「完璧な精度はあきらめて、だいたい正しいところで折り合う」――じつは私たちも、毎日これをやっています。割り勘の端数、レシピの「適量」、待ち合わせの「だいたい3時ごろ」。すべてを厳密に詰めようとすると、かえって動けなくなる。</p>
+        <p>大事なのは、<strong>「どこまでの誤差なら許されるか」を見極めること</strong>。料理の塩加減なら誤差は気にしなくていいけれど、薬の量や橋の設計ではそうはいかない。コンピュータの誤差との付き合い方は、そのまま「完璧主義とどう距離を取るか」という人生の話でもあります。</p>
+      </div>
+
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <p>この講で持ち帰ってほしいのは、浮動小数点の仕様ではありません。<strong>あの万能に見えるコンピュータでさえ、"近似と妥協"の上で動いている</strong>という見方です。完璧な正確さは幻想で、本当のプロは「どこまでの誤差を許すか」を設計する。これは、AIの「もっともらしい間違い」を冷静に見るうえでも効いてきます。</p>
+        <div class="summary">
+          <ul>
+            <li>0.1は二進法で無限循環するため、有限ビットでは丸め誤差が生じる。「0.1+0.2≠0.3」はバグではなく、原理的に避けられない現象。</li>
+            <li>浮動小数点は仮数と指数で広範囲を表すが、値は飛び飛び。厳密な等値比較は禁物、金額は整数で扱う。</li>
+            <li>小さな誤差も蓄積すると事故につながる（パトリオットの0.34秒）。「コンピュータは正確」は思い込み。</li>
+            <li>決定論的な機械は、疑似乱数で「でたらめのフリ」をする。計算で作るので、同じシード（初期値）からは毎回まったく同じ数列が出る。</li>
+            <li>暗号など、真の予測不能性が要る場面では、物理現象（電子回路の熱雑音、放射性崩壊など）の予測不能なゆらぎを借りてくる。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>なぜ <code>0.1</code> は二進法で正確に表せないのか。十進法の <code>1/3</code> との類似で説明せよ。</li>
+            <li>1円単位で正確に管理したい家計簿アプリで、金額を浮動小数点で持つと、どんな不具合が起きうるか。対策は。</li>
+            <li>ゲームのデバッグで「毎回まったく同じ乱数の流れ」を再現したいとき、疑似乱数のどの性質が役立つか。</li>
+            <li>暗号の鍵を作るのに、疑似乱数より物理現象由来の乱数が好まれるのはなぜか。</li>
+            <li>2つの浮動小数点数が「等しいか」を調べたい。<code>==</code> で比べてはいけないのはなぜか。どうすればよいか。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) 1/3は十進で割り切れず0.333…と循環する。同様に0.1は二進では割り切れず無限循環するため、有限桁で丸めるしかない。<br>
+            (2) 丸め誤差が積もり、合計が1円ずれる等の不整合が出る。対策は金額を「円（整数）」で持って計算する。<br>
+            (3) <strong>同じシードからは同じ数列が再現される</strong>性質。シードを固定すれば同じ展開を何度でも再現でき、バグ調査に便利。<br>
+            (4) 疑似乱数はシードや式が予測されると鍵まで予測され、暗号が破られるから。物理現象は本質的に予測不能で安全。<br>
+            (5) 丸め誤差でわずかにズレ、本来等しいはずの値が一致しないことがあるから。「差が十分小さいか」で判定する。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">矢沢久雄『プログラムはなぜ動くのか（第3版）』</span>（日経BP）
+          ― 二進数・浮動小数点・誤差を平易に解説する定番書。本講の内部表現の話を、もっとかみ砕いて読める。</li>
+          <li><span class="bk">伊理正夫・藤野和建『数値計算の常識』</span>（共立出版）
+          ― 「誤差とどう付き合うか」を説く、数値計算の古典的な名著。タイトルどおり"常識"を授けてくれる。</li>
+          <li><span class="bk">幸谷智紀『数値計算入門』系の教科書</span>
+          ― 浮動小数点・丸め誤差・桁落ちなどを、きちんと学びたい人向けの入門書。</li>
+          <li><span class="bk">ダレル・ハフ『統計でウソをつく法』</span>（講談社ブルーバックス）
+          ― 数値・確率の落とし穴を楽しく学べる古典。乱数や統計の「だまされない目」を養うのに。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part1_lecture13.html"><span class="lab">← 前の講</span>第13講 インターネットの基礎</a>
+        <a class="nx" href="part1_lecture15.html"><span class="lab">次の講 →</span>第15講 AIと大規模言語モデル</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第1部 第14講「数値計算と誤差」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第1部 第7講 データ構造 ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="配列・リスト・スタック・キュー・木・ハッシュテーブル・索引。データの「しまい方」がなぜ速さを決めるのかを身近に学ぶ。ゆるコンピュータ科学講義 第1部 第7講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#c8503a; --accent-soft:#f7e3dd;
+    --accent2:#2f6f6a; --accent2-soft:#dcebe9;
+    --code-bg:#2b2722; --code-ink:#f3ead9;
+    --sidebar:#262320; --sidebar-ink:#e9e2d4; --sidebar-muted:#a59c8a;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#16140f; --paper:#1f1c16; --ink:#ece6d8; --muted:#a79e8c;
+    --line:#332f27; --accent:#e8775f; --accent-soft:#3a221c;
+    --accent2:#6fb6ad; --accent2-soft:#1c2c2a;
+    --code-bg:#100e0a; --code-ink:#f3ead9;
+    --sidebar:#100e0a; --sidebar-ink:#e9e2d4; --sidebar-muted:#8d8472;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#a83c2c 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"[ ] { } #";position:absolute;right:-6px;bottom:-10px;font-family:ui-monospace,monospace;font-size:3.8rem;font-weight:800;color:rgba(255,255,255,.08)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.9;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent2);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent2-soft);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent2)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:var(--accent2-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#2b2722}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent2-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent2-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent2);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent2-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent2);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+  /* --- ゆるラジオ版の追加スタイル --- */
+  .yhook{margin:24px 0;padding:18px 24px;border-radius:18px;background:radial-gradient(circle at top left,var(--accent-soft),var(--paper));border:1px solid var(--accent);line-height:1.95}
+  .yhook .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.08em;color:#fff;background:var(--accent);padding:3px 12px;border-radius:999px;margin-bottom:8px}
+  .yhook p{margin:.5em 0}.yhook p:last-child{margin-bottom:0}
+  .ybox{margin:24px 0;padding:4px 22px 16px;border-radius:14px;border:1px solid var(--line);border-left:5px solid var(--accent);background:var(--paper)}
+  .ybox .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin:14px 0 4px}
+  .ybox p{margin:.6em 0}.ybox p:last-child{margin-bottom:0}
+  .ybox.alt{border-left-color:var(--accent2)}.ybox.alt .ylbl{color:var(--accent2);background:var(--accent2-soft)}
+  .ydlg{margin:24px 0;padding:10px 20px;border-radius:16px;background:var(--accent-soft);border:1px solid var(--line)}
+  .ydlg p{margin:.6em 0;line-height:1.8}.ydlg p:last-child{margin-bottom:0}
+  .spk{display:inline-block;font-weight:800;margin-right:.5em;padding:.08em .7em;border-radius:999px;font-size:.72em;white-space:nowrap;vertical-align:.08em}
+  .spk-a{background:var(--accent);color:#fff}.spk-b{background:var(--accent2);color:#fff}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第7講 データ構造</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第1部 第7講</span><br>データ構造</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-array">配列とリスト</a></li>
+      <li><a href="#s-stack">スタックとキュー</a></li>
+      <li><a href="#s-tree">木 ― 枝分かれの構造</a></li>
+      <li><a href="#s-hash">ハッシュテーブル</a></li>
+      <li><a href="#s-index">索引 ― 探さずに見つける</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第1部 基礎教養編 ／ 第7講</div>
+        <h1>データ構造<br>― 配列・リスト・木・ハッシュ</h1>
+        <p>同じデータでも、「しまい方」が違えば、速さも使い勝手もまるで変わる。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― 「しまい方」が速さを決める</h2>
+        <div class="yhook">
+          <span class="ylbl">この講を一言でいうと</span>
+          <p>探し物が速い人と遅い人の差は、たいてい「探し方」ではなく<strong>「しまい方」</strong>にあります。服を椅子に山積みにする人は、毎朝シャツを発掘するハメになる。引き出しに分けて畳む人は、一発で取り出せる。</p>
+          <p>データ構造とは、要するに<strong>コンピュータの「しまい方」のレパートリー</strong>です。前講で「速さは手順しだい」と学びましたが、その手順の速さは、そもそもデータをどうしまったかで決まる。本講は、その"片づけの流儀"を一通り見ていきます。</p>
+        </div>
+        <p>第6講で、アルゴリズム（手順）の良し悪しが、処理の速さを天と地ほど変えることを見ました。
+        じつは、その速さは、手順だけでは決まりません。
+        <span class="em">データを、どんな形で「しまっておくか」</span>――この<strong>データ構造</strong>が、
+        アルゴリズムと表裏一体で、速さを大きく左右するのです。</p>
+        <p>身近なたとえで考えましょう。同じ「本を探す」作業でも、
+        本棚に背番号順にきれいに並べてあるのか、それとも段ボールに無造作に放り込んであるのかで、
+        探す手間はまったく違います。
+        前者なら第6講の二分探索が使えて一瞬。後者なら、端から全部ひっくり返すしかありません。
+        <strong>データの並べ方・しまい方そのものが、後の作業の効率を決めてしまう。</strong>
+        だから、アルゴリズムとデータ構造は、車の両輪としてセットで語られます。</p>
+        <p>この講では、コンピュータが日々使っている代表的なデータ構造を、ひとつずつ見ていきます。
+        どれも「こういう場面ではこれが速い・便利」という得意分野を持っていて、
+        万能の最強構造は存在しません。
+        大事なのは、それぞれの長所と短所を知り、<strong>場面に応じて使い分ける目</strong>を養うことです。</p>
+        <p>もうひとつ、最初に伝えておきたい大事な視点があります。
+        データ構造は、けっして「プログラマだけの専門用語」ではありません。
+        私たちが日常でやっている工夫――よく使う調味料を手前に置く、書類を見出しつきのファイルで分ける、
+        ToDoを上から順に片付ける――は、すべて立派なデータ構造の発想です。
+        コンピュータがやっているのは、こうした<span class="em">「人間が情報をうまく扱うための工夫」を、徹底的に整理して名前をつけたもの</span>。
+        だから、専門知識として身構えるより、「自分も似たことをやっているな」と引きつけて読むのが、いちばんの近道です。</p>
+        <p>そしてこの講は、第6講と固く手を結んでいます。
+        第6講で「同じ問題でも、手順（アルゴリズム）次第で速さが桁違いになる」と学びましたが、
+        その手順の速さは、データを<strong>どんな構造でしまっているか</strong>に大きく左右されます。
+        二分探索が速いのは「並んでいる（配列）」から、辞書引きが一瞬なのは「ハッシュテーブル」だから。
+        <span class="em">アルゴリズムとデータ構造は、別々に学ぶものではなく、つねにセットで考えるべき"両輪"</span>なのです。
+        本講を読み終えたら、ぜひ第6講ともう一度行き来してみてください。両方が、いっそう深く理解できるはずです。</p>
+        <p class="lead-in">配列とリスト → スタックとキュー → 木 → ハッシュテーブル → 索引。
+        身のまわりのソフトの"速さ"と"使い心地"が、どんなしまい方で支えられているかが見えてきます。</p>
+      </section>
+
+      <!-- 配列とリスト -->
+      <section id="s-array">
+        <h2>配列とリスト ― 連続か、数珠つなぎか</h2>
+        <div class="ybox alt">
+          <span class="ylbl">まず捨てたい誤解</span>
+          <p><strong>「データなんて、とりあえず全部ひとつのリストに放り込んどけばよくない？」</strong>――動くことは動きます。でも、それで止まるともったいない。</p>
+          <p>同じデータでも、しまい方しだいで「追加は速いが検索は遅い」「検索は速いが並べ替えに弱い」と、得意・不得意がガラッと変わります。万能のしまい方はなく、<strong>用途に合わせて選ぶ</strong>もの。冷蔵庫と本棚とクローゼットを使い分けるのと同じです。</p>
+        </div>
+        <p>もっとも基本的な「データを並べてしまう」方法に、性格の異なる2つがあります。</p>
+        <div class="def">
+          <p><b>配列（array）</b>：データをメモリ上に<strong>すきまなく連続して</strong>並べる方式。
+          「先頭から何番目」という番地の計算だけで、どの要素にも一瞬（<code>O(1)</code>）でたどり着ける。
+          反面、途中に新しい要素を挿入したり削除したりすると、後ろの要素を全部ずらす必要があり、遅い。</p>
+          <p style="margin-bottom:0"><b>連結リスト（linked list）</b>：各データが「次のデータの居場所」を指し示し、
+          <strong>数珠つなぎ</strong>になっている方式。途中への挿入・削除は、前後のつなぎ替えだけで済むので速い（<code>O(1)</code>）。
+          反面、「10番目」を見たいときは、先頭から順にたどるしかなく、アクセスは遅い（<code>O(n)</code>）。</p>
+        </div>
+        <p>整理すると、<strong>配列は「読むのが速いが、挿入が遅い」、リストは「挿入が速いが、読むのが遅い」</strong>。
+        正反対の性格です。たとえば、めったに変更しないがしょっちゅう参照するデータには配列が、
+        頻繁に途中で追加・削除が起きるデータにはリストが向きます。
+        映画館の座席のように番号で一発アクセスしたいなら配列、
+        電車の連結のように途中で車両をつなぎ替えたいならリスト、とイメージするとよいでしょう。
+        どちらが優れているかではなく、<span class="em">用途しだいで使い分ける</span>――これがデータ構造を学ぶ第一歩です。</p>
+        <p>なぜ、この差が生まれるのか。少しだけ仕組みに踏み込むと、腑に落ちます。
+        配列は、メモリという長い棚に、データを<strong>同じ大きさで隙間なく</strong>並べます。
+        だから「先頭の番地＋(番号×データの大きさ)」という単純なかけ算ひとつで、何番目の要素の場所も即座に計算できる。
+        これが「読むのが速い（<code>O(1)</code>）」理由です。
+        反面、真ん中に1つ割り込ませると、それより後ろのデータを全部1マスずつ後ろへずらさねばならず、
+        データが多いほど大仕事になります。</p>
+        <p>連結リストは発想が逆です。データはメモリのあちこちに散らばっていてよく、
+        各データが「次はどこ」という案内札（ポインタ）を持って、手をつないでいます。
+        途中に割り込むのは、前後の人の手を握り替えるだけなので一瞬。
+        しかし「10番目」を知るには、先頭から「次、次、次…」と10回たどるしかない。
+        <span class="em">連続して置く自由を捨てる代わりに、つなぎ替えの自由を得た</span>のがリストなのです。
+        この「何かを得れば何かを失う」というトレードオフは、データ構造のいたるところに現れる、本講を貫くテーマです。</p>
+        <p>配列は、縦横に広げて「表」のように使うこともできます（多次元配列）。
+        第2講で「デジタル写真は、色の数値が並んだ巨大な表」と述べましたが、まさに画像は
+        ピクセルの色を縦横に並べた2次元の配列です。表計算ソフトのマス目も、ゲームの盤面も、同じ発想。
+        「番号で一発アクセスできる」という配列の強みは、こうした格子状のデータととても相性がよいのです。
+        逆に、要素を頻繁に出し入れする"流動的"なデータには、配列の硬さは向かない。
+        <span class="em">かっちり並んで動かないものは配列、出入りの激しいものはリスト</span>――
+        この対比を覚えておくと、設計の勘どころがつかめます。</p>
+      </section>
+
+      <!-- スタックとキュー -->
+      <section id="s-stack">
+        <h2>スタックとキュー ― 積むか、並ぶか</h2>
+        <div class="ybox">
+          <span class="ylbl">雑なたとえ</span>
+          <p>スタックとキューは、かなり雑に言うと<strong>「洗った皿の山」と「レジの行列」</strong>の違いです。</p>
+          <p>皿の山（スタック）は、最後に重ねた一番上から取る。あとに置いたものが先に出る。一方レジの行列（キュー）は、先に並んだ人から順にさばかれる。早い者勝ち。たったこれだけの違いですが、「直前の操作に戻る（取り消し）」には皿の山、「順番に処理する（印刷待ち）」には行列、と役割がきれいに分かれます。</p>
+        </div>
+        <p>次は、データの「出し入れの順序」に着目した、シンプルだけれど強力な2つの構造です。</p>
+        <ul>
+          <li><strong>スタック（stack）</strong>：あとに入れたものを先に出す方式（LIFO：Last In, First Out）。
+          机に積み上げた本のイメージで、いちばん上（最後に置いた本）から取ります。</li>
+          <li><strong>キュー（queue）</strong>：先に入れたものを先に出す方式（FIFO：First In, First Out）。
+          レジの行列のイメージで、先に並んだ人から順に処理されます。</li>
+        </ul>
+        <p>地味に見えて、この2つは私たちの操作のあちこちに隠れています。
+        ブラウザやアプリの<strong>「戻る」ボタン</strong>、文書作成の<strong>「元に戻す（Undo）」</strong>は、
+        直前の操作を順に取り消すので、まさにスタック。
+        一方、印刷の待ち行列や、動画のバッファ、順番待ちの処理は、入った順にさばくのでキューです。
+        <span class="em">「戻る」が直前のページに戻れるのは、訪れたページをスタックに積んでいるから</span>。
+        あの当たり前の挙動の裏にも、ちゃんと適切なデータ構造が選ばれているのです。</p>
+        <p>とりわけスタックは、コンピュータの内部動作でも主役級です。
+        プログラムが別のプログラム（関数）を呼び出すとき、
+        「呼び出し元に戻る場所」をスタックに積んでいきます。
+        だから、呼び出した処理が終わると、ちゃんと元の場所に順序よく戻れる。
+        この仕組みのおかげで、複雑に入れ子になった処理も迷子にならずに済むのです。</p>
+        <p>ちなみに、プログラムが動くときに使うこの領域は「コールスタック」と呼ばれ、
+        ここがあふれると<strong>「スタックオーバーフロー」</strong>というエラーになります。
+        世界的に有名なプログラマー向け質問サイトの名前にもなっている、あの言葉の出どころがこれです。
+        関数が自分自身を延々と呼び続けるようなプログラムを書くと、戻る場所が積み上がりすぎて棚があふれ、停止します。
+        身近なエラーメッセージの裏にも、ちゃんとスタックというデータ構造がいるわけです。</p>
+        <p>スタックとキューの使い分けは、「探索のしかた」にも直結します。
+        迷路を解くとき、スタックを使うと「行けるところまで突き進み、行き止まりなら戻る」深さ優先の探索になり、
+        キューを使うと「近いところから順に同心円状に広げる」幅優先の探索になります。
+        同じ迷路でも、出し入れの順序を決めるデータ構造を変えるだけで、探し方の性格ががらりと変わる。
+        次の第8講のグラフ探索でも、この2つは主役として再登場します。</p>
+      </section>
+
+      <!-- 木 -->
+      <section id="s-tree">
+        <h2>木 ― 枝分かれの構造</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-a">説明役</span>「木」っていうと身構えますけど、パソコンのフォルダを思い出してください。あれ、もう木構造です。</p>
+          <p><span class="spk spk-b">聞き役</span>あ、フォルダの中にフォルダがあって、その中にまたフォルダが……っていう、あの入れ子。</p>
+          <p><span class="spk spk-a">説明役</span>そうです。枝分かれしながら下へ伸びていく。組織図も、家系図も、トーナメント表も、ぜんぶ同じ形。一度この「木」が見えると、世界が枝分かれだらけに見えてきますよ。</p>
+        </div>
+        <p>データを一列に並べるだけでなく、<strong>枝分かれ</strong>させた構造が<span class="term">木構造（ツリー）</span>です。
+        パソコンのフォルダの階層、会社の組織図、家系図、トーナメント表――
+        世の中の「親子・上下・包含」の関係は、たいてい木で表せます。
+        じつは第1講の数当てゲームの図も、第6講の分割統治のイメージも、根っこは木でした。</p>
+        <p>木のなかでも、検索でとくに強力なのが<span class="term">二分探索木</span>です。
+        「左の子は自分より小さい、右の子は自分より大きい」というルールで数を配置すると、
+        探したい数が自分より小さければ左へ、大きければ右へ、と進むだけで、
+        <span class="em">1ステップごとに候補が半分になる</span>。
+        探索・挿入・削除がすべて <code>O(log n)</code> でできます。
+        ―― またしても、第1講・第6講の「半分ずつ絞る」発想です。
+        コンピュータ科学では、この「半分に割る」という考え方が、手を変え品を変え、何度も登場します。</p>
+        <div class="note">
+          <span class="lbl">第12講への伏線</span>
+          データベース（第12講）が、膨大なデータから目的の1件を一瞬で引けるのも、
+          内部でこうした木（実際にはB木という、枝分かれの多い木）を使ってデータを整理しているからです。
+          木構造は、地味ですが、現代のデータ管理を支える縁の下の力持ちです。
+        </div>
+        <p>ただし、二分探索木には弱点もあります。
+        データを入れる順番が悪いと、木が左右に育たず、片側にだらりと伸びた"つるつるの一本道"になってしまう。
+        そうなると、せっかくの木が連結リストと変わらず、探索が <code>O(n)</code> まで悪化します。
+        そこで、木が傾きすぎないよう自動でバランスを取り直す「平衡二分探索木」という賢い改良版が考え出されました。
+        <span class="em">理屈の上では速くても、現実のデータの偏りに耐えられるか</span>――
+        この視点が、データ構造を"使える道具"にするうえで欠かせません。
+        理論の美しさと、現実の泥くささの両方に目を配るのが、エンジニアリングの面白さです。</p>
+        <p>木には、用途に応じたさまざまな種類があります。
+        たとえば「つねに最大（または最小）のものを、すばやく取り出したい」という場面で活躍するのが
+        <strong>ヒープ</strong>という木で、これを使うと「優先度の高い順に処理するキュー（優先度付きキュー）」が作れます。
+        緊急度の高いタスクから片付けるスケジューラや、第6講で触れた最短経路の計算でも使われています。
+        また、スマホの予測変換や検索窓のオートコンプリート（入力の途中で候補が出るあれ）は、
+        文字を枝分かれでたどる<strong>トライ木</strong>という木構造が支えています。
+        「ka」と打つと「会議」「買い物」…と一気に候補が出るのは、
+        共通の出だしを枝として共有する木をたどっているから。
+        <span class="em">木は一種類ではなく、目的別にあつらえられた"道具箱"</span>なのです。</p>
+      </section>
+
+      <!-- ハッシュ -->
+      <section id="s-hash">
+        <h2>ハッシュテーブル ― 計算で居場所を決める魔法</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-b">聞き役</span>名前を言っただけで一発で在りかが分かるって、ほぼ超能力じゃないですか。</p>
+          <p><span class="spk spk-a">説明役</span>学校の下駄箱を想像してください。出席番号で場所が決まってるから、探し回らずに直行できますよね。ハッシュテーブルは、あれを「名前から番号を計算して」やるんです。</p>
+          <p><span class="spk spk-b">聞き役</span>探すんじゃなくて、最初から「どこに置くか」を計算で決めておく、と。先回りの天才ですね。</p>
+        </div>
+        <p>本講のハイライト、<span class="term">ハッシュテーブル</span>です。
+        「名前から電話番号を引く」ような、鍵（キー）と値のペアを大量に管理したい場面を考えます。
+        リストを端から探せば <code>O(n)</code>、二分探索木でも <code>O(log n)</code> かかります。
+        ところがハッシュテーブルは、これを<span class="em">平均 <code>O(1)</code>、つまりデータ量によらず一瞬</span>でやってのけます。
+        いったいどんな魔法でしょうか。</p>
+        <div class="def">
+          <p><b>ハッシュ関数</b></p>
+          <p style="margin-bottom:0">どんなデータを入れても、決まった範囲の「数値（ハッシュ値）」を吐き出す計算式。
+          同じ入力からは必ず同じ値が出る。「Tanaka」→ 7番、「Suzuki」→ 3番、のように、
+          <strong>鍵から保管場所の番地を直接"計算"する</strong>のに使う。</p>
+        </div>
+        <p>仕組みはこうです。データをしまうとき、鍵をハッシュ関数に通し、出てきた番号の棚に置く。
+        探すときも、同じ鍵を同じ関数に通せば、<strong>探し回らずに一発でその棚へ直行できる</strong>。
+        図書館で本を端から探す代わりに、請求記号を見て「あの棚のあの段」と一直線に向かうようなものです。
+        プログラミングでおなじみの「辞書（dictionary）」「連想配列」「マップ」「集合（set）」といった機能の正体は、
+        ほとんどがこのハッシュテーブルです。</p>
+        <figure>
+          <svg viewBox="0 0 540 180" role="img" aria-label="ハッシュテーブルの仕組み">
+            <style>.k{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.8}.b{fill:var(--paper);stroke:var(--accent2);stroke-width:1.5}.hf{fill:var(--accent2-soft);stroke:var(--accent2);stroke-width:2}.tt{font:13px sans-serif;fill:var(--ink);text-anchor:middle;font-weight:700}.ss{font:11px sans-serif;fill:var(--muted);text-anchor:middle}.ln{stroke:var(--muted);stroke-width:1.5;fill:none}</style>
+            <rect class="k" x="20" y="30" width="90" height="30" rx="6"/><text class="tt" x="65" y="50">"Tanaka"</text>
+            <rect class="k" x="20" y="120" width="90" height="30" rx="6"/><text class="tt" x="65" y="140">"Suzuki"</text>
+            <rect class="hf" x="160" y="65" width="110" height="50" rx="10"/><text class="tt" x="215" y="86">ハッシュ</text><text class="tt" x="215" y="103">関数</text>
+            <line class="ln" x1="110" y1="45" x2="160" y2="80"/><line class="ln" x1="110" y1="135" x2="160" y2="100"/>
+            <rect class="b" x="360" y="20" width="120" height="26"/><text class="ss" x="345" y="38">0</text>
+            <rect class="b" x="360" y="46" width="120" height="26"/><text class="ss" x="345" y="64">1</text>
+            <rect class="b" x="360" y="72" width="120" height="26"/><text class="ss" x="345" y="90">2</text>
+            <rect class="b" x="360" y="98" width="120" height="26" style="fill:var(--accent-soft);stroke:var(--accent)"/><text class="ss" x="345" y="116">3</text><text class="tt" x="420" y="116">Suzuki</text>
+            <rect class="b" x="360" y="124" width="120" height="26"/><text class="ss" x="345" y="142">…</text>
+            <rect class="b" x="360" y="150" width="120" height="26" style="fill:var(--accent-soft);stroke:var(--accent)"/><text class="ss" x="345" y="168">7</text><text class="tt" x="420" y="168">Tanaka</text>
+            <line class="ln" x1="270" y1="85" x2="358" y2="120"/><line class="ln" x1="270" y1="95" x2="358" y2="160"/>
+          </svg>
+          <figcaption>図1：鍵をハッシュ関数に通して番地を計算。探し回らず、一発で目的の棚へ到達する。</figcaption>
+        </figure>
+        <p>もちろん、魔法には種があります。
+        違う鍵がたまたま同じ番号になってしまうことがある――これを<span class="term">衝突（コリジョン）</span>と呼びます。
+        同じ棚に2人ぶん入れることになるので、その棚だけ小さなリストにする、といった対策が必要です。
+        衝突が増えすぎると <code>O(1)</code> の魔法が崩れて遅くなるため、
+        「衝突しにくい良いハッシュ関数」と「棚をどれだけ余裕をもって用意するか」の設計が、腕の見せどころになります。
+        ちなみに、この「データから短い値を計算する」というハッシュの考え方は、
+        第10講の暗号やパスワード保管でも、まったく違う目的で主役級の活躍をします。</p>
+        <p>ハッシュの威力を、もうひとつの場面で見てみましょう。<strong>「重複を見つける」</strong>作業です。
+        大量のデータの中に同じものが混じっていないか調べたいとき、
+        総当たりで2つずつ比べると <code>O(n²)</code> という、第6講で学んだ"弱い"計算量になってしまいます。
+        ところがハッシュを使えば、「見たことのあるデータの番号」をハッシュテーブルに記録しながら1回なめるだけ。
+        新しいデータが来るたびに「この棚にもう入っている？」と一発で確認できるので、全体で <code>O(n)</code> で済みます。
+        写真アプリが重複画像を見つけたり、システムが「すでに登録済みのメールアドレス」を弾いたりできるのも、
+        この仕組みのおかげ。
+        <span class="em">第6講のアルゴリズムと、第7講のデータ構造が手を組むと、遅い処理が劇的に速くなる</span>――
+        両輪が噛み合う好例です。</p>
+        <p>ハッシュテーブルの「鍵で一発」という性質は、Webサービスの高速化にも欠かせません。
+        アクセスのたびに重い計算やデータベース参照を繰り返すと遅くなるので、
+        一度求めた結果を「この鍵ならこの答え」とハッシュテーブルに覚えておき、次回は即座に返す。
+        これが<strong>キャッシュ</strong>の基本的な考え方です。
+        実際、世界中の大規模サービスが、鍵と値をハッシュで超高速に出し入れする専用の仕組み（キーバリューストア）を使って、
+        膨大なアクセスをさばいています。
+        私たちが感じる「表示が速いな」の裏には、たいていこのハッシュによるキャッシュが効いているのです。</p>
+      </section>
+
+      <!-- 索引 -->
+      <section id="s-index">
+        <h2>索引 ― 探さずに「見つける」発明</h2>
+        <p>ここまで見てきた構造に共通するのは、<strong>「全部を見ずに、目的のものへ直行する」</strong>という思想です。
+        その思想を、紙の本の世界で実現したのが<span class="term">索引（インデックス）</span>でした。
+        分厚い専門書の巻末にある、「用語 → 載っているページ番号」の一覧です。
+        索引がなければ、ある用語を探すのに1ページ目から読むしかない（線形探索）。
+        索引があれば、用語からページへ一足飛びに行ける。
+        <span class="em">本文を読まずに、必要な場所だけを射抜く</span>――これは、まさにハッシュテーブルや木と同じ発想です。</p>
+        <div class="history">
+          <p><strong>索引という「異常な発明」。</strong>
+          いまでは当たり前の索引ですが、その誕生は、人類の知の扱い方の大転換でした。
+          本来、書物は「最初から順に読むもの」です。ところが索引は、
+          <strong>本を「順番に読む対象」から「必要な箇所だけ抜き出す検索対象」へと作り変えてしまった</strong>。
+          言いかえれば、著者が込めた文脈や流れを無視して、情報を断片としてバラバラに引き出す装置です。
+          ある意味で、本に対する"非情さ"を持った発明だったとも言えます。
+          しかしこの「文脈を切り捨ててでも、必要な情報に最速で到達する」という割り切りこそ、
+          後の検索エンジン（第8講）やデータベース（第12講）に受け継がれる、コンピュータ的発想の原型でした。</p>
+        </div>
+        <p>現代のデータベースでも、「インデックス（索引）を張る」ことは高速化の最重要テクニックです。
+        索引を張った項目は一瞬で引ける一方、索引そのものを保つにも場所と手間がかかる――
+        ここにも「速さと、その代償」というトレードオフがあります。
+        紙の本の巻末で生まれた知恵が、形を変えて、いまも巨大なデータベースの中で働いているのです。</p>
+        <p>検索エンジンが、世界中のWebページから一瞬で結果を返せるのも、巨大な索引のおかげです。
+        私たちが検索するたびにWeb全体を読みに行っていたら、何時間あっても足りません。
+        そこで検索エンジンは、あらかじめWebを巡回して「どの単語が、どのページに出てくるか」という
+        巨大な索引（転置インデックスと呼ばれます）を作りためておきます。
+        検索のときは、本文ではなくこの索引を引くだけ。だから一瞬で返せるのです。
+        <span class="em">「あらかじめ整理しておいて、本番では引くだけにする」</span>――
+        索引の思想は、現代の検索の心臓部そのもの。次の第8講では、この検索エンジンが
+        「どのページが重要か」をどう見抜くか、という続きの話に入っていきます。</p>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用</h2>
+        <h3>あなたが毎日使う「あの機能」の正体</h3>
+        <p>データ構造は、目には見えませんが、私たちのデジタル生活の隅々で働いています。
+        スマホの連絡先から名前で一発検索できるのはハッシュテーブルや木のおかげ。
+        「最近開いたファイル」が新しい順に並ぶのはスタック的な管理。
+        アプリの通知が届いた順に処理されるのはキュー。
+        フォルダをたどれるのは木構造。
+        <span class="em">「速い・サクサク動く」と感じるサービスは、たいてい場面に合った正しいデータ構造を選んでいる</span>のです。</p>
+        <p>大規模なサービスでは、キューがとくに重要な働きをします。
+        たとえば、人気イベントのチケット販売で、何万人もが同時に申し込んだとしましょう。
+        全員の処理を一度にこなそうとすればシステムは崩壊しますが、
+        申し込みをいったんキューに並べ、順番にさばいていけば、混雑しても破綻せずに処理できます。
+        動画のアップロード後の変換処理や、メールの一斉送信なども、いったんキューに積んで裏でこなす方式（非同期処理）が定番です。
+        「いま全部やる」のではなく「行列に並べて、順に片付ける」――
+        この当たり前の知恵が、巨大サービスの安定を支えているのです。</p>
+        <h3>選び方しだいで、サービスの命運が変わる</h3>
+        <p>同じ機能を作るのでも、データ構造の選択を誤ると、ユーザー数が増えた途端に重くなって破綻します。
+        逆に、適切な構造を選べば、データが何百万件に増えても軽快なまま。
+        第6講のアルゴリズムと合わせて、<strong>「どう処理するか（アルゴリズム）」と「どうしまうか（データ構造）」の両輪</strong>が、
+        サービスのスケール（規模拡大）を左右します。
+        派手な機能の裏で、こうした地味な土台の設計こそが、実は勝敗を分けているのです。
+        この「大量データをいかにさばくか」というテーマは、第12講（データベース）や第2部のインフラの話へと続いていきます。</p>
+        <div class="trivia">
+          <p>プログラミングを学び始めると、最初に出会う"つまずきの石"のひとつが、この配列とリストの違いだったりします。
+          「どっちでも同じじゃないの？」と思いがちですが、データが大きくなると、選択を誤ったプログラムは目に見えて遅くなる。
+          熟練のプログラマほど、コードを書く前に「このデータは、何を頻繁にやるんだっけ？
+          読むのが多い？　途中の追加削除が多い？　順番は大事？」と自問します。
+          そして、その答えからデータ構造を選ぶ。
+          <span class="em">良いプログラムは、書き始める前の"しまい方の設計"でほとんど決まっている</span>――
+          ベテランほど、この地味な準備に時間をかけるのです。</p>
+        </div>
+        <h3>「使い方」と「中身」を分けて考える</h3>
+        <p>データ構造を学ぶうえで、もうひとつ大切な視点があります。
+        それは<strong>「何ができるか（使い方）」と「どう作られているか（中身）」を分けて考える</strong>こと。
+        たとえば「スタック」は、「積む・取り出す」という使い方さえ決まっていれば、
+        中身が配列で作られていようと、連結リストで作られていようと、利用する側はどちらでもかまいません。
+        この「使い方の約束」だけを表に出し、内部の作りを隠す考え方を<strong>抽象データ型</strong>と呼びます。
+        これは第11講で学ぶ「抽象化」や、第13講のネットワークの「階層化」と、まったく同じ思想です。
+        <span class="em">利用者は使い方だけを知ればよく、中身は作り手が好きに改良できる</span>。
+        この分離があるからこそ、巨大なソフトウェアを、大勢で分担して作れるのです。
+        データ構造は、単なる"しまい方の技術"であると同時に、「複雑さをどう隠して整理するか」という、
+        ソフトウェア設計の根本思想を学ぶ、格好の入口でもあります。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「最強のデータ構造が1つあって、それを使えばいい」</p>
+          <p class="a">ありません。配列・リスト・木・ハッシュには、それぞれ得意・不得意があります。
+          「速い構造」ではなく「その場面に合った構造」を選ぶのが正解で、万能の最強は存在しません。</p>
+          <p class="q">誤解②：「ハッシュテーブルがあれば、木や配列はいらない」</p>
+          <p class="a">ハッシュは「一発で引く」のは得意ですが、「小さい順に並べる」「範囲で取り出す（10〜20番）」のは苦手です。
+          順序が大事な場面では木や配列が向きます。やはり使い分けです。</p>
+          <p class="q">誤解③：「データ構造はプログラマだけの専門知識」</p>
+          <p class="a">考え方そのものは、日常の整理術に通じます。
+          「よく使うものを手前に（配列的）」「履歴を順に取り消す（スタック）」「索引を作って探さず見つける」――
+          情報を扱うすべての人に役立つ発想です。</p>
+          <p class="q">誤解④：「ハッシュの衝突は、めったに起きないから無視していい」</p>
+          <p class="a">データが増えれば衝突は必ず起きます。良いハッシュ関数と十分な棚の数で「起きにくく」はできますが、ゼロにはできません。
+          だから衝突への備えは、ハッシュテーブル設計の必須項目です。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <div class="ybox">
+        <span class="ylbl">この発想、生活にも出ます</span>
+        <p>「探すのが遅いのは、探し方より、しまい方のせい」――これは机の上でも、家計簿でも、写真フォルダでも、まるごと当てはまります。あとで楽をしたければ、しまう瞬間にひと手間かける。ラベルを貼る、日付で分ける、定位置を決める。</p>
+        <p>整理とは、未来の自分への前払いです。<strong>しまうときのわずかな気遣いが、探す時間を何十倍も節約する</strong>。データ構造は、その地味で確実な真実を、コンピュータの側から証明してくれています。</p>
+      </div>
+
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <p>この講で持ち帰ってほしいのは、各構造の名前ではありません。<strong>「速い・遅いは、しまい方で決まることがある」</strong>という視点です。何かを探すのに手間取ったら、探し方を責める前に、しまい方を疑ってみる。それだけで、現実の整理術まで少し変わります。</p>
+        <div class="summary">
+          <ul>
+            <li>データ構造（しまい方）は、アルゴリズム（手順）と表裏一体で、処理の速さと使い勝手を大きく左右する。万能の最強構造はなく、用途に応じた使い分けが基本。</li>
+            <li>配列は「読むのが速く挿入が遅い」、リストは「挿入が速く読むのが遅い」。正反対の性格。</li>
+            <li>スタック（後入れ先出し＝「戻る」・Undo・関数呼び出し）、キュー（先入れ先出し＝待ち行列・印刷・非同期処理）。出し入れの順序を変えるだけで性格が一変する。</li>
+            <li>木構造は階層・親子関係を表す。二分探索木なら探索・挿入が O(log n)（ここでも第1講以来の「半分ずつ絞る」発想が効く）。</li>
+            <li>ハッシュテーブルは鍵から番地を計算し、平均 O(1) で出し入れ。衝突対策が設計の鍵。</li>
+            <li>索引は「探さずに見つける」発明。検索エンジンやデータベースの原型でもある。</li>
+            <li>共通する思想は「全部を見ずに、目的のものへ直行する」「使い方と中身を分けて隠す（抽象化）」。第6講のアルゴリズムと両輪をなす。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>「直前にやった操作を取り消す（Undo）」には、スタックとキューのどちらが向くか。なぜか。</li>
+            <li>名簿の真ん中に1件挿入する操作は、配列と連結リストでどちらが速いか。理由とともに。</li>
+            <li>ハッシュテーブルで「衝突」が一切起きないと仮定すると、なぜ探索が O(1) になるのか。</li>
+            <li>「小さい順に並べて、10番目から20番目を取り出したい」。ハッシュテーブルと二分探索木、向くのはどちらか。</li>
+            <li>紙の本の「索引」と、コンピュータの「ハッシュテーブル」に共通する発想は何か。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) <strong>スタック</strong>。最後にやった操作を最初に取り消す（後入れ先出し）から。<br>
+            (2) <strong>連結リスト</strong>。挿入箇所の前後のつなぎを替えるだけで済む。配列は後続を全部ずらす必要がある。<br>
+            (3) 鍵をハッシュ関数に通せば保管番地が直接わかり、探し回らず1回で到達できるから（衝突がなければ各棚に1件だけ）。<br>
+            (4) <strong>二分探索木</strong>。順序を保てるので「並べる」「範囲で取り出す」が得意。ハッシュは順序を持たないので不向き。<br>
+            (5) どちらも「全部を順に見るのではなく、目的の場所へ直行する（探さずに見つける）」という発想。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">大槻兼資（著）・秋葉拓哉（監修）『問題解決力を鍛える！アルゴリズムとデータ構造』</span>（講談社）
+          ― 配列・リスト・木・ハッシュを、図と例題でていねいに学べる定番書。第6・7・8講と相性抜群。</li>
+          <li><span class="bk">『なっとく！アルゴリズム』（アディティア・バーガバ）</span>（翔泳社）
+          ― イラスト中心で、配列・ハッシュ・木を直感的につかめる一冊。最初の1冊に。</li>
+          <li><span class="bk">デニス・ダンカン『索引 ～ 知の歴史』</span>（光文社）
+          ― 索引という発明が、人類の知の扱い方をどう変えたかを描く読み物。本講の「索引」の話をもっと味わいたい人へ。</li>
+          <li><span class="bk">ジョン・マコーミック『世界でもっとも強力な9のアルゴリズム』</span>（日経BP）
+          ― ハッシュ・検索・データ圧縮など、世界を動かす基礎技術をやさしく解説。データ構造の実用面が見える。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part1_lecture6.html"><span class="lab">← 前の講</span>第6講 アルゴリズムと計算量</a>
+        <a class="nx" href="part1_lecture8.html"><span class="lab">次の講 →</span>第8講 グラフとネットワーク構造</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第1部 第7講「データ構造」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

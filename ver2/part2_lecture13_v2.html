@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第2部 第13講 UI・アフォーダンス・身体 ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="なぜ私たちは説明書なしでスマホを使えるのか。UI・アフォーダンス・身体性を「人と機械の接点」という視点で学ぶ。ゆるコンピュータ科学講義 第2部 第13講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#2f6f6a; --accent-soft:#dcebe9;
+    --accent2:#c8503a; --accent2-soft:#f7e3dd;
+    --code-bg:#21302e; --code-ink:#eaf3f1;
+    --sidebar:#1f2b29; --sidebar-ink:#e3ece9; --sidebar-muted:#94a7a3;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#111413; --paper:#172220; --ink:#e6ece9; --muted:#9aa9a5;
+    --line:#283633; --accent:#6fb6ad; --accent-soft:#16302c;
+    --accent2:#e8775f; --accent2-soft:#3a221c;
+    --code-bg:#0c1413; --code-ink:#eaf3f1;
+    --sidebar:#0c1413; --sidebar-ink:#e3ece9; --sidebar-muted:#7d8e8a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#245a55 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"✋";position:absolute;right:28px;bottom:2px;font-size:3.6rem;font-weight:800;opacity:.14}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.92;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent-soft);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent2);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent2-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#172220}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent2);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+  /* --- ゆるラジオ版の追加スタイル --- */
+  .yhook{margin:24px 0;padding:18px 24px;border-radius:18px;background:radial-gradient(circle at top left,var(--accent-soft),var(--paper));border:1px solid var(--accent);line-height:1.95}
+  .yhook .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.08em;color:#fff;background:var(--accent);padding:3px 12px;border-radius:999px;margin-bottom:8px}
+  .yhook p{margin:.5em 0}.yhook p:last-child{margin-bottom:0}
+  .ybox{margin:24px 0;padding:4px 22px 16px;border-radius:14px;border:1px solid var(--line);border-left:5px solid var(--accent);background:var(--paper)}
+  .ybox .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin:14px 0 4px}
+  .ybox p{margin:.6em 0}.ybox p:last-child{margin-bottom:0}
+  .ybox.alt{border-left-color:var(--accent2)}.ybox.alt .ylbl{color:var(--accent2);background:var(--accent2-soft)}
+  .ydlg{margin:24px 0;padding:10px 20px;border-radius:16px;background:var(--accent-soft);border:1px solid var(--line)}
+  .ydlg p{margin:.6em 0;line-height:1.8}.ydlg p:last-child{margin-bottom:0}
+  .spk{display:inline-block;font-weight:800;margin-right:.5em;padding:.08em .7em;border-radius:999px;font-size:.72em;white-space:nowrap;vertical-align:.08em}
+  .spk-a{background:var(--accent);color:#fff}.spk-b{background:var(--accent2);color:#fff}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第2部 第13講 UI・アフォーダンス</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第2部 第13講</span><br>UI・アフォーダンス・身体</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-door">「押すドア」の謎</a></li>
+      <li><a href="#s-afford">アフォーダンスとシグニファイア</a></li>
+      <li><a href="#s-mental">メンタルモデル ― 頭の中の地図</a></li>
+      <li><a href="#s-gui">GUIという大発明</a></li>
+      <li><a href="#s-body">身体で使うということ</a></li>
+      <li><a href="#s-dark">よいデザインと、ずるいデザイン</a></li>
+      <li><a href="#s-apply">現代への応用と論点</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第2部 応用・社会・現代技術編 ／ 第13講</div>
+        <h1>UI・アフォーダンス・身体<br>― なぜ説明書なしで使えるのか</h1>
+        <p>初めて触るスマホを、なぜ私たちはなんとなく使えてしまうのか。「使いやすさ」の正体と、人と機械の接点をめぐるデザインの科学。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <section id="s-intro">
+        <h2>はじめに ― 主役を、機械から人間へ</h2>
+        <div class="yhook">
+          <span class="ylbl">この講を一言でいうと</span>
+          <p>初めて触るスマホでも、たいていの人は説明書を読まずに使い始められます。一方で、初めて入ったビルのドアを、押すか引くか分からず、思いきり押してびくともせず気まずい思いをした人も多いはず。<strong>同じ「使う」でも、なぜ一方はすんなり、もう一方は人を戸惑わせるのか。</strong></p>
+          <p>本講は、ここまでの「機械の話」から視点を大きく転じ、<strong>それを使う「人間」</strong>を主役にします。鍵となるのは"アフォーダンス"という考え方。読み終わるころには、世界中のドアやリモコンやアプリに、ついツッコミを入れたくなっているはずです。</p>
+        </div>
+        <p>ここまでの第2部は、半導体（第10講）、GPU（第11講）、データセンター（第12講）と、<strong>機械の側</strong>の話が続いてきました。
+        本講で、視点を大きく転じます。主役は、機械ではなく<span class="em">それを使う「人間」</span>です。</p>
+        <p>ちょっと考えてみてください。
+        初めて手にしたスマートフォンでも、たいていの人は分厚い説明書など開かず、なんとなく使い始めてしまいます。
+        アイコンを指でつつき、画面をすっと払い、写真を二本指で広げて拡大する。
+        誰に習ったわけでもないのに、なぜか手が動く。
+        その一方で、初めて入ったビルのドアを「押す」のか「引く」のか分からず、力いっぱい押してびくともせず、後ろの人の視線にいたたまれなくなった――そんな経験も、きっとあるはずです。
+        <span class="em">同じ「使う」でも、なぜ一方はすんなり使え、もう一方は人を戸惑わせるのか</span>。
+        この素朴な謎を、まじめに突き詰める分野こそが、本講のテーマです。</p>
+        <p>コンピュータ科学と聞くと、つい「機械の中身」の話だと思いがちです。
+        けれど、どれほど高性能なコンピュータも、<strong>人間が使えなければ、ただの箱</strong>。
+        この、人と機械が触れ合う境界面のことを<strong>UI（ユーザーインターフェース）</strong>と呼びます。
+        本講では、その「使いやすさ」がどこから生まれるのかを、<strong>アフォーダンス</strong>という鍵概念を軸にほどいていきます。
+        そしてこれは、第1部からずっと追ってきた<strong>「抽象化」</strong>が、人間の感覚といういちばん身近な場所で実を結ぶ話でもあります。</p>
+        <div class="lead-in">よいデザインは、透明である。うまく設計された道具は、その存在を意識させず、私たちはただ「やりたいこと」に集中できる。使いやすさとは、デザイナーの努力が見えなくなった状態のことなのです。</div>
+      </section>
+
+      <section id="s-door">
+        <h2>「押すドア」の謎 ― ノーマンのドア</h2>
+        <div class="ybox alt">
+          <span class="ylbl">まず捨てたい誤解</span>
+          <p><strong>「使い方を間違えるのは、自分が機械オンチだからでしょ?」</strong>――そう自分を責めてきた人に、朗報です。たいてい、あなたのせいではありません。</p>
+          <p>デザインの世界には、はっきりした考え方があります。<strong>「多くの人が同じように間違えるなら、それは設計が悪い」</strong>。引いてしまうドアに「押す」と貼り紙がしてあったら、それはデザインの敗北のしるし。本来、ものは形を見ただけで使い方が分かるべきなのです。この視点に立つと、世界の見え方がちょっと変わります。</p>
+        </div>
+        <p>使いやすさを考えるとき、世界中のデザイナーが必ず引き合いに出す、有名な例があります。
+        それが<strong>「ドア」</strong>です。
+        押すべきか引くべきか分からないドア――取っ手の形につられて引いてしまうが、本当は押すドア――は、あまりに多くの人を戸惑わせてきたため、皮肉を込めて<span class="em">「ノーマンのドア」</span>と呼ばれています。
+        認知科学者のドナルド・ノーマンが、こうした「使いにくいデザイン」の問題を世に広めたことにちなんだ名前です。</p>
+        <p>ここで大切なのは、<strong>「使い方を間違えるのは、使う人が悪いのではなく、デザインが悪い」</strong>という考え方の転換です。
+        引いてしまうドアに「押す」と貼り紙がしてあったら、それはデザインの敗北のしるしです。
+        本来、<span class="em">ものは、その形を見ただけで、正しい使い方が分かるべき</span>なのです。
+        平らな板がついていれば、人は自然に「押す」。取っ手が出っ張っていれば、自然に「握って引く」。
+        貼り紙という言葉での説明が必要になった時点で、形のデザインは役目を果たせていない、というわけです。</p>
+        <p>この発想の転換は、思いのほか深いものです。
+        私たちは、何かをうまく使えなかったとき、つい「自分が機械オンチだから」「年だから」と、自分を責めがちです。
+        けれど、デザインの科学はきっぱりと言います。<span class="em">多くの人がつまずくなら、つまずかせる作りのほうが間違っている</span>、と。
+        この視点に立つと、世界の見え方が変わります。
+        使いにくいリモコン、迷子になる券売機、分かりにくい案内表示――それらは「自分の能力不足」ではなく、「改善されるべき設計の課題」として見えてくる。
+        技術を学ぶことの大切な効用の一つは、こうして<strong>「悪いのは自分ではなく、設計かもしれない」と切り分けられる目</strong>を持てることなのです。</p>
+        <div class="history">
+        <p>ドナルド・ノーマンは、認知科学の立場から「人にやさしいデザイン」を追求した研究者で、その著書『誰のためのデザイン？』は、UIデザインの古典中の古典として読み継がれています。
+        彼は「人間中心設計」という考え方を広め、「使いにくいのはユーザーの責任ではなく、設計の責任だ」という視点を確立しました。
+        のちにアップルでも働き、「ユーザーエクスペリエンス（UX、利用体験）」という言葉を広めた一人としても知られます。
+        機械の都合ではなく、人間の認知のクセに寄り添ってものを作る――その思想が、現代のあらゆる製品設計の土台になっています。</p>
+        </div>
+        <p>このドアの話は、コンピュータと無関係に思えて、実は本講の核心そのものです。
+        スマホもアプリも、結局は「ノーマンのドア」と同じ問題を抱えています。
+        <span class="em">そのボタンは押せそうに見えるか。その操作は、教わらなくても気づけるか。</span>
+        機械の使いやすさは、この「形が語る使い方」をどれだけ丁寧に設計できたかで決まるのです。
+        では、その「形が使い方を語る」という現象を、もう少し正確な言葉でとらえてみましょう。それが次の「アフォーダンス」です。</p>
+      </section>
+
+      <section id="s-afford">
+        <h2>アフォーダンスとシグニファイア ― 形が語る使い方</h2>
+        <div class="ybox">
+          <span class="ylbl">雑なたとえ</span>
+          <p>アフォーダンスは、かなり雑に言うと<strong>「モノの形が、無言で使い方を教えてくる」</strong>ことです。</p>
+          <p>平らな板がついていれば、人は何も考えず「押す」。出っ張った取っ手があれば、自然と「握って引く」。マグカップの取っ手を見れば、指を通したくなる。誰にも教わっていないのに、<strong>形そのものが「こう使ってね」と語りかけている</strong>。よいデザインとは、この"形の言葉"を巧みに使って、説明なしで使い方が伝わるようにすること。貼り紙が必要になった時点で、形のデザインは負けているのです。</p>
+        </div>
+        <p>本講の中心となる鍵概念が<strong>アフォーダンス</strong>です。
+        少し難しい言葉ですが、考え方はとてもシンプルです。</p>
+        <div class="def"><b>アフォーダンスとは</b><br>ものの形や性質が、それを使う人に対して「こう使えますよ」と可能性を示していること。たとえば、平らな面は「押す」ことを、取っ手は「握る・引く」ことを、ツマミは「つまんで回す」ことを、自然に促す。人は、ものの形からその使い方を無意識に読み取っている。</div>
+        <p>椅子は「座る」ことをアフォードし（可能にし）、ボタンは「押す」ことをアフォードし、ハンドルは「握って回す」ことをアフォードします。
+        私たちは、いちいち考えなくても、ものの形から「何ができるか」を読み取って行動している。
+        <span class="em">よいデザインとは、このアフォーダンスを巧みに利用して、見ただけで使い方が分かるようにすること</span>なのです。</p>
+        <p>そしてもう一つ、セットで覚えたい言葉が<strong>シグニファイア（手がかり）</strong>です。
+        これは、使い方を<span class="em">あえて分かりやすく示すための、目印やヒント</span>のこと。
+        たとえば、ドアの「押す側」に縦長の平らな板をつければ、それは「ここを押して」というシグニファイアになります。
+        スマホ画面で、ボタンにうっすら影をつけて「浮き出て見える」ようにするのも、「これは押せますよ」という手がかり（シグニファイア）です。
+        現実のボタンが持つアフォーダンスを、平らな画面の上に<strong>記号として再現している</strong>わけです。</p>
+        <p>ここで、第1部から続く本講義のテーマ<strong>「抽象化」</strong>が顔を出します。
+        コンピュータの中身は、0と1の計算という、人間には到底直感できないものです（第1部）。
+        UIとは、その<span class="em">理解しがたい中身を、人間が直感的に扱える「形」や「手がかり」に翻訳する、究極の抽象化</span>なのです。
+        ファイルを「書類のアイコン」で表し、削除を「ゴミ箱」で表す。
+        中身の複雑さを隠し、人間がすでに知っている現実のものになぞらえる。
+        この翻訳がうまくいくほど、機械は「使いやすく」感じられるのです。</p>
+        <p>ここで一つ、面白い問いがあります。
+        平らなスマホ画面に表示されたボタンは、本当は「押せる出っ張り」など存在せず、ただの光の模様にすぎません。
+        それなのに、私たちはためらいなく指で「押す」。
+        これは、現実世界で長年つちかってきた<span class="em">「出っ張って影のあるものは押せる」という経験</span>を、画面という別世界に持ち込んでいるからです。
+        デザイナーは、その人間のクセを知り尽くしたうえで、わざと影をつけ、押せそうに「見せている」。
+        つまり画面上のUIとは、<strong>現実の物理法則を、記号として巧みに演じてみせる舞台</strong>なのです。
+        近年は、装飾を削ぎ落とした平らなデザイン（フラットデザイン）も流行しましたが、行きすぎると「どこが押せるのか分からない」という新たな混乱を生み、揺り戻しも起きました。
+        見た目の流行と使いやすさのあいだにも、つねに<strong>トレードオフ</strong>があるのです。</p>
+      </section>
+
+      <section id="s-mental">
+        <h2>メンタルモデル ― 頭の中の「動き方の地図」</h2>
+        <p>もう一つ、使いやすさを語るうえで欠かせない概念が<strong>メンタルモデル</strong>です。
+        これは、<span class="em">「この道具は、たぶんこう動くだろう」という、私たちが頭の中に勝手に作っている仕組みのイメージ</span>のことです。</p>
+        <p>たとえば、冷蔵庫の温度設定ダイヤルを「強」にすると、多くの人は「もっと強く冷える」と考えます。これがメンタルモデルです。
+        スマホで画面を下に引っ張ると新しい情報が読み込まれる、という動作も、私たちはいつのまにか「そういうもの」というモデルを持っています。
+        <span class="em">使いやすい道具とは、人間が自然に抱くメンタルモデルと、実際の動きが一致している道具</span>です。
+        逆に、両者がズレていると、人は混乱し、「使いにくい」と感じます。</p>
+        <p>分かりやすい失敗例が、料理用コンロです。
+        四つの口（バーナー）が四角く並んでいるのに、それを操作するツマミが横一列に並んでいると、「どのツマミがどの口に対応するのか」が直感的に分からず、つい間違えます。
+        もしツマミも四角く配置され、口とツマミの位置が一対一で対応していれば、誰も迷いません。
+        これは<strong>対応づけ（マッピング）</strong>の問題と呼ばれ、「操作するもの」と「動くもの」の関係が、見た目で素直に分かるかどうかが、使いやすさを大きく左右するのです。</p>
+        <p>そして、私たちが新しいスマホやアプリを「なんとなく使える」のは、<span class="em">すでに持っているメンタルモデルを応用できる</span>からです。
+        過去に使った別のアプリやWebサイトと「だいたい同じように動くだろう」と推測し、その推測がたいてい当たる。
+        だからこそ、世の中のアプリはボタンの位置や操作の作法を、ある程度<strong>共通の「お約束」</strong>にそろえています。
+        この一貫性が、私たちの学習の負担を減らしているのです。
+        ばらばらに独創的なUIは、一見かっこよくても、実はユーザーを苦しめることが多いのです。</p>
+      </section>
+
+      <section id="s-gui">
+        <h2>GUIという大発明 ― 机の上の比喩</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-b">聞き役</span>パソコンの「ファイル」「フォルダ」「ゴミ箱」って、当たり前すぎて意識したことないですけど、よく考えたら変な名前ですよね。</p>
+          <p><span class="spk spk-a">説明役</span>そこが天才的なんです。コンピュータの中身は0と1の海で、人間には直感できない。そこで<strong>「机の上」というみんなが知ってる世界になぞらえた</strong>。書類、それを入れる紙ばさみ、捨てる箱、と。</p>
+          <p><span class="spk spk-b">聞き役</span>知らない世界を、知ってる世界の比喩で包んだのか。だから専門知識ゼロでも、現実の机の感覚のまま操作できるんですね。</p>
+        </div>
+        <p>UIの歴史を語るうえで、絶対に外せない大発明があります。
+        それが<strong>GUI（グラフィカル・ユーザー・インターフェース）</strong>です。</p>
+        <p>かつてのコンピュータは、黒い画面に文字で命令を打ち込む<strong>CUI（文字ベースの操作）</strong>でした。
+        正しいコマンド（呪文のような命令文）を覚えていなければ、何ひとつできません。
+        これは専門家には強力ですが、一般の人にとっては高すぎる壁でした。
+        そこへ登場したのが、画面に絵（アイコン）や窓（ウィンドウ）を表示し、マウスでそれを指し示して操作するGUIです。</p>
+        <p>GUIの天才的なところは、<span class="em">コンピュータの中を「机の上（デスクトップ）」になぞらえた</span>点にあります。
+        書類は「ファイル」のアイコン、それをまとめる入れ物は「フォルダ」、いらないものを捨てるのは「ゴミ箱」。
+        どれも、人々がすでに知っている現実のオフィスの比喩（メタファー）です。
+        だから、コンピュータの専門知識がなくても、<strong>「現実の机の上での経験（メンタルモデル）」をそのまま応用して使える</strong>。
+        これは、前節までに見たアフォーダンス・シグニファイア・メンタルモデルを、すべて見事に活用した設計でした。</p>
+        <div class="history">
+        <p>GUIやマウスの原型は、1960〜70年代に、ダグラス・エンゲルバートの伝説的なデモや、ゼロックスのパロアルト研究所（PARC）で生み出されました。
+        しかし、それを世の中に広めたのは、それを見て可能性に気づいたアップルのスティーブ・ジョブズらでした。
+        「文字を打ち込む機械」だったコンピュータを、「絵を指でさして使う道具」に変えたこの転換が、コンピュータを専門家の道具から、すべての人の道具へと解き放ったのです。
+        技術そのものの発明と、それを「人が使えるもの」にする発明は、別の才能を要する――技術史がくり返し教える事実です。</p>
+        </div>
+        <p>GUIは、まさに第1部から続く<strong>「抽象化」</strong>の勝利でした。
+        ファイルの実体は、ディスク上に散らばった0と1の集まりにすぎません（第1部、第12講）。
+        しかしGUIは、その物理的な実体を完全に隠し、<span class="em">「書類」という、誰もが知っている概念のふりをさせた</span>。
+        利用者は中身を一切知らずに、「書類をフォルダに入れる」「ゴミ箱に捨てる」という、現実そのままの感覚で操作できる。
+        中身の複雑さを隠して本質だけを使えるようにする抽象化が、ここでは「人間の直感」という形で結実しているのです。</p>
+        <p>面白いのは、この比喩（メタファー）が、ときに本来の現実を追い越してしまうことです。
+        いまの若い世代の多くは、紙の書類を綴じる現実の「フォルダ」より先に、画面の中のフォルダのアイコンに親しんでいるかもしれません。
+        「保存」を表すアイコンが、いまではほとんど使われなくなった四角い記録媒体（フロッピーディスク）の形をしている、というのも有名な話です。
+        <span class="em">もとは現実をまねた比喩だったものが、いつのまにかそれ自体が「当たり前」になり、由来が忘れられていく</span>。
+        これは、よくできた抽象化が世の中に根づいたことの、何よりの証拠でもあります。
+        私たちは日々、無数の比喩の上で、その出どころを意識することなく暮らしているのです。</p>
+      </section>
+
+      <section id="s-body">
+        <h2>身体で使うということ ― 指、目、そして慣れ</h2>
+        <p>UIは、頭で理解するだけのものではありません。
+        私たちは<strong>身体</strong>を使って機械に触れ、そして身体がそれを覚えていきます。
+        本講のもう一つの主題、<strong>身体性</strong>の話です。</p>
+        <p>スマホのタッチ操作は、GUIをさらに一歩進めました。
+        マウスという「間接的な道具」を介さず、<span class="em">画面の対象を、自分の指で直接さわって動かす</span>。
+        写真を二本指で広げて拡大する操作などは、まるで現実のものを手で扱うかのようで、幼い子どもですら直感的にできてしまいます。
+        これは、人間が生まれ持った<strong>身体の感覚</strong>を、そのままインターフェースに取り込んだ結果です。
+        道具が、頭で考える対象から、身体の延長へと近づいたのです。</p>
+        <p>そして、使ううちに操作は<strong>身体が覚えます</strong>。
+        慣れたスマホのロック解除や文字入力を、私たちはほとんど無意識に、画面をろくに見ずにこなせます。
+        これは、自転車の乗り方や箸の使い方と同じで、<span class="em">意識から身体へと技能が移った</span>状態です。
+        よいUIは、この「身体への馴染み」を妨げません。
+        ボタンの位置が毎回変わったり、操作の手順がころころ変わったりすれば、身体は覚えられず、私たちはいつまでも「頭で考えながら」使わされ、疲れてしまいます。
+        ここでも、第13講で繰り返してきた<strong>一貫性</strong>が、いかに大切かが分かります。</p>
+        <div class="trivia">
+        <p>身体性の面白い例が、スマホやパソコンの「手ごたえ（フィードバック）」です。
+        ボタンを押したときの軽い振動、スイッチを切り替えたときの「カチッ」という音、画面をはじいたときに中身が勢いよく流れて少し跳ね返る動き。
+        これらは機能には直接関係ありませんが、<span class="em">「ちゃんと操作できた」という安心感</span>を身体に返してくれます。
+        現実の世界では、ものに触れれば必ず手ごたえがある。その当たり前を、平らなガラス画面の上にわざわざ作り出すことで、機械は私たちの身体になじむのです。
+        反応のないボタンほど、不安なものはありませんよね。</p>
+        </div>
+        <p>身体性の話は、私たちが道具とどれほど深く一体化するか、という驚きにつながります。
+        熟練した人にとって、よく使う道具はもはや「意識して操作する対象」ではなく、<span class="em">自分の身体の一部のように溶け込んだ存在</span>になります。
+        スマホを操る指、車のハンドルを握る手、使い慣れたキーボード――これらを使うとき、私たちは「道具を操作している」という感覚すら忘れ、ただ「やりたいこと」だけに集中しています。
+        哲学者は、こうした状態を「道具が透明になる」と表現しました。
+        これこそ、本講の冒頭で述べた<strong>「よいデザインは透明である」</strong>という言葉の、もっとも深い意味です。
+        うまく設計された道具は、使う人の意識から消え、その人の能力をただ静かに拡張する。
+        コンピュータという道具の究極の理想も、実はここにあるのかもしれません。
+        画面やボタンを意識させず、人がやりたいことに、まっすぐ向かわせてくれる――そんな道具こそが、本当に優れた道具なのです。</p>
+      </section>
+
+      <section id="s-dark">
+        <h2>よいデザインと、ずるいデザイン</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-b">聞き役</span>サブスクの解約ボタンだけ、やたら見つけにくいの、あれ気のせいですか?</p>
+          <p><span class="spk spk-a">説明役</span>気のせいじゃないです。わざとです。「ダークパターン」といって、使いやすさの知識を<strong>利用者のためでなく、企業に都合よく誘導するために使う</strong>ずるいデザインなんです。</p>
+          <p><span class="spk spk-b">聞き役</span>登録は一瞬なのに退会は迷路、「同意する」だけ目立つ、「残りわずか」で焦らせる……あれ全部、技術の悪用だったのか。知ってるだけで、引っかかりにくくなりますね。</p>
+        </div>
+        <p>使いやすさを設計する力は、人を助けるためにも使えますが、<span class="em">人を意のままに操るためにも使えてしまいます</span>。
+        ここは、デザインの倫理にかかわる重要な論点です。</p>
+        <p>本来、UIデザインは「利用者がやりたいことを、楽に達成できるようにする」ための技術です。
+        ところが、これを<strong>「企業がやらせたいことを、利用者にうっかりさせる」</strong>ために悪用するデザインが存在します。
+        こうした、人の認知のクセや習慣につけ込んで誘導する、ずるいデザインは<strong>ダークパターン</strong>と呼ばれます。</p>
+        <ul>
+          <li><strong>解約ボタンだけ、わざと見つけにくく小さくする</strong>（登録は一瞬なのに、やめるのは一苦労）。</li>
+          <li><strong>「同意する」を目立たせ、「断る」を地味にして押させる</strong>。</li>
+          <li><strong>本当は不要な追加購入を、初期設定でオンにしておく</strong>。</li>
+          <li><strong>「残りわずか」「あと3分」と急かして、冷静に考える時間を奪う</strong>。</li>
+        </ul>
+        <p>これらは、アフォーダンスやメンタルモデルといった「使いやすさの知識」を、<span class="em">利用者のためではなく、利用者を出し抜くために使っている</span>のです。
+        本講義が一貫して大切にしてきたのは、技術を<strong>仕組みから理解し、流されずに自分で判断する</strong>力でした。
+        ダークパターンに気づける目を持つことは、まさにその実践です。
+        「なんだか急がされている」「やめにくいように作られている」と感じたら、それはデザインによる誘導かもしれない、と一歩引いて考える。
+        この健全な警戒心は、第2部第9講や第11講で見た「過熱や依存を冷静に見る目」と、根っこは同じものです。
+        作り手の意図を読み解けることが、デジタル時代の自衛になるのです。</p>
+      </section>
+
+      <section id="s-apply">
+        <h2>現代への応用と論点</h2>
+        <h3>アクセシビリティ ― 「誰のためのデザインか」を広げる</h3>
+        <p>「使いやすさ」を突き詰めると、必ず<strong>アクセシビリティ（利用しやすさ）</strong>という考え方に行き着きます。
+        目の見えにくい人、手の動かしにくい人、高齢の人、一時的にケガをしている人――<span class="em">あらゆる状態の人が使えるように設計する</span>という思想です。
+        文字を大きくできる、音声で読み上げられる、片手で操作できる。
+        じつは本講義のこのページにも、文字サイズを変えるボタンや配色を切り替えるボタンがついています。
+        そして重要なのは、<strong>誰かのための配慮は、結局みんなのためになる</strong>ということ。
+        段差をなくしたスロープが、車いすの人だけでなくベビーカーや旅行者の役にも立つのと同じです。
+        「特定の人のため」が「すべての人のため」に広がる――これはデザインのもっとも美しい原則の一つです。</p>
+        <h3>音声・ジェスチャー、そしてその先へ</h3>
+        <p>インターフェースは、文字（CUI）から、絵と指（GUI・タッチ）へと進化してきました。
+        いまや、声で話しかける音声アシスタントや、身ぶりで操作する仕組みも広がっています。
+        その先には、考えただけで操作する技術の研究すらあります。
+        共通しているのは、<span class="em">機械を人間に合わせる方向へ、一貫して進んでいる</span>ことです。
+        かつては人間が機械の言葉（コマンド）を覚えねばならなかったのに、いまや機械が人間の言葉やしぐさを理解しようとしている。
+        この主従の逆転こそ、UIの歴史の本質です。</p>
+        <h3>AIとの対話というインターフェース</h3>
+        <p>そして今、最大の変化が起きています。
+        AIに<strong>ふつうの言葉で話しかけて使う</strong>という、新しいインターフェースの登場です。
+        アイコンを探す必要も、操作手順を覚える必要もなく、「やりたいこと」を言葉で伝えるだけでよい。
+        これは、人間にとって究極に自然なUI――母国語そのもの――に近づく動きだといえます。
+        本講で学んだ「人間に寄り添うほどよいUIだ」という原則の、現時点での到達点です。
+        この大きな変化が私たちの社会をどう変えるのかは、いよいよ次の第14講・第15講で正面から考えていきます。
+        ボタンやアイコンという「形」すら超えて、ただ言葉を交わすだけで機械が応えてくれる時代――それは便利さの極みであると同時に、「私たちは本当に主導権を握れているのか」という新しい問いも生み出します。
+        使いやすさの行き着く先で、人と機械の関係はどうあるべきか。本講で育てた目で、その先を見つめていきましょう。</p>
+      </section>
+
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">Q. 機械の使い方を間違えるのは、使う人が悪い（理解力が足りない）？</p>
+          <p class="a">A. デザインの世界では、むしろ逆に考えます。多くの人が同じように間違えるなら、それは設計が悪い証拠。「押す」と貼り紙が必要なドアは、デザインの失敗です。「使う人を責める前に、設計を疑う」――これが人間中心設計の出発点です。</p>
+          <p class="q">Q. 見た目が美しくおしゃれなら、よいデザインだ？</p>
+          <p class="a">A. 美しさは大事ですが、それだけでは不十分です。よいデザインの本質は「迷わず、楽に、やりたいことができる」こと。独創的でおしゃれでも、ボタンが押せると気づけなかったり、操作が毎回変わったりすれば、使いにくいデザインです。見た目と使いやすさは別の評価軸なのです。</p>
+          <p class="q">Q. 使いやすさのデザインは、いつもユーザーの味方？</p>
+          <p class="a">A. 残念ながら、そうとは限りません。同じ知識が、解約させにくくしたり、不要なものを買わせたりする「ダークパターン」にも使われます。使いやすさの技術は道具であり、人を助けることにも、出し抜くことにも使える。だからこそ、作り手の意図を読み解く目が大切です。</p>
+        </div>
+      </section>
+
+      <div class="ybox">
+        <span class="ylbl">この発想、生活にも出ます</span>
+        <p>よいデザインは「透明」になります。使い慣れた道具は、操作している意識すら消えて、ただ「やりたいこと」に集中できる。自転車も、箸も、慣れた人は道具の存在を忘れている。<strong>道具が主張してこないこと、それ自体が優秀さの証</strong>なのです。</p>
+        <p>そして、使いやすさの知識は人を助けることにも、出し抜くことにも使える諸刃の剣。「なんだか急かされている」「やめにくく作られている」と感じたら、<strong>それはデザインによる誘導かもしれない</strong>と一歩引く。作り手の意図を読み解く目は、現代の立派な護身術です。</p>
+      </div>
+
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <p>この講で持ち帰ってほしいのは、<strong>「使いにくいのは、あなたのせいではなく、設計のせいかもしれない」</strong>と切り分けられる目です。形が使い方を語り、知っている世界の比喩が複雑さを包み、慣れが道具を身体に溶かす。その力は人を助けもすれば、こっそり操りもする。だからこそ、作り手の意図まで見抜けると、デジタル社会をぐっと賢く渡れます。</p>
+        <div class="summary">
+        <ul>
+          <li><strong>UI</strong>は人と機械の接点。使い方を間違えるのは「使う人の責任ではなくデザインの責任」と考えるのが、人間中心設計の出発点（ノーマンのドア）。</li>
+          <li><strong>アフォーダンス</strong>（形が示す使い方）と<strong>シグニファイア</strong>（使い方のヒント）を活かすと、見ただけで使える道具になる。</li>
+          <li><strong>メンタルモデル</strong>（頭の中の動き方のイメージ）と実際の動きが一致するほど使いやすい。一貫性と素直な<strong>対応づけ</strong>が鍵。</li>
+          <li><strong>GUI</strong>は「机の上」の比喩でコンピュータを万人の道具に変えた、<strong>抽象化</strong>の勝利。0と1の実体を「書類・フォルダ・ゴミ箱」に翻訳した。</li>
+          <li>私たちは<strong>身体</strong>で機械に触れ、身体で操作を覚える。手ごたえ（フィードバック）と一貫性が、道具を身体になじませる。</li>
+          <li>使いやすさの知識は、人を助けるだけでなく<strong>ダークパターン</strong>として悪用もできる。作り手の意図を読み解く目が、デジタル時代の自衛になる。</li>
+          <li><strong>アクセシビリティ</strong>＝「誰かのための配慮はみんなのためになる」。UIは文字→絵と指→声や言葉へと、つねに「機械が人間に合わせる」方向に進化している。</li>
+        </ul>
+        </div>
+      </section>
+
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+        <ol>
+          <li>あなたの身のまわりで「使い方を間違えやすいもの」を一つ探し、なぜ間違えるのか（アフォーダンスやマッピングの観点で）を分析してみよう。どう直せば迷わなくなるだろうか。</li>
+          <li>初めて使うアプリを「なんとなく使えた」経験を思い出し、そのとき自分がどんなメンタルモデル（過去の経験）を当てはめていたか、言葉にしてみよう。</li>
+          <li>最近「急かされた」「やめにくかった」と感じたサービスはないだろうか。それがダークパターンだとしたら、どんな仕掛けで、何をさせようとしていたか考えてみよう。</li>
+        </ol>
+        <details class="ans"><summary>考えるヒント</summary>
+        <p>1. たとえば「押し引きの分からないドア」「どの口かわからないコンロのツマミ」「区別しにくいリモコンのボタン」など。形が使い方を語っていない、対応づけが素直でない、が原因のことが多い。形そのものを変えるか、明確なシグニファイアを足すのが解決策です。</p>
+        <p>2. 「前に使った似たアプリと同じ位置にメニューがあるはず」「画面を下に引けば更新されるはず」など。過去の経験＝メンタルモデルを新しい道具に当てはめ、それが当たったから使えた、と気づければ十分です。</p>
+        <p>3. 「あと○分」のカウントダウン、わざと地味な解約リンク、初期設定でオンの追加オプション、など。「冷静な判断を妨げ、企業に有利な行動を取らせる」狙いが見えれば、ダークパターンを見抜く目が育っています。</p>
+        </details>
+        </div>
+      </section>
+
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">『誰のためのデザイン？』ドナルド・A・ノーマン（著）</span>― 本講の土台となった不朽の名著。アフォーダンス、シグニファイア、メンタルモデルの原典。デザインに関心があれば必読。</li>
+          <li><span class="bk">『複雑さと共に暮らす』『未来のモノのデザイン』ドナルド・ノーマン（著）</span>― 同著者による発展編。技術と人間の関係をさらに深く考えたい人へ。</li>
+          <li><span class="bk">『ノンデザイナーズ・デザインブック』ロビン・ウィリアムズ（著）</span>― 見やすさ・分かりやすさの基本原則を、専門家でなくても学べる定番。</li>
+          <li><span class="bk">『ダークパターン』に関する書籍・解説記事</span>― ずるいデザインの手口と見抜き方を知り、賢い消費者・利用者になるために。</li>
+          <li><span class="bk">各社のアクセシビリティ・ガイドライン</span>― 「誰もが使えるデザイン」の具体的な指針。配慮の実例が学べ、ものの見方が変わる。</li>
+        </ul>
+        <p>次の第2部第14講では、ここまで学んできた数々の技術を生み出した<strong>人物たちの歴史</strong>に光を当てます。アイデアはどう生まれ、どう世界を変えたのか――技術史・人物史から学ぶ回へと進みましょう。</p>
+      </section>
+
+      <nav class="pager">
+        <a class="pv" href="part2_lecture12.html">← 第12講 データセンター・CDN・動画配信</a>
+        <a class="nx" href="part2_lecture14.html">第14講 技術史・人物史から学ぶ →</a>
+      </nav>
+
+    </div>
+
+    <footer>
+      <div class="wrap">
+        <p>ゆるコンピュータ科学講義 ／ 第2部 応用・社会・現代技術編 ／ 第13講「UI・アフォーダンス・身体」</p>
+        <p>本講はデザインと認知の入門的な理解を目的とした教育用コンテンツです。概念は平易に簡略化して説明しています。</p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

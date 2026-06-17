@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第2部 第12講 データセンター・CDN・動画配信 ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="クラウドの正体は、世界中にある巨大な建物。データセンター・CDN・動画配信を「距離・分散・キャッシュ」という視点で学ぶ。ゆるコンピュータ科学講義 第2部 第12講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#2f6f6a; --accent-soft:#dcebe9;
+    --accent2:#c8503a; --accent2-soft:#f7e3dd;
+    --code-bg:#21302e; --code-ink:#eaf3f1;
+    --sidebar:#1f2b29; --sidebar-ink:#e3ece9; --sidebar-muted:#94a7a3;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#111413; --paper:#172220; --ink:#e6ece9; --muted:#9aa9a5;
+    --line:#283633; --accent:#6fb6ad; --accent-soft:#16302c;
+    --accent2:#e8775f; --accent2-soft:#3a221c;
+    --code-bg:#0c1413; --code-ink:#eaf3f1;
+    --sidebar:#0c1413; --sidebar-ink:#e3ece9; --sidebar-muted:#7d8e8a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#245a55 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"☁";position:absolute;right:26px;bottom:2px;font-size:4rem;font-weight:800;opacity:.14}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.92;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent-soft);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent2);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent2-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#172220}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent2);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+  /* --- ゆるラジオ版の追加スタイル --- */
+  .yhook{margin:24px 0;padding:18px 24px;border-radius:18px;background:radial-gradient(circle at top left,var(--accent-soft),var(--paper));border:1px solid var(--accent);line-height:1.95}
+  .yhook .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.08em;color:#fff;background:var(--accent);padding:3px 12px;border-radius:999px;margin-bottom:8px}
+  .yhook p{margin:.5em 0}.yhook p:last-child{margin-bottom:0}
+  .ybox{margin:24px 0;padding:4px 22px 16px;border-radius:14px;border:1px solid var(--line);border-left:5px solid var(--accent);background:var(--paper)}
+  .ybox .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin:14px 0 4px}
+  .ybox p{margin:.6em 0}.ybox p:last-child{margin-bottom:0}
+  .ybox.alt{border-left-color:var(--accent2)}.ybox.alt .ylbl{color:var(--accent2);background:var(--accent2-soft)}
+  .ydlg{margin:24px 0;padding:10px 20px;border-radius:16px;background:var(--accent-soft);border:1px solid var(--line)}
+  .ydlg p{margin:.6em 0;line-height:1.8}.ydlg p:last-child{margin-bottom:0}
+  .spk{display:inline-block;font-weight:800;margin-right:.5em;padding:.08em .7em;border-radius:999px;font-size:.72em;white-space:nowrap;vertical-align:.08em}
+  .spk-a{background:var(--accent);color:#fff}.spk-b{background:var(--accent2);color:#fff}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第2部 第12講 データセンター・CDN</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第2部 第12講</span><br>データセンター・CDN・動画配信</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-cloud">「クラウド」の正体</a></li>
+      <li><a href="#s-dc">データセンターの中身</a></li>
+      <li><a href="#s-distance">距離という見えない敵</a></li>
+      <li><a href="#s-cdn">CDN ― 世界中にコピーを置く</a></li>
+      <li><a href="#s-video">動画配信の魔法</a></li>
+      <li><a href="#s-scale">大規模を支える設計思想</a></li>
+      <li><a href="#s-apply">現代への応用と論点</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第2部 応用・社会・現代技術編 ／ 第12講</div>
+        <h1>データセンター・CDN・動画配信<br>― 「雲」の向こうにある巨大な建物</h1>
+        <p>クラウドに保存、と言うけれど、データは空に浮かんでいるわけではない。世界中に建つ巨大な倉庫と、距離との終わりなき戦いの話。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <section id="s-intro">
+        <h2>はじめに ― 「雲」は、どこにあるのか</h2>
+        <div class="yhook">
+          <span class="ylbl">この講を一言でいうと</span>
+          <p>「写真はクラウドに上げてあるから平気」。毎日のように言いますが、その響きのせいで、データが空のどこかにふわふわ浮かんでいる気がしてきます。そこで、はっきりさせます。<strong>クラウドは、雲ではありません。</strong></p>
+          <p>あなたの写真も、いま観ている動画も、その実体は<strong>地球上のどこかに現実に建っている、巨大な建物の中の機械</strong>に収まっています。電気を食べ、熱を吐き、二十四時間うなり続ける機械の群れ。本講は、その「雲」の正体と、世界中に動画を一瞬で届けるための、距離との終わりなき戦いの話です。</p>
+        </div>
+        <p>「写真はクラウドに上げてあるから平気」「データはクラウドにあるよ」。私たちは毎日のように「クラウド（雲）」と口にします。
+        その響きのせいか、データが空のどこかにふわふわ浮かんでいるような、つかみどころのないイメージを抱いている人は少なくありません。
+        そこで、本講のっけにはっきりさせておきます。<span class="em">クラウドは、雲ではありません。</span>
+        あなたの写真も、いま観ている動画も、使っているサービスも、その実体は<strong>地球上のどこかに現実に建っている、巨大な建物のなかの機械</strong>に収まっています。</p>
+        <p>第2部第7講では、クラウドを「サービスとして借りる計算とストレージ」という角度から眺めました。
+        本講はその続きとして、<span class="em">クラウドの物理的な正体――データセンター</span>へ、いよいよ足を踏み入れます。
+        第10講・第11講で見てきたチップやGPU、AIインフラといった「計算する機械」。それらが何万台も肩を寄せ合ってうなりを上げている場所こそ、データセンターにほかなりません。
+        いわば本講は、ここまでのハードウェアの話を、一気に<strong>「世界規模の建物とネットワーク」というスケール</strong>へ引き伸ばす回でもあります。</p>
+        <p>そして、本講のもう一人の主役が<strong>「距離」</strong>です。
+        情報は光の速さで飛ぶ――そう聞くと一瞬に思えますが、その光ですら、地球の裏側まで往復するにはちゃんと時間がかかります。
+        この「距離が生む、どうやっても消せない遅れ」とどう渡り合うか。その工夫から<strong>CDN</strong>という賢い仕掛けが生まれ、私たちが世界中の動画を待たされずに観られる理由が見えてきます。
+        本講を貫くのは、<strong>分散</strong>、おなじみの<strong>トレードオフ</strong>、そして第7講・第10講から続く<strong>「すべては物理に宿る」</strong>という視点です。</p>
+        <div class="lead-in">クラウドという言葉は、その正体を巧みに隠している。実体は、電気を食べ、熱を吐き、二十四時間うなりを上げる、無数の機械の群れなのです。</div>
+      </section>
+
+      <section id="s-cloud">
+        <h2>「クラウド」の正体 ― 他人のコンピュータ</h2>
+        <div class="ybox alt">
+          <span class="ylbl">まず捨てたい誤解</span>
+          <p><strong>「クラウドに保存すると、データはどこにも実体がなくなる」</strong>――言葉のイメージに引きずられた、よくある勘違いです。</p>
+          <p>有名な皮肉に「クラウドとは、結局"他人のコンピュータ"のことだ」があります。あなたの写真は消えてなくなるどころか、<strong>どこか遠くの建物の機械に、しかも何重にもコピーされて</strong>実在している。むしろ手元より頑丈に保管されているのです。便利さの代わりに、私たちは「自分のデータを他人に預ける」という選択をしている――ここが意外と見落とされがちです。</p>
+        </div>
+        <p>少し意地の悪い言い方をすれば、<span class="em">「クラウドとは、結局のところ『他人のコンピュータ』のことだ」</span>という有名な皮肉があります。
+        これは本質を突いています。
+        あなたがスマホの写真を「クラウドに保存」するとき、実際に起きているのは、その写真のデータが、どこか遠くにある巨大な建物の中の、誰か（巨大IT企業）が管理するコンピュータへ、インターネット越しにコピーされている、ということです。
+        魔法でも、空でもありません。<strong>あなたの代わりに、誰かが機械を持ち、電気代を払い、管理してくれている</strong>。それがクラウドの実態です。</p>
+        <p>「クラウド（雲）」という呼び名の由来も、知ると面白いものです。
+        昔から、技術者がネットワークの図を描くとき、自分たちが管理する範囲の外側――「その先は複雑でよく分からないが、とにかくつながっている領域」を、もくもくとした雲の絵で表す習慣がありました。
+        つまり雲は、もともと<span class="em">「中身を気にしなくていい、おまかせの領域」</span>を意味する記号だったのです。
+        その「中身を気にしなくていい」という性質こそ、クラウドサービスの本質をよく表しています。
+        利用者は、サーバーがどこにあり、どう動いているかを知らなくてよい。第1部から繰り返してきた<strong>「抽象化」</strong>――面倒な中身を隠して、本質だけを使えるようにする――の、これもまた一つの形なのです。</p>
+        <p>なぜ自分のパソコンに置かず、わざわざ遠くの機械に預けるのでしょうか。
+        ここに、第2部第7講で学んだ大きな利点があります。
+        自分で高価なサーバーを買い、停電や故障に備え、二十四時間管理する手間――それを専門の事業者にまとめて任せれば、私たちは<span class="em">「使った分だけ払い、面倒な管理から解放される」</span>。
+        水道をひねれば水が出るように、必要なだけ計算や保存を「サービス」として使える。
+        この発想の転換が、現代のあらゆるアプリやサービスを支えています。</p>
+        <p>しかし、これもまた<strong>トレードオフ</strong>です。
+        便利さと引き換えに、私たちは<span class="em">自分のデータを他人に預け、その事業者に依存する</span>ことになります。
+        その会社のサービスが止まれば自分のサービスも止まり、料金体系が変われば従うしかなく、データの扱いもその会社のルールに委ねることになる。
+        第2部第9講で学んだ「中央集権か分散か」「何を信頼するのか」という問いが、ここでも顔を出します。
+        便利な雲の裏側には、こうした依存の構造があることを、頭の片隅に置いておきましょう。</p>
+      </section>
+
+      <section id="s-dc">
+        <h2>データセンターの中身 ― 機械のための巨大な体育館</h2>
+        <p>では、その「他人のコンピュータ」が集まる<strong>データセンター</strong>とは、具体的にどんな場所なのでしょうか。
+        ひとことで言えば、<span class="em">「コンピュータ（サーバー）だけが住む、巨大な専用の建物」</span>です。
+        体育館いくつぶんもの広さの建物に、棚（ラック）がずらりと並び、その棚に何千、何万台ものサーバーがびっしりと差し込まれています。
+        人はほとんどおらず、機械だけが二十四時間、低いうなりを上げて働き続けている――そんな空間です。</p>
+        <p>データセンターを成り立たせている要素は、サーバーだけではありません。
+        むしろ、それを支える「裏方」の設備こそが、データセンターの本体ともいえます。</p>
+        <ul>
+          <li><strong>電力設備</strong>：何万台もの機械を動かすには、町工場どころか小さな町に匹敵する電力が要ります。しかも一瞬たりとも止められないため、停電に備えた予備電源（バッテリーや自家発電機）を必ず備えています。</li>
+          <li><strong>冷却設備</strong>：機械は動けば必ず熱を出します。放っておけば壊れるため、巨大な空調や水冷システムで冷やし続けます。第11講で見たAIインフラの「熱との戦い」が、ここで現実の設備になります。</li>
+          <li><strong>ネットワーク設備</strong>：外のインターネットと高速につなぐ、太い回線の束。データセンターは、世界中のデータが出入りする巨大な「駅」でもあります。</li>
+          <li><strong>物理的なセキュリティ</strong>：人の出入りを厳重に管理し、災害にも耐える構造になっています。世界中の重要なデータが集まる以上、守りも厳重です。</li>
+        </ul>
+        <div class="trivia">
+        <p>データセンターは、どこに建てるかも工夫の塊です。
+        大量の電力が安く手に入る場所、冷却に有利な寒冷地、災害が少なく地盤が安定した土地、そして大都市（＝利用者）からあまり遠すぎない場所――こうした条件を満たす土地が選ばれます。
+        北欧の寒い地域や、電力の安い地域に巨大データセンターが集まるのは、外気で冷やせて電気代も抑えられるから。
+        「機械を置くだけ」と思いきや、地理・気候・エネルギーまで絡んだ、壮大な立地ゲームなのです。</p>
+        </div>
+        <p>ここで効いてくるのが、第11講でも触れた<strong>限界</strong>のテーマです。
+        AIの普及でデータセンターの数と規模は急増し、その電力消費は社会全体で無視できない大きさになってきました。
+        便利なデジタルサービスは、実は<span class="em">膨大なエネルギーの上に成り立っている</span>。
+        「クラウドは環境にやさしい」という単純なイメージとは裏腹に、その消費電力や冷却用の水は、現実の環境問題に直結しているのです。
+        ここでも、便利さの裏にある物理的なコストから目をそらさない姿勢が大切です。</p>
+      </section>
+
+      <section id="s-distance">
+        <h2>距離という見えない敵 ― 光ですら遅い</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-b">聞き役</span>情報は光の速さで飛ぶんですよね。なら距離なんて、一瞬で関係ないのでは?</p>
+          <p><span class="spk spk-a">説明役</span>ところが、その光ですら「遅い」と感じる世界があるんです。地球の裏まで往復すると、コンピュータにとっては気の遠くなる待ち時間になる。</p>
+          <p><span class="spk spk-b">聞き役</span>あ、オンラインゲームで「pingが高いと不利」ってやつですか。撃ったのに当たらない、みたいな。光の速さでも追いつかない距離があるとは……。</p>
+        </div>
+        <p>ここから本講のもう一つの主役、<strong>「距離」</strong>の話に入ります。
+        現代のネットワークでは、情報は光（や電気）の速さで飛びます。
+        光の速さは秒速約30万キロメートル。一秒で地球を七周半する、想像を絶する速さです。
+        「それなら、距離なんて関係ないのでは？」と思うかもしれません。ところが、ことコンピュータの世界では、<span class="em">その光の速さですら「遅い」</span>のです。</p>
+        <p>たとえば、日本から地球の裏側にあるサーバーまで、データが往復するとしましょう。
+        距離にして数万キロメートル。光の速さでも、往復には数十ミリ秒（1ミリ秒＝1000分の1秒）かかります。
+        人間の感覚では一瞬ですが、コンピュータにとっては<span class="em">「気の遠くなるほど長い待ち時間」</span>です。
+        この「信号が往復するのにかかる遅れ」を<strong>レイテンシ（遅延）</strong>と呼びます。
+        そして、Webページや動画を表示するには、この往復が何度も必要になることが多い。
+        往復のたびに数十ミリ秒の遅れが積み重なれば、体感では「なんだか重い、もたつく」サイトになってしまうのです。</p>
+        <div class="def"><b>レイテンシ(遅延)とは</b><br>データを送ってから返ってくるまでの「待ち時間」。距離が遠いほど大きくなる。通信の「太さ（一度に運べる量＝帯域）」とは別の概念で、いくら回線が太くても、遠ければ遅延は減らない。「速さ」には、太さ（帯域）と待ち時間（遅延）の二種類がある、と覚えておこう。</div>
+        <p>ここが重要な点です。
+        多くの人は「通信が速い＝回線が太い（たくさん運べる）」と思いがちですが、それとは別に<strong>「待ち時間（遅延）」</strong>という壁があり、<span class="em">こちらは物理法則（光の速さ）で決まっているため、お金をかけても原理的には縮められない</span>のです。
+        どんなに技術が進歩しても、地球の裏側との距離をゼロにはできません。
+        この「消せない遅れ」とどう向き合うか――そこから、次に見る天才的な発想が生まれます。
+        答えはシンプルです。<strong>「遠いのが問題なら、近くに置けばいい」</strong>。</p>
+        <p>ちなみに、この遅延の問題は、私たちの体験の意外なところに顔を出します。
+        たとえば対戦型のオンラインゲームでは、相手との通信の往復がほんの数十ミリ秒遅れるだけで、「撃ったのに当たらない」「動きがカクつく」といった不利が生まれます。
+        ゲーマーが「ping（ピング）が低いほうが有利」と気にするのは、まさにこのレイテンシのことです。
+        ビデオ会議で相手の返事がわずかに遅れて感じられ、つい言葉がかぶってしまうのも、同じ遅延のしわざ。
+        <span class="em">光の速さという宇宙の制限速度が、私たちの日常の体験に、はっきりと影を落としている</span>のです。
+        距離は、決してただの抽象的な数字ではありません。</p>
+      </section>
+
+      <section id="s-cdn">
+        <h2>CDN ― 世界中にコピーを置いておく</h2>
+        <div class="ybox">
+          <span class="ylbl">雑なたとえ</span>
+          <p>CDNは、かなり雑に言うと<strong>「人気の本を、世界中の図書館にコピーしてばらまく」</strong>仕組みです。</p>
+          <p>世界に一冊しかない本を東京に置いておくと、ニューヨークの人は取り寄せに何日もかかる。でも、あらかじめ各都市の図書館に同じ本を配っておけば、誰もが<strong>近所で一瞬で借りられる</strong>。動画も画像も同じで、よく見られるものを世界各地の"出張所"にコピーしておく。「遠いのが問題なら、近くに置けばいい」――第2部第10講のキャッシュと、根っこはまるで同じ知恵です。</p>
+        </div>
+        <p>距離による遅れを減らすいちばんの方法は、<span class="em">利用者の近くに、データのコピーをあらかじめ置いておくこと</span>です。
+        この発想を仕組みにしたのが<strong>CDN（コンテンツ配信ネットワーク）</strong>です。</p>
+        <div class="def"><b>CDN(コンテンツ配信ネットワーク)とは</b><br>画像・動画・Webページなどのコピーを、世界各地に分散して配置したサーバー網に置いておき、利用者に「いちばん近い場所」から届ける仕組み。遠くの本社（オリジンサーバー）まで取りに行かず、近所の出張所から受け取れるので、速くて、本社の負担も減る。</div>
+        <p>身近なたとえで考えましょう。
+        ある人気の本を、世界に一冊だけ、東京の図書館に置いているとします。
+        ニューヨークの人がそれを読むには、はるばる東京まで取りに来るか、送ってもらうしかなく、時間がかかります。
+        そこで、<span class="em">あらかじめ世界中の主要都市の図書館に、同じ本のコピーを配っておく</span>。
+        そうすれば、ニューヨークの人は近所の図書館で、東京の人は地元で、それぞれ瞬時に読める。
+        CDNがやっているのは、まさにこれです。よく見られる画像や動画を、世界各地の「出張所サーバー」にコピーしておくのです。</p>
+        <p>この仕組みは、本講義でくり返し登場してきた<strong>キャッシュ</strong>の考え方そのものです。
+        第2部第7講のクラウド、第10講のメモリ階層で見たように、<span class="em">「よく使うものを、手近な場所に置いておく」</span>という発想は、コンピュータのあらゆる階層に現れます。
+        CPUのすぐ隣のキャッシュメモリも、世界中に散らばったCDNも、スケールはまるで違うのに、根っこの知恵はまったく同じ。
+        <strong>「近くに置く」</strong>という一つの原理が、ナノメートルの世界から地球規模まで、形を変えて貫いているのです。
+        これに気づけると、ばらばらに見えた技術が、一本の糸でつながって見えてきます。</p>
+        <p>CDNには、速さ以外の利点もあります。
+        利用者からのアクセスを世界中の出張所が分担して引き受けるため、<span class="em">大もとの本社サーバーに負荷が集中しない</span>。
+        人気サイトに何百万人が同時にアクセスしても、各地のCDNが手分けして応えるので、本社はパンクせずに済みます。
+        これは、災害や攻撃で一か所がダウンしても、他がカバーできるという<strong>頑丈さ（耐障害性）</strong>にもつながります。
+        一点に集中させず、分け合う――次節の「大規模設計」にも通じる、重要な思想です。</p>
+      </section>
+
+      <section id="s-video">
+        <h2>動画配信の魔法 ― なぜ止まらずに観られるのか</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-b">聞き役</span>巨大な動画が、再生ボタンを押した瞬間に始まるの、よく考えたら不思議ですよね。全部ダウンロードし終わるの待ってないのに。</p>
+          <p><span class="spk spk-a">説明役</span>コップに水をためてから飲むんじゃなく、蛇口から流れる水を直接飲んでるんです。観ている先の部分だけ、少しずつ先回りで受け取る。これがストリーミング。</p>
+          <p><span class="spk spk-b">聞き役</span>あー、だから電車で一瞬画質が落ちて、また戻るのか。「止まる」より「画質を落としてでも流し続ける」を選んでるんですね。賢い妥協だ。</p>
+        </div>
+        <p>CDNの威力がもっとも分かりやすく現れるのが、<strong>動画配信</strong>です。
+        私たちは毎日、当たり前のように高画質の動画を、ほとんど待たされることなく観ています。
+        しかし、考えてみれば、これはとてつもないことです。
+        一本の動画は、文章や画像とは比べものにならないほど巨大なデータの塊。
+        それを世界中の何億人もが、それぞれ別の動画を、同時に再生している。
+        この「魔法」は、いくつかの賢い工夫の合わせ技で成り立っています。</p>
+        <p>第一の工夫は、先ほどの<strong>CDN</strong>です。
+        人気の動画は、あらかじめ世界中の出張所サーバーにコピーされているので、あなたは遠い本社からではなく、近所のサーバーから受け取れます。だから速い。</p>
+        <p>第二の工夫が、<strong>少しずつ送る（ストリーミング）</strong>という考え方です。
+        動画全体をダウンロードし終えてから再生するのではなく、<span class="em">観ている先の部分を、少しずつ先回りして受け取りながら再生する</span>。
+        だから、巨大な動画でも、再生ボタンを押してすぐに観始められるのです。
+        コップに水をためてから飲むのではなく、蛇口から流れる水を直接飲むイメージです。</p>
+        <p>第三の工夫が、<strong>通信状況に応じて画質を変える（アダプティブ配信）</strong>仕組みです。
+        動画はあらかじめ、高画質・中画質・低画質など複数の版が用意されています。
+        あなたの回線が速いときは高画質を、混雑して遅くなったときはサッと低画質に切り替えて、<span class="em">「止まる（バッファリング）」よりは、多少画質が落ちても再生を続ける</span>ことを優先する。
+        電車の中で動画が一瞬ぼやけてまた鮮明になる、あの体験の正体がこれです。
+        これもまた<strong>トレードオフ</strong>――「画質」と「途切れなさ」を、状況に応じて賢く天秤にかけているのです。</p>
+        <p>さらにその根っこには、第1部第9講で学んだ<strong>データ圧縮</strong>の技術があります。
+        動画は、隣り合うコマがよく似ていることを利用して「変化した部分だけを記録する」など、巧みに圧縮されています。
+        圧縮がなければ、動画のデータ量は何十倍にもふくれあがり、とても今のように快適には配信できません。
+        <span class="em">圧縮（第9講）、距離との戦い（CDN）、少しずつ送る工夫、画質の調整</span>――これらが束になって、私たちの「当たり前」の視聴体験を支えているのです。
+        当たり前の裏に、これだけの知恵が積み重なっている。それに気づくことこそ、本講義の醍醐味です。
+        次に動画を観るとき、再生ボタンを押した一瞬の裏で、世界中のサーバーと圧縮技術と通信の工夫が静かに連携している様子を、少し想像してみてください。きっと、見慣れた画面が少し違って見えるはずです。
+        私たちが何気なく「便利だ」と感じる体験のほとんどは、こうした見えない努力の総体なのです。
+        そして、その努力の正体を知ることは、技術への敬意と、冷静な判断力を同時に育ててくれます。</p>
+      </section>
+
+      <section id="s-scale">
+        <h2>大規模を支える設計思想 ― 一点に頼らない</h2>
+        <p>データセンターやCDNのような、世界規模で止まってはいけない巨大システムを作るとき、技術者がもっとも大切にする考え方があります。
+        それが<span class="em">「一点に頼らない（単一障害点をなくす）」</span>という思想です。</p>
+        <p>もし、世界中のサービスがたった一台のサーバーや、一か所のデータセンターに頼っていたら、どうなるでしょう。
+        その一か所が、停電や故障、災害、あるいは攻撃でダウンした瞬間、すべてが止まってしまいます。
+        この「ここが壊れたら全部が止まる」という弱点を<strong>単一障害点</strong>と呼び、巨大システムの設計では、これを徹底的に避けます。</p>
+        <p>そのための基本戦略が<strong>冗長化</strong>――つまり<span class="em">「同じものを、わざと複数用意しておく」</span>ことです。
+        サーバーを何台も並べ、データを複数の場所に複製し、データセンターそのものを地理的に離れた複数の地域に建てる。
+        一見すると「無駄」に見えるこの重複こそが、一か所が倒れても全体は動き続ける、という頑丈さを生みます。
+        第2部第9講のブロックチェーンが「全員が同じ台帳を持つ」ことで強かったのと、根は同じ発想です。
+        <strong>効率（一か所にまとめる）と、頑丈さ（分散して重複させる）</strong>――ここにも、本講義でおなじみのトレードオフがあります。</p>
+        <p>もう一つ、巨大システムを支える重要な考え方が<strong>スケーラビリティ（拡張性）</strong>です。
+        利用者が増えたとき、より高性能な一台に買い替える（垂直スケール）のではなく、<span class="em">同じような機械を台数だけ増やしていく（水平スケール）</span>。
+        この「数を増やせばいくらでも対応できる」設計が、爆発的に成長するサービスを支えています。
+        これは第11講のGPUの「数の力（並列）」とも通じる発想で、<strong>「一つを強くする」より「たくさんを束ねる」</strong>という、現代の大規模システムに共通する哲学です。
+        賢い一台の天才ではなく、平凡でも数えきれない働き手の群れ。インターネットの巨大さは、この思想の上に築かれているのです。</p>
+        <p>この「一点に頼らない」という発想は、実はインターネットそのものの生い立ちにも刻まれています。
+        インターネットのもとになった仕組みは、もともと「どこか一か所が破壊されても、別の経路で通信が続けられる」ことを目指して設計されました。
+        中央の司令塔を置かず、網の目のように経路を分散させておけば、一部が切れても全体は生き延びる。
+        <span class="em">「中心をなくすことで、かえって強くなる」</span>というこの思想は、第2部第9講のブロックチェーンや、本講のCDN・冗長化と、見事に響き合っています。
+        中心に頼る効率の良さと、中心をなくす頑丈さ――どちらを選ぶかは、つねに目的しだいのトレードオフです。
+        現代の巨大インフラは、この両者のあいだで、絶妙なバランスを取りながら設計されているのです。</p>
+      </section>
+
+      <section id="s-apply">
+        <h2>現代への応用と論点</h2>
+        <h3>あなたの一日は、いくつのデータセンターに支えられているか</h3>
+        <p>朝、スマホで天気を確認し、SNSを見て、動画を流し、地図でルートを調べ、メッセージを送る。
+        その一つひとつの操作の裏で、世界中のデータセンターとCDNが働いています。
+        私たちはもはや、<span class="em">「見えない巨大インフラ」に全面的に依存して生活している</span>のです。
+        電気や水道と同じように、デジタルのインフラもまた、社会の土台になった。
+        だからこそ、それがどう成り立ち、どんな弱点を持つのかを知っておくことは、現代を生きる教養の一部だといえます。</p>
+        <h3>集中のリスクと、止まったときの影響</h3>
+        <p>便利さの裏で、特定の巨大クラウド事業者への集中も進んでいます。
+        実際、大手クラウドで大規模な障害が起きると、世界中の無数のサービスが同時に使えなくなる、という出来事が現実に起きています。
+        多くのサービスが同じ土台に乗っているがゆえに、その土台が揺れると影響が一気に広がる。
+        これは第2部第9講・第11講で見た「中央集権と依存」の問題が、インフラの規模で現れたものです。
+        利便性と引き換えに、私たちは何に依存しているのか――くり返し問う価値のあるテーマです。</p>
+        <h3>エネルギーと環境</h3>
+        <p>そしてやはり、<strong>電力と環境</strong>の論点を忘れてはいけません。
+        動画視聴も、AIの利用も、クラウド保存も、すべてはどこかのデータセンターで電気を消費しています。
+        「デジタルは無形だから環境に無関係」というのは誤解で、その裏には現実のエネルギーと冷却用の水がある。
+        各社が再生可能エネルギーの活用や省電力化に取り組んでいるのも、この問題の大きさゆえです。
+        この視点は、本講義の最終盤、第2部第15講「コンピュータ科学と社会」へとまっすぐつながっていきます。</p>
+      </section>
+
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">Q. データを「クラウドに保存」すると、データはどこにも実体がなくなる？</p>
+          <p class="a">A. 逆です。実体は必ずどこかのデータセンターのディスクに、しかも多くの場合は複数の場所に複製されて存在します。「クラウド」という言葉が物理的な実体を見えなくしているだけで、データが空に浮かんでいるわけではありません。むしろ、あなたの手元より頑丈に、何重にも保管されていることが多いのです。</p>
+          <p class="q">Q. 回線が速い（太い）ほど、何でも速くなる？</p>
+          <p class="a">A. 太さ（帯域）と待ち時間（遅延）は別物です。大きなファイルをまとめて送るには太さが効きますが、遠くのサーバーとのやりとりは、回線をいくら太くしても「往復の待ち時間」は光の速さで決まり、縮みません。だから「近くに置く」CDNが重要になるのです。速さには二種類ある、と覚えておきましょう。</p>
+          <p class="q">Q. 動画は、全部ダウンロードし終わってから再生されている？</p>
+          <p class="a">A. いいえ。観ている先の部分を少しずつ先回りして受け取りながら再生する「ストリーミング」方式が一般的です。だから巨大な動画でもすぐ観始められます。また、回線状況に応じて画質を自動で切り替え、「止まる」より「画質を落としてでも続ける」ことを優先しています。</p>
+        </div>
+      </section>
+
+      <div class="ybox">
+        <span class="ylbl">この発想、生活にも出ます</span>
+        <p>「よく使うものは近くに置く（CDN）」と「一点に頼らず、複製して備える（冗長化）」。この二つは、暮らしの知恵そのものです。毎日使う調味料はコンロの脇に、大事な書類は別の場所にもコピーを。<strong>近くに置けば速くなり、複製しておけば一つ失っても困らない</strong>。</p>
+        <p>そして、便利の裏には必ず物理がある。無料で動画を観られても、その裏ではどこかのデータセンターでGPUが回り、電気が燃え、水で冷やされている。<strong>「見えないコストを、誰かが払っている」</strong>と知っておくのも、デジタル時代の大人のたしなみです。</p>
+      </div>
+
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <p>この講で持ち帰ってほしいのは、<strong>クラウドは「雲」ではなく、地球上に実在する、電気を食い熱を吐く機械の群れだ</strong>という見方です。そして世界中に動画が一瞬で届くのは、距離という消せない壁と戦うために、「近くにコピーを置き」「少しずつ流し」「一点に頼らない」工夫を重ねた成果。次に動画を観るとき、その裏側の総力戦を少しだけ想像してみてください。</p>
+        <div class="summary">
+        <ul>
+          <li><strong>クラウドは雲ではなく「他人のコンピュータ」</strong>。データは世界中に実在する<strong>データセンター</strong>に保管されている。便利さの裏に、事業者への依存というトレードオフがある。</li>
+          <li>データセンターは、サーバーに加え<strong>電力・冷却・ネットワーク・物理セキュリティ</strong>の塊。その消費電力は社会的な<strong>限界・環境問題</strong>に直結する。</li>
+          <li>通信には<strong>太さ（帯域）</strong>と<strong>待ち時間（遅延＝レイテンシ）</strong>の二種類があり、遅延は光の速さで決まるため、距離を縮める以外に減らせない。</li>
+          <li><strong>CDN</strong>は「利用者の近くにコピーを置く」仕組み。第7・10講の<strong>キャッシュ</strong>と同じ原理が、地球規模で現れている。速さと負荷分散と頑丈さを同時に実現する。</li>
+          <li>動画配信は、CDN＋少しずつ送る（ストリーミング）＋画質の自動調整＋<strong>圧縮（第9講）</strong>の合わせ技。「当たり前」の裏に膨大な知恵がある。</li>
+          <li>巨大システムは<strong>単一障害点をなくす（冗長化）</strong>と<strong>数を増やして対応する（水平スケール）</strong>という思想で設計される。「一つを強く」より「たくさんを束ねる」。</li>
+        </ul>
+        </div>
+      </section>
+
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+        <ol>
+          <li>今日あなたがスマホやパソコンでした操作を3つ挙げ、それぞれが「どこかのデータセンター」とどうやり取りしていたか想像してみよう。完全にオフラインで完結した操作は、いくつあっただろうか。</li>
+          <li>「近くにコピーを置いておく（キャッシュ／CDN）」という工夫を、コンピュータ以外の身のまわり（たとえばコンビニの在庫、図書館の分館、救急の配置など）で探してみよう。</li>
+          <li>「同じものをわざと複数用意する（冗長化）」のは、一見すると無駄に見える。それでも巨大システムがあえてそうする理由を、自分の言葉で説明してみよう。身近な例（合鍵、バックアップなど）でもよい。</li>
+        </ol>
+        <details class="ans"><summary>考えるヒント</summary>
+        <p>1. SNSの表示、地図の検索、動画の再生、メッセージ送信、写真のバックアップ――ほとんどがデータセンターとやり取りしています。電卓やメモ（端末内で完結）以外、純粋にオフラインで終わる操作は意外と少ない、と気づければ十分です。</p>
+        <p>2. コンビニが地域に在庫を分散して持つ、図書館が人気の本を各分館に置く、消火栓や救急車を町のあちこちに配置する――どれも「必要な人の近くに、あらかじめ用意しておく」という同じ知恵です。</p>
+        <p>3. 一か所が壊れても全体が止まらないため。合鍵を複数持つ、データを別の場所にもバックアップする、のと同じ。「無駄に見える重複」が、いざというときの頑丈さを生みます。効率と頑丈さのトレードオフを語れればよい。</p>
+        </details>
+        </div>
+      </section>
+
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">『ウェブはなぜ動くのか』『プロになるためのWeb技術入門』</span>― サーバー、通信、CDNなどWebの裏側を平易に解説。本講をより技術的に深めたい人へ。</li>
+          <li><span class="bk">『The Datacenter as a Computer』（オンラインで公開）</span>― データセンターを「一台の巨大なコンピュータ」として捉える名著。やや専門的だが視野が広がる。</li>
+          <li><span class="bk">大手クラウド事業者の技術ブログ・障害報告</span>― 実際の大規模障害がなぜ起きたかの公式説明は、生きた教材。冗長化や設計の現実が学べる。</li>
+          <li><span class="bk">データセンターや海底ケーブルを扱ったドキュメンタリー・記事</span>― 「インターネットの物理的な姿」を映像で見ると、本講の内容が一気に実感に変わる。</li>
+          <li><span class="bk">第2部第7講「クラウド」・第10講「半導体」・第11講「AIインフラ」</span>― 本講と地続きの回。あわせて読むと、ナノの世界から地球規模までが一本につながる。</li>
+        </ul>
+        <p>次の第2部第13講では、視点を機械の側から<strong>人間の側</strong>へ大きく転じます。私たちはどうやって機械を「使える」のか――UI・アフォーダンス・身体という、技術と人の接点の話に進みましょう。</p>
+      </section>
+
+      <nav class="pager">
+        <a class="pv" href="part2_lecture11.html">← 第11講 NVIDIAとAIインフラ</a>
+        <a class="nx" href="part2_lecture13.html">第13講 UI・アフォーダンス・身体 →</a>
+      </nav>
+
+    </div>
+
+    <footer>
+      <div class="wrap">
+        <p>ゆるコンピュータ科学講義 ／ 第2部 応用・社会・現代技術編 ／ 第12講「データセンター・CDN・動画配信」</p>
+        <p>本講はインターネットインフラの理解を目的とした教育用コンテンツです。技術や設備は簡略化して説明しています。</p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第2部 第2講 ファイル・拡張子・フォーマット ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="ファイルとは何か。拡張子・フォーマットの正体、テキストとバイナリ、ファイルサイズ感覚を身近に学ぶ。ゆるコンピュータ科学講義 第2部 第2講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#2f6f6a; --accent-soft:#dcebe9;
+    --accent2:#c8503a; --accent2-soft:#f7e3dd;
+    --code-bg:#21302e; --code-ink:#eaf3f1;
+    --sidebar:#1f2b29; --sidebar-ink:#e3ece9; --sidebar-muted:#94a7a3;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#111413; --paper:#172220; --ink:#e6ece9; --muted:#9aa9a5;
+    --line:#283633; --accent:#6fb6ad; --accent-soft:#16302c;
+    --accent2:#e8775f; --accent2-soft:#3a221c;
+    --code-bg:#0c1413; --code-ink:#eaf3f1;
+    --sidebar:#0c1413; --sidebar-ink:#e3ece9; --sidebar-muted:#7d8e8a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#245a55 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:".jpg .zip";position:absolute;right:14px;bottom:-8px;font-family:ui-monospace,monospace;font-size:3.6rem;font-weight:800;color:rgba(255,255,255,.10)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.92;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent-soft);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent2);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent2-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#172220}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent2);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+  /* --- ゆるラジオ版の追加スタイル --- */
+  .yhook{margin:24px 0;padding:18px 24px;border-radius:18px;background:radial-gradient(circle at top left,var(--accent-soft),var(--paper));border:1px solid var(--accent);line-height:1.95}
+  .yhook .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.08em;color:#fff;background:var(--accent);padding:3px 12px;border-radius:999px;margin-bottom:8px}
+  .yhook p{margin:.5em 0}.yhook p:last-child{margin-bottom:0}
+  .ybox{margin:24px 0;padding:4px 22px 16px;border-radius:14px;border:1px solid var(--line);border-left:5px solid var(--accent);background:var(--paper)}
+  .ybox .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin:14px 0 4px}
+  .ybox p{margin:.6em 0}.ybox p:last-child{margin-bottom:0}
+  .ybox.alt{border-left-color:var(--accent2)}.ybox.alt .ylbl{color:var(--accent2);background:var(--accent2-soft)}
+  .ydlg{margin:24px 0;padding:10px 20px;border-radius:16px;background:var(--accent-soft);border:1px solid var(--line)}
+  .ydlg p{margin:.6em 0;line-height:1.8}.ydlg p:last-child{margin-bottom:0}
+  .spk{display:inline-block;font-weight:800;margin-right:.5em;padding:.08em .7em;border-radius:999px;font-size:.72em;white-space:nowrap;vertical-align:.08em}
+  .spk-a{background:var(--accent);color:#fff}.spk-b{background:var(--accent2);color:#fff}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第2部 第2講 ファイルとフォーマット</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第2部 第2講</span><br>ファイル・拡張子・フォーマット</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-file">ファイルとは何か</a></li>
+      <li><a href="#s-ext">拡張子 ― 中身を示すラベル</a></li>
+      <li><a href="#s-format">フォーマット ― 解釈の約束</a></li>
+      <li><a href="#s-textbin">テキストとバイナリ</a></li>
+      <li><a href="#s-size">ファイルサイズの感覚</a></li>
+      <li><a href="#s-history">歴史 ― 標準化という戦い</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第2部 応用・社会・現代技術編 ／ 第2講</div>
+        <h1>ファイル・拡張子・フォーマット<br>― 「ファイルとは何か」という素朴な大問題</h1>
+        <p>毎日扱っているファイル。でも「ファイルって、そもそも何？」と聞かれて、答えられますか？</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― いちばん身近で、意外と謎な存在</h2>
+        <div class="yhook">
+          <span class="ylbl">この講を一言でいうと</span>
+          <p>毎日、保存して、開いて、送って、消している「ファイル」。でも改まって「ファイルって何?」と聞かれると、たいていの人は固まります。じつはその正体、<strong>「名前のついた、ただのバイト列」</strong>。それ以上でも以下でもありません。</p>
+          <p>そして <code>.jpg</code> や <code>.pdf</code> という拡張子は、中身そのものではなく、<strong>「この列は、こう読んでね」という"名札"</strong>にすぎない。本講で名札と中身を切り分けられるようになると、「なぜか開けない」「なぜ容量が足りない」といった日々のモヤモヤが、すっと見通せるようになります。</p>
+        </div>
+        <p>写真ファイル、文書ファイル、音楽ファイル。保存して、開いて、送って、消す。
+        私たちは毎日、息をするように「ファイル」を扱っています。
+        ところが改まって「ファイルって、そもそも何？」と聞かれると、たいていの人は言葉に詰まります。
+        <code>.jpg</code> や <code>.pdf</code> という<strong>拡張子</strong>は何を表しているのか。
+        同じ画像なのに <code>.jpg</code> と <code>.png</code> はどこが違うのか。
+        なぜときどき「このファイルは開けません」と突き放されるのか。
+        どれも素朴な疑問ですが、答えはそろってコンピュータの根っこにつながっています。</p>
+        <p>そしてその答えのほとんどは、第1部第2講で出会った<strong>「コンピュータの中身は、結局すべて0と1のバイト列」</strong>という一点に帰っていきます。
+        本講では、ファイルの正体、拡張子とフォーマットの関係、テキストとバイナリの違い、さらには「マンガ1冊って何MB？」といったサイズの肌感覚までを、身近な例で確かめていきましょう。
+        ここがつかめると、コンピュータとの付き合いがぐっと見通しよくなり、いざトラブルが起きても慌てずに済むはずです。</p>
+        <p>そもそも「ファイル」は、コンピュータを使ううえでいちばん基本の"単位"です。
+        ふだんはアプリのアイコンをタップしているだけですが、その裏では写真も文書も、なんならアプリ本体までもが、すべてファイルという姿で存在しています。
+        最近のスマホは、この「ファイル」をうまく覆い隠し、利用者にあまり意識させないよう作られています。
+        おかげで快適な反面、「写真って結局どこにあるの？」「なんで容量が足りないの？」といった疑問には、かえって答えづらくなりました。
+        <span class="em">隠された土台を、あえて一度のぞいてみる</span>。仕組みを理解する近道は、いつだってそこにあります。
+        ふだん意識もしない「ファイル」という存在に、本講では正面から光を当ててみます。</p>
+        <p class="lead-in">ファイルの正体 → 拡張子 → フォーマット → テキストとバイナリ → サイズ感覚。
+        第1部第2講（バイト列）と第9講（圧縮）が、ここで実生活の道具として戻ってきます。</p>
+      </section>
+
+      <!-- ファイルとは -->
+      <section id="s-file">
+        <h2>ファイルとは何か ― 名前のついたバイト列</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-b">聞き役</span>写真ファイルと文書ファイル、見た目も中身も全然違うじゃないですか。同じ「ファイル」でくくるの、雑じゃないですか?</p>
+          <p><span class="spk spk-a">説明役</span>それが、どちらも中身は「0と1の長い列」なんですよ。違うのは"並べ方の約束"だけ。だから、ぜんぶ「名前をつけたバイト列」として、同じように保存・コピー・移動できる。</p>
+          <p><span class="spk spk-b">聞き役</span>中身は同じ素材で、ラベルと並べ方が違うだけ。意外と平等な世界なんですね。</p>
+        </div>
+        <p>まず、いちばん根本的な答えから。
+        <span class="em">ファイルとは、「名前のついた、ひとかたまりのバイト列（0と1の並び）」</span>です。
+        それ以上でも以下でもありません。
+        写真も、文書も、音楽も、プログラムも、中身はすべて0と1がずらりと並んだもの。
+        その長い数列に「<code>家族写真.jpg</code>」のような名前をつけて、ひとまとまりとして保存・管理できるようにしたもの――
+        それがファイルです。</p>
+        <p>第1部第2講で、「数も文字も画像も、コンピュータの中ではすべてバイト列」だと学びました。
+        ファイルは、そのバイト列を<strong>「ひとつの単位」として、名前をつけて扱えるようにした入れ物</strong>なのです。
+        では、その大量のファイルを、どう整理するのか。
+        ここで登場するのが<strong>フォルダ（ディレクトリ）</strong>です。
+        フォルダの中にファイルやさらに別のフォルダを入れ、階層的に整理していく――
+        これは第1部第7講・第8講で学んだ<strong>木構造</strong>そのもの。
+        「ドキュメント」フォルダの中に「2024」フォルダがあり、その中に写真がある、という入れ子の構造は、
+        まさに枝分かれする木です。
+        <span class="em">バラバラのバイト列に名前をつけ（ファイル）、木構造で整理する（フォルダ）</span>。
+        コンピュータのデータ管理は、ど派手な仕掛けに見えて、煎じ詰めればこの二段構えに尽きます。
+        名前と入れ子。たったそれだけの素朴な発想が、何百万ものファイルを迷子にせず束ねているのです。</p>
+        <h3>ファイルを管理する「司書」― ファイルシステム</h3>
+        <p>では、その大量のファイルやフォルダを、実際にディスク（SSDやハードディスク）のどこに、どう置いているのでしょうか。
+        それを取り仕切るのが<span class="term">ファイルシステム</span>という、OS（基本ソフト）の重要な機能です。
+        ファイルシステムは、いわば巨大な図書館の<strong>司書</strong>のような存在。
+        「このファイルは、ディスクのこのあたりに置いてある」という対応表（第1部第7講の索引！）を管理し、
+        私たちが「<code>家族写真.jpg</code> を開いて」と頼むと、その実体がディスクのどこにあるかを探し出してくれます。</p>
+        <p>面白いのは、私たちが見ている「フォルダの中にファイルがある」という整然とした木構造は、
+        じつは<span class="em">人間に分かりやすく見せるための"見かけ"</span>だということ。
+        ディスク上では、1つのファイルのデータが、空いている場所にバラバラに分かれて置かれていることも珍しくありません
+        （第1部第13講のパケットが、バラバラの経路を通ったのに似ています）。
+        ファイルシステムが、その断片の在りかを管理し、読み出すときに1つにつなぎ合わせてくれる。
+        「ファイルを削除しても、すぐには中身が消えず、復元できることがある」のも、
+        多くの場合、削除とは"対応表から消すだけ"で、実体のバイト列はしばらく残っているからです。
+        この仕組みを知ると、データ復旧やセキュリティ（完全消去）の話（第2部後半）も理解しやすくなります。</p>
+      </section>
+
+      <!-- 拡張子 -->
+      <section id="s-ext">
+        <h2>拡張子 ― 中身の「種類」を示すラベル</h2>
+        <div class="ybox alt">
+          <span class="ylbl">まず捨てたい誤解</span>
+          <p><strong>「ファイル名の <code>.jpg</code> を <code>.txt</code> に書き換えたら、画像が文書に変換される」</strong>――これ、けっこうやりがちな勘違いです。</p>
+          <p>残念ながら、変わるのは<strong>"名札"だけ</strong>。中身のバイト列は1ビットも変わりません。だから画像をテキストエディタで無理やり開くと、意味不明な文字の洪水になる。<strong>名札を貼り替えても、中身は別物にならない</strong>。本当に形式を変えるには、中身を作り直す「変換」が必要なんです。この「ラベルと中身は別」という感覚が、今日いちばんの肝です。</p>
+        </div>
+        <p>ファイル名の最後についている <code>.jpg</code> や <code>.pdf</code> や <code>.txt</code> が<span class="term">拡張子</span>です。
+        その役割は、第1部第2講でも少し触れたとおり、<strong>「このファイルは、どんな種類のデータか」を示すラベル</strong>。
+        中身はどれも同じ0と1のバイト列ですが、それを<strong>「どう解釈すべきか」のヒント</strong>を、拡張子が教えてくれるのです。</p>
+        <p>ここが、ファイル理解のいちばんのポイントです。
+        <span class="em">同じバイト列でも、「画像として読む」か「文字として読む」かで、意味がまるで変わる。</span>
+        拡張子は、その「どの読み方をすればいいか」を示す道しるべ。
+        パソコンは拡張子を見て、「<code>.jpg</code> なら画像ビューアで開こう」「<code>.docx</code> なら文書ソフトで開こう」と判断します。
+        これは第1部第2講の文字化けの話とそっくりです。
+        文字化けが「どの文字コード表で読むか」の取り違えだったように、
+        ファイルも「どのフォーマットで読むか」を間違えると、まったく意味をなさなくなります。</p>
+        <p>ちなみに、スマホでは拡張子がほとんど表示されません。利用者が混乱しないよう、OSが隠しているのです。
+        その代わり、システムが内部で「このファイルはこの種類」と管理し、適切なアプリで開いてくれます。
+        便利な一方で、「拡張子という仕組みがあること」自体が見えにくくなり、
+        ファイルの正体を考える機会が減った、とも言えます。
+        パソコンでは設定で拡張子を表示でき、一度見える化してみると、「なるほど、すべてのファイルに種類の名札が付いているのか」と実感できます。
+        <span class="em">隠されている仕組みを、あえて表に出して観察する</span>――これも、理解を深める良い方法です。</p>
+        <div class="trivia">
+          <p>だからこそ、有名な"いたずら"が成立します。
+          ファイルの拡張子だけを <code>.jpg</code> から <code>.txt</code> に書き換えても、<strong>中身（バイト列）は1ビットも変わりません</strong>。
+          変わったのは「ラベル」だけ。だから、画像を <code>.txt</code> に変えてテキストエディタで開くと、意味不明な文字の洪水が表示されます。
+          逆に、拡張子を書き換えただけで「変換した」つもりになると、痛い目を見ます。
+          <span class="em">拡張子はあくまで"名札"であって、中身そのものではない</span>。
+          本当に形式を変える（たとえば画像をJPEGからPNGにする）には、中身のバイト列を作り直す「変換」が必要なのです。
+          この「ラベルと中身は別物」という感覚は、第1部から繰り返し登場する、大切な視点です。</p>
+        </div>
+      </section>
+
+      <!-- フォーマット -->
+      <section id="s-format">
+        <h2>フォーマット ― バイト列を解釈する「約束」</h2>
+        <div class="ybox">
+          <span class="ylbl">雑なたとえ</span>
+          <p>フォーマットは、かなり雑に言うと<strong>「同じ紙を、どう読むかの取り決め」</strong>です。</p>
+          <p>同じ数字の列でも、「最初の2桁は月、次は日」と決めれば日付に読めるし、別の決まりで読めば電話番号に見える。フォーマットとは、その<strong>"並びの意味の約束"</strong>。書いた側と読む側が同じ約束を共有しているからこそ、バイトの列が「絵」や「音」としてよみがえる。約束を取り違えると、第1部の文字化けとそっくりな事故が起きます。</p>
+        </div>
+        <p>では、拡張子が示す「種類」の中身、つまり<span class="term">ファイルフォーマット（ファイル形式）</span>とは、具体的に何でしょうか。
+        フォーマットとは、<strong>「このバイト列を、こう並べて、こう読めば、意味のあるデータになる」という取り決め（約束）</strong>です。</p>
+        <p>たとえばJPEG形式の画像ファイルなら、「最初の数バイトはこの形式であることを示す目印、
+        次は画像の幅と高さ、その後に圧縮された色のデータが続く…」というように、
+        バイトの並べ方が細かく決められています。
+        その約束を知っているソフト（画像ビューア）だけが、そのバイト列を正しく「絵」として復元できる。
+        <span class="em">フォーマットとは、書き手と読み手のあいだの"共通の文法"</span>なのです。
+        第1部第13講で学んだ通信の「プロトコル（約束）」と、まったく同じ発想がここにもあります。</p>
+        <p>多くのファイルは、先頭に<strong>「マジックナンバー」</strong>と呼ばれる、形式を示す目印のバイト列を持っています。
+        だから、たとえ拡張子が間違っていても、賢いソフトは中身の先頭を見て「これは本当はJPEGだ」と見抜けることがあります。
+        <span class="em">本当の種類は、ラベル（拡張子）ではなく、中身（フォーマット）で決まる</span>。
+        この事実は、第2部第5講以降のセキュリティでも重要になります
+        （危険なファイルを安全な拡張子に偽装する、という手口があるためです）。</p>
+        <h4>オープンな形式と、独自の形式</h4>
+        <p>フォーマットには、仕様が公開されていて誰でも読み書きできる「オープンな形式」（JPEG、PNG、PDF、CSVなど）と、
+        特定の会社が仕様を握る「独自形式」があります。
+        オープンな形式は、いろいろなソフトで開けて、長く使い続けられる安心感があります。
+        一方、独自形式は、そのソフトがなくなると<strong>ファイルが開けなくなる</strong>恐れがある。
+        大切なデータを長期保存するときは、できるだけオープンな形式を選ぶ――これは、第1部第11講で触れた
+        「過去の資産（レガシー）」の問題とも通じる、実用的な知恵です。</p>
+      </section>
+
+      <!-- テキストとバイナリ -->
+      <section id="s-textbin">
+        <h2>テキストとバイナリ ― 2つの大きな分かれ道</h2>
+        <p>無数にあるファイル形式は、おおきく2種類に分けられます。<strong>テキストファイル</strong>と<strong>バイナリファイル</strong>です。</p>
+        <div class="def">
+          <p><b>テキストファイルとバイナリファイル</b></p>
+          <p style="margin:.2em 0"><b>テキストファイル</b>：中身が、文字コード（第1部第2講）で読める「文字」だけでできているファイル。
+          メモ帳などで開けば、人間がそのまま読める。例：<code>.txt</code>、<code>.csv</code>、<code>.html</code>、プログラムのソースコード。</p>
+          <p style="margin-bottom:0"><b>バイナリファイル</b>：文字として読むことを前提としない、形式専用のバイト列でできたファイル。
+          専用ソフトでないと意味をなさない。例：<code>.jpg</code>、<code>.mp3</code>、<code>.zip</code>、<code>.exe</code>（プログラム本体）。</p>
+        </div>
+        <p>テキストファイルの良さは、<strong>素朴で、どこでも開けて、人間にも読める</strong>こと。
+        だからプログラムのソースコード（第1部第11講）や、設定ファイル、データ交換（CSV、第1部第12講）に向いています。
+        中身が見えるので、トラブルのときも原因を追いやすい。
+        実際、第1部第12講で学んだCSVは、<code>田中,東京,30</code> のように値をカンマで区切っただけのテキストファイル。
+        中身をそのまま目で読めるからこそ、表計算ソフトでもデータベースでもプログラムでも開けて、
+        異なるシステム間のデータ交換の"共通語"として重宝されています。
+        同じく、Webページのソース（第2部第1講のHTML）も、設定ファイルも、テキストであることが多い。
+        「人間も機械も、同じものを読める」というテキストの素朴さが、互換性と寿命の長さを生むのです。
+        一方バイナリファイルは、画像や音声のような複雑なデータを<strong>効率よく、コンパクトに詰め込める</strong>のが強み。
+        人間には読めませんが、その代わり専用の形式で圧縮（第1部第9講）したり、最適化したりできます。</p>
+        <p>「人間が読める素朴さ」と「機械にとっての効率」――ここにも、本講義おなじみの<strong>トレードオフ</strong>があります。
+        どちらが優れているということはなく、用途に応じて使い分ける。
+        この見極めができると、「なぜこのデータはCSV（テキスト）で、あのデータは専用形式（バイナリ）なのか」が、すっと腑に落ちるようになります。</p>
+        <h3>データに付くデータ ― メタデータ</h3>
+        <p>ファイルには、中身そのもののほかに、<strong>「そのファイルについての情報」</strong>もくっついています。
+        これを<span class="term">メタデータ</span>（データについてのデータ）と呼びます。
+        たとえば写真ファイルには、撮影した日時、カメラの機種、そして場合によっては<strong>撮影場所のGPS座標</strong>まで埋め込まれていることがあります。
+        ファイルの作成日・更新日・サイズなども、メタデータの一種です。</p>
+        <p>このメタデータは便利な反面、思わぬ落とし穴にもなります。
+        たとえば、撮った写真をそのままやり取りすると、写真に埋め込まれた位置情報から、
+        <span class="em">自宅や行動範囲が他人に知られてしまう</span>恐れがあるのです。
+        「中身（写真）」だけでなく「中身についての情報（メタデータ）」にも目を配る――
+        これは、第2部のセキュリティ・プライバシーの回につながる、現代の大切なリテラシーです。
+        多くのSNSは投稿時にこうした情報を自動で削る配慮をしていますが、ファイルを直接送るときは要注意。
+        「ファイルは、見えている中身がすべてではない」と覚えておきましょう。</p>
+      </section>
+
+      <!-- サイズ -->
+      <section id="s-size">
+        <h2>ファイルサイズの感覚 ― マンガ1冊は何MB？</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-b">聞き役</span>「容量がいっぱいです」って言われるたびにビクッとするんですが、何が場所を食ってるのか、正直よく分かってないんです。</p>
+          <p><span class="spk spk-a">説明役</span>ざっくりの桁感覚を持つと一発で見当がつきますよ。文章はKB、写真はMB、動画はGB。けたが三段ぶん違う。</p>
+          <p><span class="spk spk-b">聞き役</span>あ、じゃあ容量を圧迫してる犯人は、たいてい動画ってことですね。写真を何千枚消すより、動画を数本消すほうが効く、と。</p>
+        </div>
+        <p>ファイルの「大きさ」、つまりファイルサイズの感覚は、デジタル時代の生活力のひとつです。
+        第1部第2講で学んだとおり、サイズの単位はバイト。
+        そして1000倍（厳密には1024倍）ごとに、KB → MB → GB → TB と桁が上がります。
+        では、身近なものは、だいたいどれくらいのサイズなのでしょうか。ざっくりした目安を持っておきましょう。</p>
+        <table class="tbl">
+          <caption>表1：身近なデータの、おおよそのサイズ感（目安）</caption>
+          <tr><th>もの</th><th>おおよそのサイズ</th></tr>
+          <tr><td>短いテキストメール1通</td><td>数KB</td></tr>
+          <tr><td>スマホ写真1枚（JPEG）</td><td>数MB</td></tr>
+          <tr><td>音楽1曲（MP3）</td><td>数MB〜10MB程度</td></tr>
+          <tr><td>マンガ1冊（電子書籍）</td><td>数十MB〜100MB程度</td></tr>
+          <tr><td>映画1本（圧縮済み）</td><td>数GB</td></tr>
+          <tr><td>スマホ・PCの保存容量</td><td>数十GB〜数TB</td></tr>
+        </table>
+        <p>こうした感覚があると、「写真を100枚送ったら数百MB、だからWi-Fiでないと厳しいな」とか、
+        「128GBのスマホに、映画は何本入るかな」といった見積もりが、ぱっとできるようになります。
+        ここで効いてくるのが、第1部第9講で学んだ<strong>圧縮</strong>です。
+        無圧縮なら巨大になるはずの写真や動画が、現実的なサイズに収まっているのは、JPEGやMP4といった圧縮形式のおかげ。
+        <span class="em">ファイル形式の多くは、「いかに小さく、かつ十分な品質で詰め込むか」という工夫の結晶</span>なのです。</p>
+        <p>同じ「画像」でも、形式によってサイズと特性が違います。
+        JPEGは写真向けで小さく圧縮できる（非可逆）、PNGはロゴやイラスト向けで劣化しない（可逆）、
+        といった具合に、それぞれ第1部第9講で学んだ「可逆／非可逆」の性質を受け継いでいる。
+        「写真はJPEG、透明や図はPNG」と使い分けられるようになると、もう立派なデジタル中級者です。</p>
+        <div class="trivia">
+          <p>「マンガ1冊は何MB？」のような問いを、ぱっと見積もる感覚は、意外と役に立ちます。
+          たとえば「128GBのスマホに、3MBの写真は何枚入る？」を考えてみましょう。
+          <code>128GB ＝ 約128,000MB</code>、それを3MBで割ると<strong>およそ4万枚</strong>。
+          ざっくりでも、こうした桁感覚があると、「もう容量がいっぱい」と慌てる前に、何が容量を食っているか見当がつきます。
+          たいてい容量を圧迫しているのは、サイズの大きい<strong>動画</strong>。
+          数GBの映画を数本も入れれば、写真何万枚ぶんもの容量があっという間に消えます。
+          <span class="em">「だいたいの桁」をつかむ力は、デジタル時代の生活の知恵</span>。
+          細かい数字より、「写真はMB、動画はGB」という"桁の感覚"を持っておくことが大切です。</p>
+        </div>
+      </section>
+
+      <!-- 歴史 -->
+      <section id="s-history">
+        <h2>歴史 ― フォーマットは「標準化」の戦い</h2>
+        <div class="history">
+          <p><strong>規格をめぐる、終わりなき調整。</strong>
+          ファイルフォーマットの歴史は、「みんなで共通の約束を決める」という<strong>標準化</strong>の歴史でもあります。
+          もし会社ごと・ソフトごとにバラバラの形式を使っていたら、ファイルのやり取りは大混乱になります（第1部第2講の文字コード乱立を思い出してください）。
+          そこで、JPEGやMP3、PDFといった形式は、企業や専門家が集まる委員会で長い議論を重ねて標準化されました。
+          ちなみにJPEGもMP3も、その名前は、規格を決めた専門家グループの名前に由来しています。
+          一枚の写真、一曲の音楽の裏に、世界中の技術者が知恵と利害を持ち寄って合意した、地道な調整の歴史があるのです。</p>
+          <p>第1部第9講で触れたQRコードとmp3の対比も、この標準化の物語の一部でした。
+          仕様を広く開放して普及を優先するか、権利を主張して対価を得るか――
+          フォーマットの運命は、技術の優劣だけでなく、こうした「どう普及させるか」の戦略にも大きく左右されます。
+          優れた形式が必ず勝つとは限らず、「みんなが使うから、ますますみんなが使う」という普及の力学（ネットワーク効果）も働く。
+          <span class="em">技術は、純粋な性能だけでなく、社会的な合意と普及の上に成り立っている</span>――
+          これは、第2部全体を貫く重要な視点です。</p>
+          <p>身近な例では、文書ソフトの形式をめぐる歴史も興味深いものです。
+          かつては特定のソフトの独自形式が事実上の標準でしたが、
+          「特定の一社に文書の形式を握られるのは、社会にとって健全ではない」という議論から、
+          公開された標準形式（OpenDocumentや、後に公開仕様化されたOffice形式など）への動きが進みました。
+          国や自治体が公文書をどの形式で保存するかは、数十年先まで影響する、れっきとした政策判断です。
+          <span class="em">「ファイル形式は、技術の問題であると同時に、社会のインフラの問題でもある」</span>――
+          一見地味な拡張子の話が、じつは情報の主権や公共性にまでつながっているのです。
+          この視点は、第2部の終盤（社会制度の回）であらためて深く扱います。</p>
+        </div>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用</h2>
+        <h3>「とりあえずZIP」の正体</h3>
+        <p>たくさんのファイルをまとめて送るとき、よく使う<code>.zip</code>。これも本講のテーマの集大成です。
+        ZIPは、<strong>複数のファイルを1つにまとめ（アーカイブ）、さらに圧縮する（第1部第9講）</strong>という、2つの役割を持っています。
+        バラバラのファイルを1つの入れ物にまとめると、送るのも管理するのも楽になり、圧縮でサイズも小さくなる。
+        「フォルダごと圧縮して送る」という日常の操作の裏には、本講と第9講で学んだ仕組みが、しっかり働いているのです。
+        ただし、すでに圧縮済みのファイル（JPEGやMP4）をZIPしても、ほとんど縮まないのは、第1部第9講で学んだとおり。
+        理由が分かっていると、無駄な操作をせずに済みます。</p>
+        <h3>データを永く残すために ― 「形式」を選ぶ責任</h3>
+        <p>ファイル形式の選択は、データを<strong>未来に残せるか</strong>を左右します。
+        十数年前の特殊なソフトで作ったファイルが、いまや開けなくなっている――そんな経験はないでしょうか。
+        ソフトや会社は移り変わりますが、写真や文書は何十年も残したいもの。
+        だからこそ、長期保存には<strong>広く使われ、仕様が公開されたオープンな形式</strong>を選ぶことが、
+        大切なデータを未来へ手渡すための知恵になります。
+        図書館や公文書館では、「デジタルデータをいかに後世に残すか（デジタル・アーカイブ）」が、いま真剣な課題になっています。
+        <span class="em">フォーマットを選ぶことは、未来の自分や次の世代への、ささやかな責任でもある</span>のです。</p>
+        <h3>「紙よりデジタルは長持ち」とは限らない</h3>
+        <p>意外に思われるかもしれませんが、デジタルデータは、紙より<strong>もろい</strong>一面があります。
+        紙の文書や写真は、数百年前のものでも、いまも目で見て読めます。
+        ところがデジタルデータは、それを読むための「形式の知識」「対応するソフト」「動かす機械」がそろわないと、
+        ただの0と1の塊にすぎません。
+        実際、数十年前のフロッピーディスクや特殊な形式のデータが、いまや事実上"読めない遺物"になっている例は数多くあります。
+        <span class="em">デジタルは「コピーは完璧（第1部第2講）」だが、「読み続けるには、形式と環境を保ち続ける努力が要る」</span>のです。
+        だから、本当に大切なデータは、オープンな形式で保存し、定期的に新しい媒体へ移し替え、複数の場所に複製しておく――
+        この地道な手入れが、デジタル時代の"保存"の作法になります。
+        便利さの裏にある、こうした繊細さを知っておくことも、技術と賢く付き合うための一歩です。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「拡張子を書き換えれば、ファイルの種類を変換できる」</p>
+          <p class="a">できません。拡張子は"名札"にすぎず、書き換えても中身（バイト列）は変わりません。
+          本当に形式を変えるには、中身を作り直す「変換」が必要です。拡張子変更だけでは、むしろ開けなくなることもあります。</p>
+          <p class="q">誤解②：「ファイルの中には、文字や絵そのものが入っている」</p>
+          <p class="a">入っているのは0と1のバイト列だけ（第1部第2講）。それを「どのフォーマットで読むか」で、文字にも絵にも音にもなります。
+          中身は同じバイト列、違うのは"解釈の約束"だけです。</p>
+          <p class="q">誤解③：「ZIPで圧縮すれば、どんなファイルでも小さくなる」</p>
+          <p class="a">なりません。すでに圧縮済みの画像（JPEG）や動画（MP4）は、もう無駄が削られているので、ZIPしてもほぼ縮みません（第1部第9講）。
+          ZIPが効くのは、規則性の多いテキストや無圧縮データです。</p>
+          <p class="q">誤解④：「拡張子さえ正しければ、そのファイルは安全だ」</p>
+          <p class="a">危険です。拡張子は偽装できます。安全そうな名前でも、中身が危険なプログラムということもある。
+          だから、心当たりのないファイルは、拡張子を信用せず開かないのが鉄則です（第2部のセキュリティ回で詳述）。</p>
+          <p class="q">誤解⑤：「ファイルを削除すれば、中身は完全に消える」</p>
+          <p class="a">多くの場合、削除とは"対応表から消すだけ"で、実体のバイト列はしばらくディスクに残ります。
+          だから消したファイルが復元できることがある。
+          逆に言えば、人に譲る端末などでは、本当に消すための「完全消去」が必要になる、ということでもあります。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <div class="ybox">
+        <span class="ylbl">この発想、生活にも出ます</span>
+        <p>ファイルは「中身（バイト列）」のほかに「中身についての情報（メタデータ）」も連れています。写真には撮影日時や、ときに<strong>撮影場所のGPS座標</strong>まで。これを知らずに写真をそのまま送ると、自宅の位置が相手に伝わってしまうこともある。</p>
+        <p>「見えている中身が、そのファイルのすべてではない」――これは、人にも当てはまる話かもしれません。表向きの内容だけでなく、それに付随する"見えない情報"にも目を配る。<strong>中身とラベルとメタ情報を分けて見る習慣</strong>は、デジタル時代の身を守るリテラシーそのものです。</p>
+      </div>
+
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <p>この講で持ち帰ってほしいのは、拡張子の一覧ではありません。<strong>ファイルを「中身＝バイト列」「種類＝読み方の約束」「名札＝拡張子」の三層で見る</strong>目です。これがあれば、「開けない」「文字化けする」「容量が足りない」が、もう得体の知れない怪奇現象ではなくなります。</p>
+        <div class="summary">
+          <ul>
+            <li>ファイルとは「名前のついた、ひとかたまりのバイト列」。フォルダはそれを木構造で整理する仕組みで、実体の在りかはファイルシステム（OSの司書）が管理する。</li>
+            <li>拡張子は中身の種類を示す"ラベル"であって、中身（バイト列）そのものではない。書き換えても中身は変わらず、種類の変換にはならない。本当の種類は中身（フォーマット）で決まる。</li>
+            <li>フォーマットは「バイト列をどう解釈するか」の約束。本当の種類は、ラベルでなく中身（フォーマット）で決まる。</li>
+            <li>テキスト（人間が読める・素朴・互換性が高い）とバイナリ（機械に効率的・コンパクト・専用）。用途に応じて使い分けるトレードオフ。</li>
+            <li>サイズ感覚（写真はMB、動画・映画はGB）と圧縮（第1部第9講）を知ると、容量や通信量の見積もりがぱっとできるようになる。</li>
+            <li>フォーマットは標準化の産物で、社会のインフラでもある。長期保存にはオープンな形式を選び、複製・移し替えを続けるのが、データを未来に残す知恵。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>「ファイルとは何か」を、第1部第2講の言葉を使って一言で説明せよ。</li>
+            <li>画像ファイルの拡張子を <code>.jpg</code> から <code>.txt</code> に変えると、中身はどうなるか。開くとどう見えるか。</li>
+            <li>透明な背景を持つロゴ画像を保存したい。JPEGとPNG、どちらが適切か。第1部第9講も踏まえて。</li>
+            <li>すでにMP4の動画ファイルをZIPで圧縮しても、あまり小さくならないのはなぜか。</li>
+            <li>大切な文書を「20年後も開けるように」保存したい。形式選びで気をつけることは何か。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) 「名前のついた、ひとかたまりのバイト列（0と1の並び）」。<br>
+            (2) 中身（バイト列）は変わらない。テキストとして読もうとするため、意味不明な文字の羅列に見える。<br>
+            (3) <strong>PNG</strong>。透明を表現でき、劣化しない可逆圧縮だから。JPEGは写真向けの非可逆で、透明も扱えない。<br>
+            (4) MP4はすでに圧縮済みで無駄（冗長性）が削られているため、ZIPで削る余地がほとんどないから（第9講）。<br>
+            (5) 広く使われ、仕様が公開された<strong>オープンな形式</strong>（PDF、プレーンテキストなど）を選ぶ。特定ソフト独自の形式は、将来開けなくなる恐れがある。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">矢沢久雄『プログラムはなぜ動くのか（第3版）』</span>（日経BP）
+          ― ファイルの中身・バイト列・データ形式を平易にたどれる定番書。本講と第1部第2講の橋渡しに。</li>
+          <li><span class="bk">『なるほど！ファイル＆フォルダ』系の入門書</span>
+          ― ファイル・フォルダ・拡張子の扱いを、初心者向けにやさしく整理した一冊を手元に。</li>
+          <li><span class="bk">柳谷智宣ほか『デジタルデータの整理・保存術』系の実用書</span>
+          ― 写真や文書をどの形式で、どう保存・バックアップするか、という実用的な知恵が学べる。</li>
+          <li><span class="bk">『独習Webデータ形式（JSON・CSV・XML）』系の資料</span>
+          ― データ交換でよく使う形式の中身を学べる。第1部第12講・第2部第3講（API）にもつながる。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part2_lecture1.html"><span class="lab">← 前の講</span>第2部 第1講 ブラウザとWeb</a>
+        <a class="nx" href="part2_lecture3.html"><span class="lab">次の講 →</span>第2部 第3講 APIとソフトウェア同士の会話</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第2部 第2講「ファイル・拡張子・フォーマット」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

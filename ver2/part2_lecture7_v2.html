@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第2部 第7講 ハッキングと攻撃者の世界 ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="脆弱性はなぜ生まれるのか。攻撃の発想を知り、守りに活かす。マルウェア・Tor・ホワイトハッカーを防御の視点で学ぶ。ゆるコンピュータ科学講義 第2部 第7講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#2f6f6a; --accent-soft:#dcebe9;
+    --accent2:#c8503a; --accent2-soft:#f7e3dd;
+    --code-bg:#21302e; --code-ink:#eaf3f1;
+    --sidebar:#1f2b29; --sidebar-ink:#e3ece9; --sidebar-muted:#94a7a3;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#111413; --paper:#172220; --ink:#e6ece9; --muted:#9aa9a5;
+    --line:#283633; --accent:#6fb6ad; --accent-soft:#16302c;
+    --accent2:#e8775f; --accent2-soft:#3a221c;
+    --code-bg:#0c1413; --code-ink:#eaf3f1;
+    --sidebar:#0c1413; --sidebar-ink:#e3ece9; --sidebar-muted:#7d8e8a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#245a55 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"0day";position:absolute;right:20px;bottom:-8px;font-family:ui-monospace,monospace;font-size:3.8rem;font-weight:800;color:rgba(255,255,255,.10)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.92;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent-soft);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent2);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent2-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#172220}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent2);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+  /* --- ゆるラジオ版の追加スタイル --- */
+  .yhook{margin:24px 0;padding:18px 24px;border-radius:18px;background:radial-gradient(circle at top left,var(--accent-soft),var(--paper));border:1px solid var(--accent);line-height:1.95}
+  .yhook .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.08em;color:#fff;background:var(--accent);padding:3px 12px;border-radius:999px;margin-bottom:8px}
+  .yhook p{margin:.5em 0}.yhook p:last-child{margin-bottom:0}
+  .ybox{margin:24px 0;padding:4px 22px 16px;border-radius:14px;border:1px solid var(--line);border-left:5px solid var(--accent);background:var(--paper)}
+  .ybox .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin:14px 0 4px}
+  .ybox p{margin:.6em 0}.ybox p:last-child{margin-bottom:0}
+  .ybox.alt{border-left-color:var(--accent2)}.ybox.alt .ylbl{color:var(--accent2);background:var(--accent2-soft)}
+  .ydlg{margin:24px 0;padding:10px 20px;border-radius:16px;background:var(--accent-soft);border:1px solid var(--line)}
+  .ydlg p{margin:.6em 0;line-height:1.8}.ydlg p:last-child{margin-bottom:0}
+  .spk{display:inline-block;font-weight:800;margin-right:.5em;padding:.08em .7em;border-radius:999px;font-size:.72em;white-space:nowrap;vertical-align:.08em}
+  .spk-a{background:var(--accent);color:#fff}.spk-b{background:var(--accent2);color:#fff}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第2部 第7講 ハッキング</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第2部 第7講</span><br>ハッキングと攻撃者の世界</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-vuln">脆弱性 ― ソフトの「穴」</a></li>
+      <li><a href="#s-injection">攻撃の発想 ― 混ぜてはいけないものを混ぜる</a></li>
+      <li><a href="#s-malware">マルウェアの分類</a></li>
+      <li><a href="#s-ecosystem">攻撃者の生態系</a></li>
+      <li><a href="#s-tor">匿名化とダークウェブ</a></li>
+      <li><a href="#s-white">ホワイトハッカー</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第2部 応用・社会・現代技術編 ／ 第7講</div>
+        <h1>ハッキングと攻撃者の世界<br>― 敵の発想を知り、守りに活かす</h1>
+        <p>攻撃者は、いったい何を考え、どこを突くのか。その「発想」を知ることが、最良の防御になる。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― 「敵を知る」ことは、守ること</h2>
+        <div class="yhook">
+          <span class="ylbl">この講を一言でいうと</span>
+          <p>前の2講は「守る側」の席にいました。今回はいったん椅子を立って、テーブルの向こう――<strong>「攻める側」</strong>に回ってみます。といっても、攻撃のやり方を仕込む回ではありません。</p>
+          <p>泥棒がどこから入り、どんな家を狙うかを知らないまま、効果的な戸締まりはできない。<strong>敵の発想が読めるほど、守りの急所がくっきりする</strong>。本講のゴールは、攻撃者を「闇の中の怪物」から「行動が予測できる相手」へと引きずり下ろし、あなたが落ち着いて身を守れるようになることです。恐怖をあおるためでなく、恐怖を飼いならすために、敵を知ります。</p>
+        </div>
+        <p>第5講と第6講では、ずっと「守る」側の席に座ってきました。
+        この第7講では、いったん椅子を立って、テーブルの反対側――<strong>「攻める」側</strong>に回り込んでみます。
+        ただし、念のため。これは攻撃のやり方を仕込む回ではありません。
+        <span class="em">敵がどんな発想で、どこを狙ってくるのかを知ること。それこそが、いちばん効く防御になる</span>。だからこそ、あえて攻撃者の世界をのぞきに行くのです。</p>
+        <p>理屈は、防犯とまったく同じです。
+        泥棒がどこから忍び込み、どんな家に目をつけるかを知らないまま、効果的な戸締まりなどできません。
+        セキュリティの専門家がこぞって攻撃者の頭の中を研究するのも、これと同じ動機からです。
+        本講では、ソフトの「穴（脆弱性）」がなぜ生まれるのか、あらゆる攻撃に共通する根っこの発想は何か、
+        マルウェアや攻撃者にはどんな顔ぶれがいるのか、そして匿名化技術の光と影までを、
+        あくまで<strong>「仕組みを理解し、防御に活かす」</strong>という一線を守りながらたどっていきます。
+        覚えてほしいのは個々の手順ではなく、その奥にある「考え方」のほうです。</p>
+        <p>ひとつだけ、先に釘を刺しておきます。
+        攻撃者の世界を知ると、「こんなに穴だらけなら、もう何をやっても無駄じゃないか」と、げんなりするかもしれません。
+        でも、本講が伝えたいのは、その正反対です。
+        <span class="em">敵の手口が読めるほど、「どこに力を注げばいいか」がくっきりし、少ない労力で要所を守れるようになる</span>。
+        得体の知れないものに怯えるのと、正体を知ったうえで備えるのとでは、心の余裕がまるで違います。
+        本講のゴールは、攻撃者を「闇の中の怪物」から「行動が予測できる相手」へと引きずり下ろし、
+        あなたが落ち着いて、賢く身を守れるようになること。
+        恐怖をあおるためではなく、恐怖を飼いならすために、敵を知るのです。</p>
+        <p class="lead-in">脆弱性 → 攻撃の根本発想 → マルウェアの分類 → 攻撃者の生態系 → 匿名化技術 → ホワイトハッカー。
+        第2部第4講（バグ）・第5講（守りの非対称性）が、攻める側から見えてきます。</p>
+      </section>
+
+      <!-- 脆弱性 -->
+      <section id="s-vuln">
+        <h2>脆弱性 ― ソフトに必ずある「穴」</h2>
+        <div class="ybox alt">
+          <span class="ylbl">まず捨てたい誤解</span>
+          <p><strong>「脆弱性って、天才ハッカーだけが見つけられる、特別な裏ワザなんでしょ?」</strong>――そういう派手なものもありますが、ほとんどは違います。</p>
+          <p>脆弱性の正体は、第2部第4講で学んだ「どうしても残るバグ」の一種にすぎません。そして<strong>世の中の攻撃の大半は、"修正がとっくに出ているのに、更新せず放置された古い穴"</strong>を突いたもの。攻撃者は、最新の鉄壁を破るより、鍵のかかっていない裏口を探すんです。だから「こまめに更新」という地味なアドバイスが、いちばん効く。</p>
+        </div>
+        <p>攻撃の出発点は、たいてい<span class="term">脆弱性</span>（ぜいじゃくせい）です。
+        これは、<strong>ソフトウェアに潜む、セキュリティ上の欠陥や"穴"</strong>のこと。
+        第2部第4講で学んだとおり、複雑なソフトには必ずバグが残ります。
+        そのバグのうち、悪用すると安全を脅かせるものが、脆弱性です。
+        つまり脆弱性は、特別な何かではなく、<span class="em">「ソフトには必ずある、ありふれたバグの一種」</span>なのです。</p>
+        <p>攻撃者は、この穴を探し、突いてきます。
+        とくに危険なのが、第2部第5講でも触れた<strong>ゼロデイ脆弱性</strong>――
+        まだ世界の誰にも知られておらず、修正（パッチ）も存在しない穴です。
+        誰も知らないので、防ぎようがない。攻撃側に圧倒的に有利な状態です。</p>
+        <p>逆に言えば、<strong>すでに知られた脆弱性の多くは、修正プログラム（更新）で塞がれています</strong>。
+        にもかかわらず、世の中の攻撃の大半は、<span class="em">「修正がとっくに出ているのに、更新せず放置された、古い穴」</span>を突いたものです。
+        だから第2部第5講・第6講で「更新をこまめに当てよう」と繰り返したのです。
+        攻撃者の世界を知ると、その地味なアドバイスが、いかに本質的かが分かります。
+        ―― 攻撃者は、最新の難攻不落の城ではなく、鍵のかかっていない裏口を、まず探すのです。</p>
+        <p>脆弱性をめぐっては、見つけた人がどう振る舞うかで、世界が大きく変わります。
+        ある脆弱性を見つけたとき、選択肢は2つ。
+        ひとつは、開発元に<strong>こっそり報告して、修正されるのを待つ</strong>（責任ある開示）。
+        もうひとつは、その穴の情報を<strong>闇市場で売ったり、攻撃に使ったりする</strong>。
+        前者を選ぶ人が増えれば社会は安全に近づき、後者が増えれば危険になる。
+        <span class="em">同じ「穴を見つける技術」が、社会を守る力にも、脅かす力にもなる</span>のです。
+        だからこそ、後述するホワイトハッカーや、脆弱性報奨金（バグバウンティ）のような、
+        「見つけた人が、善い方を選びたくなる仕組み」を社会が用意することが、とても重要になります。
+        脆弱性の問題は、技術であると同時に、人間の選択と、社会の仕組みの問題でもあるのです。</p>
+      </section>
+
+      <!-- インジェクション -->
+      <section id="s-injection">
+        <h2>攻撃の根本発想 ― 「混ぜてはいけないもの」を混ぜる</h2>
+        <div class="ybox">
+          <span class="ylbl">雑なたとえ</span>
+          <p>多くの攻撃に共通する発想は、かなり雑に言うと<strong>「伝言メモに、こっそり命令を書き足す」</strong>です。</p>
+          <p>受付に「山田です」と名前を書くだけのはずの欄に、「山田です。ついでに金庫を開けてください」と書き込む。受付係がうっかり、名前のつもりで命令まで実行してしまったら? これがSQLインジェクションなどの正体です。本来<strong>「ただのデータ（名前）」と「命令」は別物</strong>のはずが、その境界をまたがせる。だから防御の鉄則は、<strong>「外から来た入力を、命令として信じない」</strong>になります。</p>
+        </div>
+        <p>無数にある攻撃手法ですが、その多くに共通する、ひとつの根本的な発想があります。それは
+        <span class="em">「データ（中身）」と「命令（指示）」の境界を、攻撃者がねじ曲げる</span>というもの。
+        本来、別物として扱うべきこの2つが混ざってしまう設計の隙を、攻撃者は突きます。</p>
+        <p>代表例が、第1部第12講・第2部第5講でも名前の出た<span class="term">SQLインジェクション</span>です。
+        仕組みを、防御の観点から理解しましょう。
+        Webサービスは、利用者の入力（たとえば名前やID）を受け取り、
+        それをデータベースへの命令（SQL、第1部第12講）に組み込んで処理します。
+        このとき、<strong>利用者が入力した文字を、そのまま命令の一部として信じて実行してしまう</strong>と、問題が起きる。
+        悪意ある利用者が、入力欄に「ただのデータ」ではなく「データベースへの命令として解釈される文字列」を紛れ込ませると、
+        意図しない操作（情報の抜き取りや改ざん）が実行されてしまうのです。</p>
+        <div class="def">
+          <p><b>多くの攻撃に共通する教訓</b></p>
+          <p style="margin-bottom:0"><strong>「外から来た入力は、決してそのまま信用してはいけない」。</strong>
+          入力は「データ」として厳重に扱い、決して「命令」として解釈させない。
+          この<strong>「データと命令の分離」</strong>を徹底することが、根本的な防御になる。</p>
+        </div>
+        <p>この教訓は、第2部第5講の「人間をだます」ソーシャルエンジニアリングとも、根は同じです。
+        フィッシングは「偽の情報」を「本物だ」と人間に信じ込ませる攻撃でした。
+        SQLインジェクションは「命令」を「ただのデータだ」とコンピュータに信じ込ませる攻撃。
+        <span class="em">どちらも「信用してはいけないものを、信用させる」ことで成り立っている</span>のです。
+        だから防御の原則も共通します。「来たものを、無条件に信じない」。
+        Webページに悪意あるスクリプトを紛れ込ませる攻撃（クロスサイトスクリプティング）も、
+        メモリの想定外の場所を書き換える攻撃（バッファオーバーフロー）も、根っこにあるのは同じ「境界を越えさせる」発想です。
+        個々の手口を覚えるより、この<strong>共通の発想と、共通の防御原則</strong>をつかむことが、ずっと役に立ちます。</p>
+        <p>この「データと命令を分ける」という原則は、じつはコンピュータ科学の歴史と深く結びついています。
+        第1部第4講で学んだノイマン型の核心は、「プログラム（命令）も、データと同じメモリに置く」というものでした。
+        この発想がソフトウェアの自由を生んだ一方で、<span class="em">「命令とデータが同じ場所にある」がゆえに、両者の境界が攻撃の標的になる</span>という宿命も、同時に生んだのです。
+        便利さの源が、そのまま弱点の源でもある――技術にはしばしば、こうした表裏一体の性質があります。
+        だから、攻撃を防ぐ多くの工夫は、結局のところ「データが、勝手に命令に化けないようにする」ための、絶え間ない努力なのです。
+        利用者の入力を、命令とは別物として安全に処理する技術（プレースホルダや無害化）は、いまや開発の常識になっています。
+        ―― ここでも、派手な攻撃の裏側にあるのは、第1部からの地続きの原理なのです。</p>
+      </section>
+
+      <!-- マルウェア -->
+      <section id="s-malware">
+        <h2>マルウェアの分類 ― 悪意あるソフトの動物図鑑</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-b">聞き役</span>ウイルスとかワームとかトロイの木馬とか、ぜんぶ「悪いやつ」でひとくくりじゃダメなんですか?</p>
+          <p><span class="spk spk-a">説明役</span>感染の仕方が違うんですよ。ウイルスは他のファイルに寄生して広がる。ワームは自分の足で勝手に増殖する。トロイの木馬は<strong>便利なフリして忍び込む</strong>。</p>
+          <p><span class="spk spk-b">聞き役</span>なるほど、生態が違う動物図鑑なんですね。"無害な顔して入ってくる"トロイの木馬、いちばん油断しそうで怖いな……。</p>
+        </div>
+        <p><span class="term">マルウェア</span>とは、悪意を持って作られたソフトウェアの総称です（malicious software の略）。
+        一般に「コンピュータウイルス」と呼ばれますが、厳密にはいくつかの種類があり、性質が違います。
+        敵を正しく知るために、整理しておきましょう。</p>
+        <table class="tbl">
+          <caption>表1：代表的なマルウェアの分類</caption>
+          <tr><th>種類</th><th>特徴（たとえると）</th></tr>
+          <tr><td>ウイルス</td><td>他のファイルに寄生して増える。宿主が必要な「寄生虫」型。</td></tr>
+          <tr><td>ワーム</td><td>単独で自己増殖し、ネットワークを通じて自ら広がる「自走式」型。</td></tr>
+          <tr><td>トロイの木馬</td><td>役に立つソフトのふりをして忍び込み、内側から悪さをする「内通者」型。</td></tr>
+          <tr><td>スパイウェア</td><td>こっそり情報を盗み、外部へ送る「盗聴器」型。</td></tr>
+          <tr><td>ランサムウェア</td><td>データを暗号化して人質にし、身代金を要求する「誘拐犯」型（第1部第10講）。</td></tr>
+        </table>
+        <p>とくに近年、社会を脅かしているのが<strong>ランサムウェア</strong>です。
+        第1部第10講で学んだ暗号が、皮肉にも攻撃に悪用されます。
+        攻撃者は、組織のデータを勝手に暗号化して使えなくし、「元に戻す鍵が欲しければ金を払え」と要求する。
+        病院や工場、自治体が機能停止に追い込まれ、人命や暮らしに直結する被害も出ています。
+        ここでも、侵入の入り口の多くは、一通のあやしいメールや、放置された脆弱性（更新漏れ）でした。
+        <span class="em">高度な技術より、人間の隙と、運用の緩みが狙われる</span>――第2部第5講の教訓が、ここでも繰り返されます。
+        そして、ランサムウェアへの最も確実な備えが、第2部第5講で触れた「バックアップ」だ、というのも、ここでつながります。</p>
+        <p>マルウェアの感染経路を知っておくと、防ぎ方も見えてきます。
+        昔ながらの「あやしいファイルを開く」「不正なサイトを見る」だけでなく、
+        近年は、<strong>正規のソフトの更新になりすます</strong>、<strong>USBメモリ経由で広がる</strong>、
+        <strong>第2部第3講で見たような、つながった外部サービスや部品の弱点から侵入する</strong>など、経路は多様化しています。
+        とくに巧妙なのが、攻撃者が正規のソフト配布元に侵入し、<span class="em">「正規の更新」のふりをしてマルウェアを世界中にばらまく</span>サプライチェーン攻撃。
+        利用者は「正しい更新」をしただけなのに感染してしまう、という恐ろしいものです。
+        ここでも、自分一人の注意だけでは防ぎきれず、「つながった相手の安全」が自分の安全を左右する（第2部第5講）という構図が現れます。
+        だからこそ、社会全体での守りの底上げが必要になるのです。</p>
+      </section>
+
+      <!-- 生態系 -->
+      <section id="s-ecosystem">
+        <h2>攻撃者の生態系 ― 誰が、なぜ攻撃するのか</h2>
+        <p>「ハッカー」と聞くと、フードをかぶった孤独な天才を想像しがちですが、現実の攻撃者は多様で、その目的も変化してきました。</p>
+        <ul>
+          <li><strong>愉快犯・腕試し</strong>：初期に多かった、技術的な好奇心や自己顕示が動機のタイプ。</li>
+          <li><strong>金銭目的の組織</strong>：現在の主流。ランサムウェアや詐欺で金銭を稼ぐ、<strong>ビジネスとしての</strong>サイバー犯罪。分業化された"企業"のように動く。</li>
+          <li><strong>国家・スパイ</strong>：国家が背後にいる、諜報や妨害を目的とする高度な攻撃（サイバー戦争）。</li>
+          <li><strong>主義主張（ハクティビスト）</strong>：政治的・社会的な主張のために、企業や政府を標的に攻撃を行うタイプ。</li>
+          <li><strong>内部の人間</strong>：恨みや金銭目的で、権限を持つ社員自身が情報を持ち出すケース。外からの守りでは防ぎにくい、見落とされがちな脅威。</li>
+        </ul>
+        <p>重要なのは、いまや攻撃の主流が<span class="em">「愉快犯」から「金銭目的のビジネス」へと変わった</span>ことです。
+        攻撃ツールが売買され、攻撃を代行するサービスまで存在し、専門の役割分担で効率的に"稼ぐ"。
+        サイバー犯罪は、もはや孤独な天才の趣味ではなく、<strong>巨大な地下経済（アンダーグラウンド・エコノミー）</strong>になっているのです。
+        この変化を理解することは重要です。
+        相手が「金を稼ぐビジネス」である以上、攻撃は<strong>「儲かるところ」を合理的に狙ってくる</strong>。
+        だから守る側も、「自分たちの何が、攻撃者にとっての"金"になるのか」を考えることが、防御の出発点になります。</p>
+        <p>「ビジネス化」は、攻撃の<strong>分業化</strong>も進めました。
+        かつては、一人の天才が侵入から悪用まで全部こなしていました。
+        いまは、脆弱性を見つける専門家、攻撃ツールを作る専門家、それを売る業者、実際に攻撃を実行する者、
+        盗んだ情報を換金する者――と、まるで普通の産業のように役割が分かれています。
+        攻撃ツールを月額で貸し出す「サービス」（ランサムウェアの"代行業"など）まで存在するほどです。
+        この分業化のせいで、<span class="em">高い技術を持たない者でも、お金さえ払えば攻撃に手を染められる</span>ようになり、攻撃の裾野が一気に広がりました。
+        皮肉なことに、第2部第3講・第4講で見た「分業」や「部品を組み合わせる」という、ソフトウェア産業を発展させたのと同じ効率化の論理が、
+        裏社会でも同じように働いているのです。
+        悪意の側もまた、合理的に効率を追求している――この冷徹な事実を知ることが、相手を正しく見積もる第一歩になります。</p>
+      </section>
+
+      <!-- Tor -->
+      <section id="s-tor">
+        <h2>匿名化とダークウェブ ― 技術の光と影</h2>
+        <p>攻撃者が捕まりにくい背景には、<strong>身元を隠す匿名化技術</strong>の存在があります。
+        その代表が<span class="term">Tor（トーア）</span>です。
+        Torは、通信を<strong>何重にも暗号化し、世界中の中継地点を経由させる</strong>ことで、
+        「誰が、どこと通信しているか」を極めて追跡しにくくする仕組み。
+        玉ねぎの皮のように暗号を何層も重ねることから、オニオンルーティングとも呼ばれます（第1部第10講の暗号の応用）。</p>
+        <p>そして、こうした匿名技術の上に広がるのが、通常の検索エンジンには現れない<span class="term">ダークウェブ</span>です。
+        ここでは、違法な売買や、盗まれた情報の取引などが行われ、サイバー犯罪の温床になっている、という暗い側面があります。</p>
+        <p>しかし――ここが大切なところです――<span class="em">匿名化技術そのものは、善でも悪でもありません</span>。
+        Torは、抑圧的な国家の監視を逃れて声を上げるジャーナリストや活動家、内部告発者、
+        プライバシーを守りたい一般市民にとって、<strong>命綱になる技術</strong>でもあります。
+        包丁が料理にも凶器にもなるように、技術は使い手しだい。
+        <span class="em">「強力な技術は、善にも悪にも使える」という両面性</span>は、第1部第10講の暗号（プライバシーを守る一方、犯罪も守る）でも見たテーマです。
+        技術を「危険だから禁止」と単純に切り捨てるのではなく、その光と影の両方を理解したうえで、どう付き合うかを社会全体で考える――
+        この成熟した視点が、これからますます重要になります（第2部の終盤で深めます）。</p>
+        <p>Torの仕組みそのものも、第1部の知識でちゃんと理解できます。
+        通常の通信では、第1部第13講で見たとおり、データに「送り主」と「宛先」が書かれているため、経路を追えば誰と誰の通信かが分かります。
+        Torは、通信を<strong>3つほどの中継地点を経由させ、それぞれの区間を別々の鍵で暗号化（第1部第10講）</strong>します。
+        各中継地点は「ひとつ前」と「ひとつ次」しか知らず、全体像（最初の送り主と最終的な宛先）を、どこも把握できない。
+        <span class="em">情報を細切れにして、誰も全体を知らない状態を作る</span>――これが匿名化の核心です。
+        第1部の暗号と、第13講の中継の仕組みを組み合わせただけで、強力な匿名通信ができてしまう。
+        ここでも、基礎の積み重ねが応用技術を生んでいることが分かります。
+        そして、この「全体を誰も知らない」性質が、自由を守る盾にも、犯罪を隠す影にもなる、というわけです。</p>
+      </section>
+
+      <!-- ホワイトハッカー -->
+      <section id="s-white">
+        <h2>ホワイトハッカー ― 守るために攻める人々</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-b">聞き役</span>「ホワイトハッカー」って、要は善玉のハッカーですよね。でも、やってることは攻撃と同じでは?</p>
+          <p><span class="spk spk-a">説明役</span>技術は同じです。違うのは目的。鍵開けの達人が、泥棒になるか、それとも<strong>「お宅の鍵、こんなに簡単に開きますよ」と教えて回る鍵屋になるか</strong>。</p>
+          <p><span class="spk spk-b">聞き役</span>同じ腕でも、向ける方向で正反対なんですね。攻めの技術を「守るため」に使う――かっこいいじゃないですか。</p>
+        </div>
+        <div class="history">
+          <p><strong>最初のワームと、ハッカー文化の起源。</strong>
+          自己増殖してネットワークを広がる「ワーム」が世界に衝撃を与えたのは、1988年のこと。
+          ある大学院生が放った実験的なプログラムが、想定をはるかに超えて暴走し、当時のインターネットの相当部分を麻痺させてしまいました。
+          作者に大きな破壊の意図はなかったとされますが、結果は甚大で、コンピュータ犯罪として裁かれた初期の事例になりました。
+          <span class="em">「悪意がなくても、技術は大きな被害を生みうる」</span>――この出来事は、技術者の責任という重い問いを、社会に突きつけました。
+          そもそも「ハッカー」という言葉は、1960年代の大学で、コンピュータを限界まで楽しみ尽くした学生たちの、知的な遊び心の文化から生まれたものです。
+          その純粋な探究心が、善にも悪にも転びうることを、歴史はくり返し示してきました。</p>
+        </div>
+        <p>「ハッカー」は、もともと悪い意味の言葉ではありませんでした。
+        本来は<strong>「高度な技術で、システムを深く理解し、巧みに使いこなす人」</strong>を指す、むしろ尊敬を込めた呼び名です。
+        悪用する者は、正しくは「クラッカー」や「攻撃者」と呼び分けられます。</p>
+        <p>そして、その高い技術を<strong>防御のために使う</strong>人々がいます。<span class="term">ホワイトハッカー</span>（倫理的ハッカー）です。
+        彼らは、許可を得たうえで、わざとシステムを攻撃してみせ、
+        実際に攻撃者に悪用される前に、脆弱性を見つけ出して報告します（ペネトレーションテスト）。
+        <span class="em">「敵の発想で攻めてみる」ことが、最良の防御点検になる</span>――本講の冒頭で述べたことの、プロフェッショナル版です。</p>
+        <div class="trivia">
+          <p>多くの大企業は、<strong>「脆弱性報奨金制度（バグバウンティ）」</strong>を設けています。
+          これは、自社サービスの穴を見つけて報告してくれた人に、賞金を支払う仕組み。
+          「攻撃者より先に、善意のハッカーに穴を見つけてもらう」ための、賢い仕掛けです。
+          世界には、この報奨金だけで生計を立てるプロのバグハンターもいます。
+          <span class="em">「攻撃者に悪用される前に、味方に見つけてもらう」</span>――
+          完璧な防御が不可能（第2部第5講）だからこそ、こうして世界中の善意の目を借りる発想が生まれました。
+          攻撃と防御は、敵対するだけでなく、こうして手を取り合うこともあるのです。
+          自分のスキルを、悪用するのか、守りに使うのか――技術者一人ひとりの倫理が、社会の安全を左右します。</p>
+        </div>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用 ― 敵を知って、賢く守る</h2>
+        <p>攻撃者の世界を学んだいま、私たちの防御は、ぐっと地に足のついたものになります。
+        本講で見えてきた「敵の発想」を、守りに翻訳してみましょう。</p>
+        <ul>
+          <li><strong>攻撃者は、最新の城を正面から崩すより「鍵のかかっていない裏口（更新漏れ）」を探す</strong>→ だから、OS・アプリの更新をこまめに当てることが、最も効く基本対策になる（第5・6講）。</li>
+          <li><strong>攻撃者は、入力をそのまま信じてしまう隙を突く</strong>→ サービスを作る側は「外から来たものを、決して無条件に信じず、データと命令を分ける」を徹底する。</li>
+          <li><strong>攻撃者は、人間の隙を最も狙う</strong>→ あやしいメールやうますぎる話を疑い、開く前にひと呼吸おく心構えが、どんな技術的対策とも同じくらい重要（第5講）。</li>
+          <li><strong>攻撃は儲かるビジネスで、無差別に弱い所を狙う</strong>→ 「自分は重要でないから無関係」という油断こそ狙われる。誰もが踏み台にされ、人質に取られうると知る。</li>
+          <li><strong>いつか暗号化・破壊される前提で、バックアップ</strong>→ 複数の場所に複製しておけば、ランサムウェアに身代金を払わずに復旧でき、攻撃者の"ビジネスモデル"を成り立たなくできる。</li>
+        </ul>
+        <p>こうして並べると、本講の結論が見えてきます。
+        <span class="em">特別な専門知識がなくても、「敵の発想」を知っているだけで、防御の優先順位を正しく判断できる</span>。
+        そして、その対策の多くは、すでに第5講・第6講で学んだ「地味な基本」と一致しています。
+        派手なハッキングの世界をのぞいた末にたどり着くのは、「基本を地道に守る」という、拍子抜けするほど堅実な結論なのです。
+        敵を知ることは、恐れるためではなく、<strong>正しく、落ち着いて備えるため</strong>。
+        これが、攻撃者の世界をあえて学んだ、いちばんの収穫です。</p>
+        <p>もうひとつ、これからの大きな変化に触れておきましょう。<strong>AIと攻防</strong>です。
+        第1部第15講で見たAIは、攻撃にも防御にも使われ始めています。
+        攻撃側は、AIでより自然な偽メールを大量に作ったり、脆弱性探しを自動化したりする。
+        一方、防御側も、AIで膨大なログから「あやしい兆候」をすばやく見つけ出す。
+        <span class="em">攻撃と防御、双方がAIという新しい武器を手にした「いたちごっこ」</span>が、いま始まったところです。
+        どんな新技術も、登場すれば必ず、攻める側と守る側の両方に使われる――
+        これは本講義で繰り返し見てきた、技術の両面性そのものです。
+        だからこそ、土台となる原理を理解し、変化に振り回されずに本質を見抜く力が、これまで以上に大切になるのです。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「ハッカーは、みんな悪人だ」</p>
+          <p class="a">「ハッカー」は本来「高い技術で深く理解する人」を指す中立〜敬称の言葉。悪用する者は「クラッカー／攻撃者」と区別されます。
+          技術を防御に使う「ホワイトハッカー」も大勢います。</p>
+          <p class="q">誤解②：「攻撃は、最新の高度な技術で行われる」</p>
+          <p class="a">多くは、修正がとっくに出ているのに放置された「古い穴」や、人間の隙を突くもの。
+          だから「更新する」「あやしいものを疑う」という地味な基本が、いちばん効くのです。</p>
+          <p class="q">誤解③：「ウイルス対策ソフトを入れれば、絶対に安全」</p>
+          <p class="a">万能ではありません（第1部第5講・第2部第5講）。とくに未知の脅威（ゼロデイ）は防ぎきれない。
+          更新・多要素認証・バックアップ・疑う心構えと、多層で守る必要があります。</p>
+          <p class="q">誤解④：「Torや匿名化技術は、犯罪のための危険な技術だ」</p>
+          <p class="a">両面性があります。犯罪に悪用される一方、抑圧下のジャーナリストや市民のプライバシーを守る命綱でもある。
+          技術自体に善悪はなく、使い手しだいです。「危険だから禁止」では片付きません。</p>
+          <p class="q">誤解⑤：「自分は重要な情報を持っていないから、攻撃者に狙われない」</p>
+          <p class="a">危険な油断です。攻撃の多くは特定の標的でなく、弱いところを機械的に・無差別に探します。
+          あなたの端末は、別の標的を攻撃する「踏み台」にされたり、ランサムウェアの被害に遭ったりしうる。「自分は無関係」が最も狙われます。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <div class="ybox">
+        <span class="ylbl">この発想、生活にも出ます</span>
+        <p>攻撃の根っこは「来たものを、つい信じてしまう」こと。これ、そのまま詐欺対策です。「データと命令を分ける」は、人間でいえば<strong>「相手の言い分（データ）と、それに従うかどうか（命令）を、いったん切り離して考える」</strong>こと。あやしいメールのリンクを、流れでうっかり踏まない、ということです。</p>
+        <p>「至急」「あなただけ特別に」と急かされたら、いったん立ち止まる。来たものを無条件に実行しない。<strong>健全な警戒心は、臆病ではなく、賢さ</strong>です。攻撃者の発想を知ることは、めぐりめぐって、日常の詐欺や扇動に流されない目を育てます。</p>
+      </div>
+
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <p>この講で持ち帰ってほしいのは、攻撃の手順ではなく、<strong>攻撃者は得体の知れない怪物ではなく、行動原理の読める相手だ</strong>という見方です。多くの攻撃は「古い穴」と「人間の油断」を突く。だから守りの基本も、派手な対策より「更新する・無条件に信じない」という地味な習慣に尽きるのです。</p>
+        <div class="summary">
+          <ul>
+            <li>「敵の発想」を知ることが最良の防御。本講は個々の攻撃手順でなく、攻撃に共通する考え方を理解し、敵を「得体の知れない怪物」から「読める相手」に変えて、落ち着いて備えるための回。</li>
+            <li>脆弱性は「悪用できるバグ」で、複雑なソフトには必ずある（第2部第4講）。攻撃の多くは、修正済みなのに放置された古い穴を突く。だから更新をこまめに当てることが最重要。</li>
+            <li>多くの攻撃の根本は「データ（中身）と命令（指示）の境界を越えさせる」こと。防御原則は「外から来た入力を、決して無条件に信じない（データと命令を分ける）」。</li>
+            <li>マルウェアにも種類がある（寄生するウイルス、自走するワーム、なりすますトロイ、人質を取るランサムウェア等）。ランサムウェア対策として最も確実なのは、複数の場所へのバックアップ。</li>
+            <li>攻撃は今や「金銭目的のビジネス」で、分業化・サービス化が進む。儲かる所を合理的に狙う。匿名化技術（Tor等）やAIは、攻防の双方に使われる善悪両面の道具。</li>
+            <li>ホワイトハッカーやバグバウンティで「攻撃者より先に、善意の味方に穴を見つけてもらう」。派手な攻撃の世界をのぞいた末にたどり着く結論は、拍子抜けするほど堅実な「基本を地道に守る」。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>「脆弱性」とは何か。第2部第4講の「バグ」との関係で説明せよ。</li>
+            <li>世の中の攻撃の多くが「古い穴」を突くものだとすると、個人ができる最も効果的な対策は何か。</li>
+            <li>SQLインジェクションなど多くの攻撃に共通する「根本発想」と、それに対する「防御原則」を一言で。</li>
+            <li>ランサムウェアの被害に屈しないための、最も確実な備えは何か。なぜか。</li>
+            <li>Torのような匿名化技術を「危険だから禁止すべき」と単純に言えないのは、なぜか。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) ソフトに必ず残るバグ（第2部第4講）のうち、悪用するとセキュリティを脅かせるもの。特別なものでなく、ありふれたバグの一種。<br>
+            (2) OS・アプリの更新をこまめに当てること。攻撃の多くは「修正済みなのに放置された古い穴」を突くため。<br>
+            (3) 根本発想＝「データ（中身）と命令（指示）の境界を越えさせる」。防御原則＝「外から来た入力を、決して無条件に信じない（データと命令を分ける）」。<br>
+            (4) バックアップ（複数の場所に）。暗号化されてデータが人質になっても、別の複製から復旧できるので、身代金を払う必要がなくなる。<br>
+            (5) 技術には両面性があり、犯罪に悪用される一方、抑圧下のジャーナリストや市民の自由・プライバシーを守る命綱でもあるから。善悪は使い手しだい。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">岡嶋裕史『ハッカーの手口』『5G』ほか</span>（PHP新書ほか）
+          ― 攻撃と防御の構図を、一般読者向けにやさしく解説する新書。本講の世界観を広げるのに。</li>
+          <li><span class="bk">IPA（情報処理推進機構）『情報セキュリティ10大脅威』『安全なウェブサイトの作り方』</span>
+          ― 公的機関が、現実の脅威と、作る側の防御策をまとめた無料資料。SQLインジェクション対策なども具体的。</li>
+          <li><span class="bk">アンディ・グリーンバーグ『サンドワーム』ほかサイバー攻撃ノンフィクション</span>
+          ― 国家が関わる現実のサイバー攻撃を追った調査報道。攻撃者の生態系の実像が見える（読み物として）。</li>
+          <li><span class="bk">ブルース・シュナイアー『セキュリティはなぜやぶられたのか』</span>（日経BP）
+          ― 攻防を「人間とトレードオフ」で捉える名著（第5・6・7講に共通の必読書）。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part2_lecture6.html"><span class="lab">← 前の講</span>第2部 第6講 認証・パスワード・パスキー</a>
+        <a class="nx" href="part2_lecture8.html"><span class="lab">次の講 →</span>第2部 第8講 ネット回線・Wi-Fi・通信の実用知識</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第2部 第7講「ハッキングと攻撃者の世界」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        本講は脅威の理解と防御を目的としており、攻撃を助長する意図はありません。具体的な攻撃手順は扱っていません。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

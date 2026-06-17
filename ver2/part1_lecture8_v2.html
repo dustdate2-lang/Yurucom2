@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第1部 第8講 グラフとネットワーク構造 ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="地図もSNSもWebも「点と線」で解ける。グラフ理論・最短経路・PageRank・六次の隔たりを身近に学ぶ。ゆるコンピュータ科学講義 第1部 第8講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#c8503a; --accent-soft:#f7e3dd;
+    --accent2:#2f6f6a; --accent2-soft:#dcebe9;
+    --code-bg:#2b2722; --code-ink:#f3ead9;
+    --sidebar:#262320; --sidebar-ink:#e9e2d4; --sidebar-muted:#a59c8a;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#16140f; --paper:#1f1c16; --ink:#ece6d8; --muted:#a79e8c;
+    --line:#332f27; --accent:#e8775f; --accent-soft:#3a221c;
+    --accent2:#6fb6ad; --accent2-soft:#1c2c2a;
+    --code-bg:#100e0a; --code-ink:#f3ead9;
+    --sidebar:#100e0a; --sidebar-ink:#e9e2d4; --sidebar-muted:#8d8472;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#a83c2c 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"●─●─●";position:absolute;right:6px;bottom:-6px;font-family:ui-monospace,monospace;font-size:3.8rem;font-weight:800;color:rgba(255,255,255,.08)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.9;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent2);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent2-soft);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent2)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:var(--accent2-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#2b2722}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent2-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent2-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent2);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent2-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent2);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+  /* --- ゆるラジオ版の追加スタイル --- */
+  .yhook{margin:24px 0;padding:18px 24px;border-radius:18px;background:radial-gradient(circle at top left,var(--accent-soft),var(--paper));border:1px solid var(--accent);line-height:1.95}
+  .yhook .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.08em;color:#fff;background:var(--accent);padding:3px 12px;border-radius:999px;margin-bottom:8px}
+  .yhook p{margin:.5em 0}.yhook p:last-child{margin-bottom:0}
+  .ybox{margin:24px 0;padding:4px 22px 16px;border-radius:14px;border:1px solid var(--line);border-left:5px solid var(--accent);background:var(--paper)}
+  .ybox .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin:14px 0 4px}
+  .ybox p{margin:.6em 0}.ybox p:last-child{margin-bottom:0}
+  .ybox.alt{border-left-color:var(--accent2)}.ybox.alt .ylbl{color:var(--accent2);background:var(--accent2-soft)}
+  .ydlg{margin:24px 0;padding:10px 20px;border-radius:16px;background:var(--accent-soft);border:1px solid var(--line)}
+  .ydlg p{margin:.6em 0;line-height:1.8}.ydlg p:last-child{margin-bottom:0}
+  .spk{display:inline-block;font-weight:800;margin-right:.5em;padding:.08em .7em;border-radius:999px;font-size:.72em;white-space:nowrap;vertical-align:.08em}
+  .spk-a{background:var(--accent);color:#fff}.spk-b{background:var(--accent2);color:#fff}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第8講 グラフとネットワーク構造</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第1部 第8講</span><br>グラフとネットワーク構造</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-graph">グラフとは ― 点と線</a></li>
+      <li><a href="#s-traverse">グラフをたどる ― 探索</a></li>
+      <li><a href="#s-path">最短経路 ― カーナビの頭の中</a></li>
+      <li><a href="#s-pagerank">PageRank ― リンクは投票</a></li>
+      <li><a href="#s-sns">SNSと「六次の隔たり」</a></li>
+      <li><a href="#s-history">歴史 ― 一筆書きから検索へ</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第1部 基礎教養編 ／ 第8講</div>
+        <h1>グラフとネットワーク構造<br>― 点と線で世界を解く</h1>
+        <p>街の地図も、人間関係も、Web も。すべては「点と線」というたった一つの数学で記述できる。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― 世界は「点と線」でできている</h2>
+        <div class="yhook">
+          <span class="ylbl">この講を一言でいうと</span>
+          <p>電車の路線図、友だちの相関図、Webページのリンク、宅配便のルート。まったく別物に見えるこれらが、<strong>「点と、点をつなぐ線」</strong>というたった一つの形にまとめられます。</p>
+          <p>この単純なメガネ（グラフ）をかけると、カーナビの最短ルート探しも、Google検索の順位づけも、SNSの「友だちの友だち」も、ぜんぶ<strong>同じ問題の変奏</strong>に見えてくる。本講は、世界が急に「点と線」だらけに見えはじめる、ちょっと危険なメガネを手渡す回です。</p>
+        </div>
+        <p>一見まったく無関係に見える問題が、ある見方をすると、ぴたりと同じ形に見えてくる――
+        そういう「魔法のメガネ」が、数学にはときどきあります。
+        この講で扱う<span class="term">グラフ</span>は、その代表格です。</p>
+        <p>ここでいうグラフは、棒グラフや折れ線グラフの「グラフ」とは別物。
+        <strong>「点（ノード）」を「線（エッジ）」でつないだ構造</strong>のことを指します。
+        たったそれだけの単純な道具なのに、世の中の驚くほど多くのものが、これで表せてしまいます。</p>
+        <ul>
+          <li><strong>地図</strong>：交差点が点、道路が線。</li>
+          <li><strong>SNS</strong>：人が点、フォローや友だち関係が線。</li>
+          <li><strong>Web</strong>：ページが点、リンクが線。</li>
+          <li><strong>路線図</strong>：駅が点、線路が線。</li>
+          <li><strong>乗り換え案内・電力網・人脈・分子構造・依存関係</strong>…数えきれない。</li>
+        </ul>
+        <p>これらは中身がまるで違うのに、<span class="em">「点と線のつながり」という同じ数学で扱える</span>。
+        だからこそ、「最短ルートは？」「友だちの友だちは？」「いちばん重要なページは？」といった
+        バラバラに見える問いを、<strong>共通の道具で一気に解ける</strong>のです。
+        グラフは、コンピュータ科学のなかでも、とびきり応用範囲の広い"万能の見方"です。</p>
+        <p>なぜ、こんなにも多くのものがグラフで表せるのでしょう。
+        それは、世の中の多くの物事の本質が<strong>「個々のモノ」ではなく「モノとモノの"関係"」</strong>にあるからです。
+        友情は「人」そのものではなく人と人の"間"にあり、交通は「街」ではなく街と街を結ぶ"道"にある。
+        グラフは、この「関係そのもの」を主役にすえて世界を描く道具なのです。
+        だからこそ、分野を越えて、ありとあらゆる場面に顔を出す。
+        「これは点と線で表せないか？」と問うクセをつけると、複雑に見えた問題が、急にシンプルに見えてくることがあります。
+        これは、コンピュータの外でも役に立つ、強力な思考法です。</p>
+        <p>本講で扱う問いも、すべてこの「関係に注目する」視点から生まれます。
+        「最短でたどり着くには？（最短経路）」「いちばん重要なのは誰・どれ？（PageRank）」
+        「どれくらいの距離でつながっている？（六次の隔たり）」――
+        どれも、個々のモノの性質ではなく、<strong>つながり方そのものから答えが導かれる</strong>問いです。
+        <span class="em">中身が何であれ、つながりの形が同じなら、同じ方法で解ける</span>。
+        地図でもSNSでもWebでも通用する、この汎用性こそが、グラフを学ぶ最大の見返りです。</p>
+        <p class="lead-in">グラフとは何か → グラフのたどり方（探索）→ 最短経路 → PageRank → SNS。
+        カーナビや検索エンジンの中身が、この講で一気に見通せるようになります。</p>
+      </section>
+
+      <!-- グラフとは -->
+      <section id="s-graph">
+        <h2>グラフとは ― 点と線</h2>
+        <div class="ybox alt">
+          <span class="ylbl">まず捨てたい誤解</span>
+          <p><strong>「グラフって、あの棒グラフとか折れ線グラフのことでしょ？」</strong>――ここ、つまずきやすいポイントです。同じ「グラフ」でも、まったくの別物です。</p>
+          <p>ここで言うグラフは、数値を可視化する図ではなく、<strong>「点（モノ）と、それをつなぐ線（関係）」だけでできたネットワーク</strong>のこと。駅と線路、人と友情、ページとリンク。"何と何がつながっているか"を抜き出した、関係性の地図だと思ってください。</p>
+        </div>
+        <p>あらためて、グラフの言葉を整理しましょう。</p>
+        <div class="def">
+          <p><b>グラフの基本用語</b></p>
+          <p style="margin:.2em 0"><b>ノード（頂点）</b>：点。対象そのもの（交差点、人、ページ など）。</p>
+          <p style="margin:.2em 0"><b>エッジ（辺）</b>：線。点と点のつながり（道路、友だち関係、リンク など）。</p>
+          <p style="margin-bottom:0"><b>重み</b>：エッジにつけた数値（距離、時間、コスト など）。重みのないグラフもある。</p>
+        </div>
+        <p>グラフには、つながりに「向き」があるかどうかで2種類あります。
+        <strong>無向グラフ</strong>は、線に向きがないもの。
+        たとえばフェイスブックの「友だち」は、片方が友だちならもう片方も友だち、という相互関係なので無向です。
+        一方<strong>有向グラフ</strong>は、線に矢印（向き）があるもの。
+        X（旧Twitter）の「フォロー」は、自分が相手をフォローしても、相手が自分をフォローするとは限らない一方通行なので有向。
+        Webのリンクも「AからBへ張られている」という向きがあるので、有向グラフです。
+        この「向きの有無」は、後で出てくるPageRankで決定的に効いてきます。</p>
+        <p>さらに、エッジに「重み」をつけると、表現力が一気に増します。
+        地図なら、道路の長さや所要時間を重みにできる。
+        すると「ただつながっているか」だけでなく「どれくらいの距離・時間でつながっているか」まで扱えて、
+        最短経路の計算（後述）が可能になります。
+        <span class="em">点と線、向き、重み。この4つの部品だけで、世界のあらゆるネットワークが記述できる</span>のです。</p>
+        <p>では、このグラフをコンピュータの中にどう"しまう"のでしょうか。ここで第7講のデータ構造が効いてきます。
+        代表的な方法は2つ。ひとつは<strong>隣接リスト</strong>で、
+        各点について「つながっている相手の一覧」をリストで持つやり方。
+        SNSなら「Aさんの友だち：B, C, D」というメモを全員ぶん持つイメージで、
+        友だちが少ない（つながりがまばらな）グラフを省メモリで扱えます。
+        もうひとつは<strong>隣接行列</strong>で、全員×全員の表を作り、
+        「つながっていれば1、いなければ0」と書き込むやり方（第2講・第3講の0と1がここでも登場）。
+        確認は一瞬ですが、点が増えると表が爆発的に大きくなります。
+        <span class="em">同じグラフでも、しまい方しだいで得意な操作が変わる</span>――
+        第7講の「配列かリストか」の話が、グラフでもそのまま繰り返されるのです。</p>
+      </section>
+
+      <!-- 探索 -->
+      <section id="s-traverse">
+        <h2>グラフをたどる ― 探索</h2>
+        <p>グラフを手に入れたら、まずやりたいのは「たどる」ことです。
+        ある点から出発して、つながった点を順にたどり、目的の点にたどり着けるか、どうたどり着くか。
+        これを<strong>グラフ探索</strong >と呼びます。代表的なたどり方が2つあり、
+        どちらも第7講のデータ構造が主役になります。</p>
+        <ul>
+          <li><strong>深さ優先探索（DFS）</strong>：行けるところまでひたすら突き進み、行き止まりになったら一歩戻って別の道を試す。
+          迷路を「片手を壁につけて進む」イメージ。第7講の<strong>スタック</strong>（後入れ先出し）で実現できます。</li>
+          <li><strong>幅優先探索（BFS）</strong>：出発点に近い点から順に、同心円状にじわじわ広げていく。
+          池に石を落としたときの波紋のイメージ。第7講の<strong>キュー</strong>（先入れ先出し）で実現できます。</li>
+        </ul>
+        <p>面白いのは、<span class="em">同じグラフでも、使うデータ構造（スタックかキューか）を変えるだけで、
+        探し方の性格ががらりと変わる</span>こと。
+        そして、この2つには得意分野があります。
+        とくに幅優先探索は「近いところから広げる」性質から、
+        <strong>重みのないグラフでの最短経路（最少ステップ数）を見つける</strong>のに向いています。
+        「友だちの友だちの…で、目的の人まで何ステップか」を調べるなら、幅優先探索の出番です。
+        第6講のアルゴリズムと第7講のデータ構造が、ここでグラフの上で合流するわけです。</p>
+        <p>探索でひとつ注意すべきは、<strong>「同じ点を二度訪れない」工夫</strong>です。
+        グラフはぐるりと輪になっていることが多く（AとBが互いにつながっているなど）、
+        うっかりすると同じ場所を行ったり来たりして、永遠に終わりません。
+        そこで「訪問済みの点」に印をつけながら進みます。
+        この「もう見たかどうか」を高速に確認するのに、第7講のハッシュテーブルが活躍する――
+        ここでもデータ構造が、地味だが決定的な役割を果たしています。</p>
+        <p>探索の応用範囲は驚くほど広いものです。
+        塗りつぶしツールが、クリックした場所と同じ色の領域だけをきれいに塗り替えるのも、
+        「同じ色でつながったマス」をグラフとみなした探索（塗りつぶし＝フラッドフィル）。
+        パズルの「つながったブロックをまとめて消す」処理も、迷路の自動生成や自動解答も、同じ仲間です。
+        <span class="em">「つながりをたどる」という素朴な操作が、ゲームから画像処理まで顔を出す</span>のです。</p>
+      </section>
+
+      <!-- 最短経路 -->
+      <section id="s-path">
+        <h2>最短経路 ― カーナビの頭の中</h2>
+        <div class="ybox">
+          <span class="ylbl">雑なたとえ</span>
+          <p>カーナビが最短ルートを探すようすは、かなり雑に言うと<strong>「出発点に水をたらして、じわじわ染み出させる」</strong>感じです。</p>
+          <p>水は四方八方へ均等に広がり、近い場所から順に濡れていく。目的地が濡れた瞬間、そこへ最初に届いた水の通り道が、最短ルートというわけです。やみくもに全ルートを試すのではなく、「近いところから順に」染み広げるのがミソ。この発想は、乗り換え案内でも配送計画でも、まったく同じように効きます。</p>
+        </div>
+        <p>カーナビや乗換案内が、複雑な道路網・路線網から「最短ルート」をほぼ一瞬で出せるのは、
+        賢いグラフのアルゴリズムのおかげです。
+        重みつきグラフ（道路の距離や時間が重み）で最短経路を求める代表的な手順が、<span class="term">ダイクストラ法</span>です。</p>
+        <p>考え方は、意外なほど直感的です。
+        <strong>「出発点に近い交差点から順に、そこまでの最短距離を確定させていく」</strong>。
+        水を出発点に垂らすと、波紋が同心円状に広がっていくように、
+        近いところから「ここまでの最短距離はこれで確定」とじわじわ決めていき、
+        目的地に波が届いた瞬間が、最短ルートになります。
+        やみくもに全ルートを試す（第6講の指数爆発！）のではなく、
+        「確定した近い点」から効率よく広げるので、現実的な時間で解けるのです。</p>
+        <p>簡単な例で感覚をつかみましょう。A地点からD地点へ行きたいとします。
+        「A→B が 2分、A→C が 5分、B→D が 4分、C→D が 1分」というつながりがあるとき、
+        ルートは2通り。A→B→D は <code>2＋4＝6分</code>、A→C→D は <code>5＋1＝6分</code>。
+        この例では同点ですが、もしC→Dが極端に速ければ、遠回りに見えるA→C→Dのほうが速い、ということも起こります。
+        <span class="em">「見た目の近さ」ではなく「実際の合計コスト」で最短を選ぶ</span>のがポイント。
+        ダイクストラ法は、こうした計算を、点が何万あっても、近い順に淡々と確定させて解いていくのです。</p>
+        <p>実際のカーナビでは、もう一歩進んだ工夫もあります。
+        ダイクストラ法は全方向へ均等に探しますが、
+        「目的地のある方角を優先して探す」と、無駄な計算を大きく減らせます（A★アルゴリズムなどと呼ばれます）。
+        ゲームの中で、敵キャラクターがプレイヤーを賢く追いかけてくる経路も、たいていこの仲間です。
+        <span class="em">街もダンジョンも、いったん「点と線」のグラフにしてしまえば、同じアルゴリズムで攻略できる</span>。
+        これがグラフという見方の威力です。</p>
+        <div class="note">
+          <span class="lbl">第5講・第7講とのつながり</span>
+          最短経路の問題は「解けるか（第5講）」ではなく「速く解けるか（第6講）」の典型。
+          そして、その高速化を支えているのが、第7講で学んだキューや優先度付きキュー（ヒープ）といったデータ構造です。
+          ここまでの講が、グラフの上で一斉に働いていることに注目してください。
+        </div>
+      </section>
+
+      <!-- PageRank -->
+      <section id="s-pagerank">
+        <h2>PageRank ― リンクは「投票」である</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-a">説明役</span>初期のGoogleの賢かったところは、「リンクを"投票"とみなした」ことなんです。よそから多くリンクされているページは、それだけ支持されている、と。</p>
+          <p><span class="spk spk-b">聞き役</span>でも、票を買い占めたら順位を操作できちゃいません?</p>
+          <p><span class="spk spk-a">説明役</span>そこも巧妙で、「えらいページからの一票は重い」としたんです。誰に支持されるかで価値が変わる。<strong>"えらい人に推される人は、えらい"</strong>という、ちょっとぐるぐるした理屈で順位を決めたんですね。</p>
+        </div>
+        <p>1998年、創業まもないGoogleが、検索の世界を一変させました。
+        その心臓部にあったのが、創業者ラリー・ペイジらが考案した<span class="term">PageRank</span>というアルゴリズムです。
+        当時の検索エンジンは「ページの中にキーワードが何回出てくるか」で順位を決めており、
+        キーワードをただ大量に詰め込んだだけの中身のないページが、上位を埋め尽くしていました。</p>
+        <p>ペイジらの発想の転換は、こうでした。
+        <span class="em">「良いページとは、多くの良いページからリンクされているページだ」</span>。
+        Webを巨大な有向グラフ（ページが点、リンクが矢印）と見て、
+        <strong>1本のリンクを、一種の"投票"</strong>とみなしたのです。
+        ただし、ここに2つの巧妙な工夫がありました。</p>
+        <ul>
+          <li><strong>票の重みは平等でない</strong>：重要なページからの1票は、無名ページからの1票より重い。
+          つまり「誰から推薦されたか」で価値が変わる。</li>
+          <li><strong>堂々めぐりを解く</strong>：「重要さ」が「重要なところからのリンク」で決まるなら、定義がぐるぐる循環してしまう。
+          これを、「ネットを延々ランダムにリンクをたどり続ける人が、最終的に各ページにいる確率」として計算で解いた。</li>
+        </ul>
+        <p>この「重要さが、つながりによって決まる」という考え方は、まさにグラフならではのもの。
+        ページ単体の中身だけでなく、<strong>Web全体のリンク構造から、各ページの"格"を浮かび上がらせた</strong>のです。
+        スパムだらけだった検索結果が、これで一気に使い物になった。
+        グラフという数学が、世界一の企業の土台になった瞬間でした。</p>
+        <div class="trivia">
+          <p>PageRankの面白さは、第1講以来おなじみの数学とつながっている点にもあります。
+          「リンクをランダムにたどり続けると、各ページにいる確率がやがて一定値に落ち着く」――
+          この落ち着き先（定常分布）を求めるのが計算の本体で、突き詰めると巨大な行列の計算になります。
+          さらにペイジらは「たどる人は時々飽きて、どこか適当なページへワープする」という"飽き性"の要素まで入れました。
+          人間の気まぐれを数式に1つ加えることで、計算が安定し、現実のWebをうまく捉えられるようになったのです。
+          純粋数学（グラフと確率）が、検索という超実用技術に化けた好例です。</p>
+        </div>
+        <p>もっとも、PageRankの仕組みが知れ渡ると、今度は「リンクを売買して票を水増しする」業者が現れ、
+        Googleはアルゴリズムの改良を延々と続けることになります。
+        <strong>評価基準を公開すると、人はそれを攻略しにかかる</strong>――
+        これは検索だけでなく、第15講のAIや、SNSの「おすすめ」、あらゆる「指標」が抱える、終わりなき宿命でもあります。</p>
+        <p>じつはPageRankの「重要なものから推されるほど、自分も重要になる」という考え方は、
+        Web以前から学術の世界にありました。論文の世界では昔から、
+        「多くの（重要な）論文から引用される論文は、影響力が大きい」とみなされてきたのです。
+        ペイジらは、この"引用ネットワーク"の発想をWebのリンクに応用したとも言えます。
+        逆に今では、PageRankの考え方が研究者の影響力評価や、SNSの影響力ランキング、
+        さらには不正検出（あやしい口座から推される口座もあやしい）など、さまざまな分野に逆輸入されています。
+        <span class="em">「つながりの中での"格"を測る」という一つのアイデアが、分野を越えて応用され続けている</span>――
+        これもまた、グラフという見方の普遍性を物語っています。</p>
+      </section>
+
+      <!-- SNS -->
+      <section id="s-sns">
+        <h2>SNSと「六次の隔たり」</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-b">聞き役</span>「知り合いを6人たどれば世界中の誰にでもつながる」って、さすがに盛ってませんか。</p>
+          <p><span class="spk spk-a">説明役</span>それが、意外とそうでもないんです。自分の知り合いが仮に100人いて、その一人ひとりがまた別の100人を知っていれば、2手で1万人、3手で100万人。あっという間にふくらむ。</p>
+          <p><span class="spk spk-b">聞き役</span>あ、これ前の講の「指数爆発」と同じやつだ。今回は怖い方じゃなくて、世界が狭くなる方に効いてるんですね。</p>
+        </div>
+        <p>グラフは、人間関係そのものを映し出す鏡でもあります。
+        人を点、つながりを線とすれば、SNSはまるごと巨大なグラフです。
+        ここで有名なのが<span class="term">「六次の隔たり」</span>という考え方。
+        <strong>世界中のどんな人とも、知り合いを6人たどれば、たいていつながってしまう</strong>、という説です。</p>
+        <p>「まさか」と思うかもしれませんが、ざっくり計算すると納得できます。
+        仮に1人が50人と知り合いだとすると、知り合いの知り合いは <code>50×50＝2,500人</code>、
+        さらにその先は <code>50³＝12.5万人</code>…と、たどるたびに人数が爆発的に増えていく（第6講の指数の力！）。
+        数ステップで、あっという間に世界人口に届いてしまうのです。
+        実際、巨大SNSのデータ解析でも、世界中の利用者は平均して<strong>4〜5人</strong>たどればつながる、という結果が報告されています。</p>
+        <div class="trivia">
+          <p>「六次の隔たり」は、もともと1960年代に心理学者スタンレー・ミルグラムが行った実験に由来します。
+          彼はアメリカの各地の人に手紙を渡し、「知り合いをたどって、この見知らぬ目標人物まで届けてほしい」と頼みました。
+          すると、届いた手紙は<strong>平均しておよそ6人の手</strong>を経ていた、というのです。
+          ここから「世界は6人でつながっている」という言葉が広まりました。
+          のちにインターネットとSNSが登場し、何億人ぶんものつながりを実際に解析できるようになると、
+          この"言い伝え"が、データによって裏づけられたわけです。
+          手紙の時代の素朴な実験が、ビッグデータの時代に証明される――
+          科学のロマンを感じる話です。</p>
+        </div>
+        <p>こうした「少ないステップで誰とでもつながる」ネットワークは<span class="term">スモールワールド</span>と呼ばれ、
+        SNSだけでなく、脳の神経回路や、生態系、感染症の広がり方にも共通して見られる性質です。
+        だからこそ、デマや流行が一気に世界へ広がることもあれば、感染症が急速に拡大することもある。
+        <span class="em">「世界は意外と狭い」という実感の正体を、グラフは数理として説明してくれる</span>のです。
+        SNSの「おすすめユーザー（知り合いかも）」機能も、このグラフ構造をたどって
+        「共通の友だちが多い人」を見つけ出しているのです。</p>
+      </section>
+
+      <!-- 歴史 -->
+      <section id="s-history">
+        <h2>歴史 ― 一筆書きの散歩から、検索エンジンへ</h2>
+        <div class="history">
+          <p><strong>グラフ理論の始まり ― ケーニヒスベルクの橋。</strong>
+          グラフ理論の出発点は、18世紀の、ある"散歩の問題"でした。
+          プロイセンのケーニヒスベルクという町には、川に7つの橋が架かっていて、
+          住民の間で「すべての橋を1度ずつ渡って元の場所に戻れるか（一筆書きできるか）」が話題になっていました。
+          これに決着をつけたのが、大数学者<strong>レオンハルト・オイラー</strong>です。
+          彼は、土地を「点」、橋を「線」に置き換えて問題を抽象化し、
+          「そんな一筆書きは不可能だ」と鮮やかに証明しました。
+          <span class="em">具体的な地理を捨てて、点と線のつながりだけに注目する</span>――
+          このオイラーの大胆な抽象化が、グラフ理論という分野まるごとの誕生でした。
+          遊びのような問いが、巨大な学問の種になったのです。</p>
+          <p><strong>そして検索エンジンへ。</strong>
+          オイラーから約260年。ラリー・ペイジとセルゲイ・ブリンという2人の大学院生が、
+          「Webという巨大グラフのリンク構造を解析する」という研究から、Googleを生み出しました。
+          散歩の問題から始まったグラフ理論が、世界中の情報を整理する技術にまで育ったのです。</p>
+        </div>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用</h2>
+        <h3>あなたの一日は、グラフだらけ</h3>
+        <p>気づいていないだけで、私たちは毎日グラフのお世話になっています。
+        地図アプリの経路案内、乗換案内の最適ルート、SNSの「知り合いかも」、
+        通販サイトの「この商品を買った人はこちらも」、動画サービスの「次のおすすめ」――
+        これらはみな、点と線のつながりをたどって答えを出しています。
+        ECサイトのおすすめは「商品とユーザーを点、購入を線」としたグラフから、
+        「似た人が買ったもの」を手繰り寄せている。
+        <span class="em">「つながりから何かを推し量る」処理は、ほぼすべてグラフの応用</span>なのです。</p>
+        <p>とくに「おすすめ」の裏側は、グラフの腕の見せどころです。
+        「この商品を買った人は、こちらも買っています」は、ユーザーと商品をつないだグラフをたどって、
+        「自分と似た買い方をした人が、ほかに何を買ったか」を手繰り寄せています。
+        動画やSNSの「次のおすすめ」も同じで、視聴やフォローのつながりから「近いもの」を引き出している。
+        私たちが「なぜこれを知っているの？」と驚くおすすめの精度は、
+        巨大なつながりのグラフを解析した成果なのです。
+        もっとも、この推薦が強力すぎると、似たものばかりが表示されて視野が狭まる「フィルターバブル」という問題も生みます。
+        便利さと引き換えに何を失うか――この光と影は、第2部でも改めて考えます。</p>
+        <h3>つながりの分析が、社会を動かす</h3>
+        <p>グラフ解析は、ビジネスや社会の分析にも使われます。
+        「人脈の中心にいる影響力の高い人（インフルエンサー）は誰か」「組織の中で情報が滞る箇所はどこか」
+        「不正な取引が、どの口座のネットワークで行われているか」――
+        こうした問いは、すべてグラフの構造を調べることで見えてきます。
+        感染症対策で「誰と誰が接触したか」を追うのも、送電網の弱点を探すのも、同じグラフの発想です。
+        点と線という素朴な道具が、社会の見えない構造を浮かび上がらせる。
+        だからグラフは、情報技術にとどまらない"世界を読む技術"でもあるのです。</p>
+        <h3>「順番」もグラフで決まる</h3>
+        <p>もうひとつ、意外な応用を紹介しましょう。「物事の正しい順序を決める」問題です。
+        たとえば料理で「米を炊く前に、まず研ぐ」「炒める前に、まず切る」といった
+        "先にやるべきこと"の関係を、矢印つきのグラフ（有向グラフ）で表せます。
+        このグラフから、矛盾なく実行できる順番を割り出す手法を<strong>トポロジカルソート</strong>と呼びます。
+        ソフトウェアの「このプログラムを動かすには、先にこの部品が必要」という依存関係の解決、
+        大学の履修登録（先に基礎科目、次に応用科目）、工事や製造の工程管理など、
+        <span class="em">「何を、どの順でやるか」を自動で決める</span>場面で広く使われています。
+        グラフは、つながりだけでなく「前後関係・段取り」まで扱える、懐の深い道具なのです。</p>
+        <h3>「木」もグラフの仲間だった</h3>
+        <p>ここで、これまでの講とのつながりに気づいた人もいるかもしれません。
+        第7講で学んだ「木（ツリー）」は、じつは<strong>グラフの特別な一種</strong>です。
+        点と線でできていて、輪（ループ）がなく、すべての点がつながっている――そんな特別なグラフを「木」と呼ぶのです。
+        つまり、フォルダの階層も、ハフマン符号の木（第9講）も、二分探索木（第7講）も、すべてグラフの一族。
+        <span class="em">バラバラに学んできた構造が、「点と線」という一つの視点で、すっと一望できる</span>。
+        これがグラフという見方の、もうひとつの威力です。</p>
+        <p>グラフ理論には、有名な難問もたくさんあります。
+        「地図を、隣り合う国が同じ色にならないように塗り分けるには、何色あれば足りるか」という<strong>四色問題</strong>は、
+        「4色で必ず足りる」と予想されながら、100年以上も証明されませんでした。
+        そして1976年、ついに<strong>コンピュータを使って</strong>膨大な場合分けをしらみつぶしに調べ上げ、証明されたのです。
+        これは「人間の手による証明」を当然としてきた数学界に、「機械による証明をどう受け止めるか」という新しい問いを突きつけた、
+        歴史的な出来事でもありました。点と線をめぐる素朴な問いが、数学のあり方そのものを揺さぶったのです。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「グラフ理論のグラフ＝棒グラフや折れ線グラフ」</p>
+          <p class="a">別物です。ここでのグラフは「点（ノード）と線（エッジ）のつながり」を表す構造のこと。
+          データを可視化する棒グラフ・折れ線グラフとは、まったく違う概念です。</p>
+          <p class="q">誤解②：「カーナビは、考えられる全ルートを比べて最短を選んでいる」</p>
+          <p class="a">全ルート総当たりは、組み合わせが指数爆発して現実には終わりません（第6講）。
+          実際は、近い地点から最短距離を確定していく賢い手順（ダイクストラ法など）で、無駄な探索を省いています。</p>
+          <p class="q">誤解③：「PageRankは、ページ内のキーワードの数で順位を決めている」</p>
+          <p class="a">それは旧来の方式で、スパムに弱いものでした。PageRankの革新は、ページの中身ではなく
+          <strong>リンク構造（どんなページからリンクされているか）</strong>で重要度を測った点にあります。</p>
+          <p class="q">誤解④：「六次の隔たりは、ただの都市伝説」</p>
+          <p class="a">巨大SNSの実データ解析でも、世界中の人が平均4〜5ステップでつながることが確認されています。
+          知り合いの数が"かけ算"で増えていくため、数ステップで爆発的に到達範囲が広がるのです。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <div class="ybox">
+        <span class="ylbl">この発想、生活にも出ます</span>
+        <p>人間関係も、立派なグラフです。たくさんの人とつながる「ハブ」のような人、別々のグループを橋渡しする人、はしっこでぽつんとしている点。誰とつながっているかが、その人に流れてくる情報やチャンスを大きく左右します。</p>
+        <p>「六次の隔たり」――知り合いを6人もたどれば世界中の誰にでも届く、という話が示すのは、世界が思うより狭いということ。<strong>あなたという一つの点が、どんな線でつながっているか</strong>。そう考えると、人付き合いの見え方も少し変わってきます。</p>
+      </div>
+
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <p>この講で持ち帰ってほしいのは、アルゴリズムの手順ではありません。<strong>「つながりは、点と線に抜き出せる」</strong>という抽象化のメガネです。これをかけると、別物に見えていた問題（地図・検索・人脈）が、同じ一つの問題に見えてくる。抽象化の威力を、いちばん体感できる回です。</p>
+        <div class="summary">
+          <ul>
+            <li>グラフ＝点（ノード）と線（エッジ）。地図・SNS・Web・路線図など、中身の違うものを「つながり」という一つの見方で統一的に表せる、強力な思考の道具。</li>
+            <li>つながりに向きがあるかで有向／無向、線に数値をつけると重みつきグラフになる。</li>
+            <li>グラフ探索は深さ優先（スタック）と幅優先（キュー）。第7講のデータ構造が主役。</li>
+            <li>最短経路はダイクストラ法（出発点に近い点から順に最短距離を確定していく）。カーナビや乗換案内、ゲームAIの追跡経路などの基礎。</li>
+            <li>PageRankは「リンク＝投票」。重要なページからのリンクほど重く、循環を確率計算で解いた。</li>
+            <li>SNSはスモールワールド。知り合いがかけ算で増えるため、数ステップで世界中とつながる。</li>
+            <li>第7講の「木」もグラフの特別な一種。バラバラに学んだ構造が「点と線」という一つの視点で一望できる。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>「友だちの友だちは何人いるか」を調べたい。グラフの点と線で言い換えると、何をたどる操作になるか。</li>
+            <li>無向グラフと有向グラフの違いを、SNSの「友だち」と「フォロー」を例に説明せよ。</li>
+            <li>PageRankで、無名ブログから1000本のリンクをもらうのと、超有名サイトから1本もらうのと、評価が高いのはどちらの可能性が高いか。なぜか。</li>
+            <li>1人が平均50人と知り合いだとすると、「知り合いの、知り合いの、知り合い」はおよそ何人になるか。</li>
+            <li>検索順位の決め方を完全に公開すると、なぜ問題が起きるのか。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) ある点から線を1本たどると「友だち」、もう1本たどると「友だちの友だち」。グラフを2ステップたどる操作。<br>
+            (2) 「友だち」は相互関係なので<strong>無向</strong>（線に向きなし）。「フォロー」は一方通行もありうるので<strong>有向</strong>（矢印つき）。<br>
+            (3) <strong>超有名サイトからの1本</strong>。PageRankでは票の重みが平等でなく、重要なページからのリンクほど価値が高い。質の低い大量リンクは効きにくい。<br>
+            (4) <code>50³ ＝ 125,000人</code>。たどるたびにかけ算で爆発的に増える。<br>
+            (5) 基準が分かると、内容を良くする代わりに「基準だけを満たすスパム」を作る攻略者が現れるから。だから基準は一部非公開かつ改良し続けられる。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">増田直紀・今野紀雄『複雑ネットワーク ― 基礎から応用まで』</span>（近代科学社）
+          ― スモールワールドやスケールフリーなど、ネットワーク科学の世界を本格的に学べる一冊。SNSの話の続きへ。</li>
+          <li><span class="bk">増田直紀『私たちはどうつながっているのか』</span>（中公新書）
+          ― 六次の隔たりやネットワークの性質を、やさしく語る新書。本講の入口に最適。</li>
+          <li><span class="bk">ジョン・マコーミック『世界でもっとも強力な9のアルゴリズム』</span>（日経BP）
+          ― PageRankや検索の仕組みを、平易に解説。本講の「現代への応用」をもっと深く。</li>
+          <li><span class="bk">大槻兼資（著）・秋葉拓哉（監修）『問題解決力を鍛える！アルゴリズムとデータ構造』</span>（講談社）
+          ― グラフ探索や最短経路（ダイクストラ法）を、コードと図で学べる定番書。手を動かしたい人へ。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part1_lecture7.html"><span class="lab">← 前の講</span>第7講 データ構造</a>
+        <a class="nx" href="part1_lecture9.html"><span class="lab">次の講 →</span>第9講 圧縮と誤り訂正</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第1部 第8講「グラフとネットワーク構造」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

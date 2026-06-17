@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第1部 第6講 アルゴリズムと計算量 ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="同じ問題でも手順しだいで天と地。探索・整列・ビッグオー記法・指数爆発・P対NP問題までを身近に学ぶ。ゆるコンピュータ科学講義 第1部 第6講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#c8503a; --accent-soft:#f7e3dd;
+    --accent2:#2f6f6a; --accent2-soft:#dcebe9;
+    --code-bg:#2b2722; --code-ink:#f3ead9;
+    --sidebar:#262320; --sidebar-ink:#e9e2d4; --sidebar-muted:#a59c8a;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#16140f; --paper:#1f1c16; --ink:#ece6d8; --muted:#a79e8c;
+    --line:#332f27; --accent:#e8775f; --accent-soft:#3a221c;
+    --accent2:#6fb6ad; --accent2-soft:#1c2c2a;
+    --code-bg:#100e0a; --code-ink:#f3ead9;
+    --sidebar:#100e0a; --sidebar-ink:#e9e2d4; --sidebar-muted:#8d8472;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#a83c2c 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"O(n log n)";position:absolute;right:-6px;bottom:-10px;font-family:ui-monospace,monospace;font-size:3.4rem;font-weight:800;color:rgba(255,255,255,.08)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.9;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent2);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent2-soft);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent2)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:var(--accent2-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#2b2722}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent2-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent2-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent2);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent2-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent2);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+  /* --- ゆるラジオ版の追加スタイル --- */
+  .yhook{margin:24px 0;padding:18px 24px;border-radius:18px;background:radial-gradient(circle at top left,var(--accent-soft),var(--paper));border:1px solid var(--accent);line-height:1.95}
+  .yhook .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.08em;color:#fff;background:var(--accent);padding:3px 12px;border-radius:999px;margin-bottom:8px}
+  .yhook p{margin:.5em 0}.yhook p:last-child{margin-bottom:0}
+  .ybox{margin:24px 0;padding:4px 22px 16px;border-radius:14px;border:1px solid var(--line);border-left:5px solid var(--accent);background:var(--paper)}
+  .ybox .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin:14px 0 4px}
+  .ybox p{margin:.6em 0}.ybox p:last-child{margin-bottom:0}
+  .ybox.alt{border-left-color:var(--accent2)}.ybox.alt .ylbl{color:var(--accent2);background:var(--accent2-soft)}
+  .ydlg{margin:24px 0;padding:10px 20px;border-radius:16px;background:var(--accent-soft);border:1px solid var(--line)}
+  .ydlg p{margin:.6em 0;line-height:1.8}.ydlg p:last-child{margin-bottom:0}
+  .spk{display:inline-block;font-weight:800;margin-right:.5em;padding:.08em .7em;border-radius:999px;font-size:.72em;white-space:nowrap;vertical-align:.08em}
+  .spk-a{background:var(--accent);color:#fff}.spk-b{background:var(--accent2);color:#fff}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第6講 アルゴリズムと計算量</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第1部 第6講</span><br>アルゴリズムと計算量</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-algo">アルゴリズムとは何か</a></li>
+      <li><a href="#s-search">探索で体感する速さの差</a></li>
+      <li><a href="#s-order">計算量とビッグオー記法</a></li>
+      <li><a href="#s-explosion">指数爆発の恐怖</a></li>
+      <li><a href="#s-sort">並べ替えの奥深さ ― ソート</a></li>
+      <li><a href="#s-pnp">P対NP問題</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第1部 基礎教養編 ／ 第6講</div>
+        <h1>アルゴリズムと計算量<br>― 「解ける」と「速く解ける」は別物</h1>
+        <p>同じ問題でも、手順しだいで答えが出るのが一瞬にも、宇宙の年齢ぶんかかるようにもなる。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― 速さという、もうひとつの物差し</h2>
+        <div class="yhook">
+          <span class="ylbl">この講を一言でいうと</span>
+          <p>プログラムやパソコンが「遅い」とき、私たちはつい「スペックが足りないんだ」と思いがちです。でも本当の差は、たいてい<strong>「頑張り」ではなく「やり方」</strong>にあります。</p>
+          <p>本が10冊なら端から探しても一瞬。でも10万冊を毎回端から探していたら、一生かけても終わりません。<strong>手順が賢いか、ダサいか</strong>。その差は、数が増えるほど天文学的に開いていく。本講で味わうのは、この「速さは根性ではなく段取りで決まる」という、ちょっと痛快な事実です。</p>
+        </div>
+        <p>第5講で、私たちは「その問題は計算で解けるのか？」という問いを掘り下げました。
+        停止性問題のように原理的に解けない問題もある一方で、多くの問題は「時間さえかければ解ける」ものでした。
+        しかし、ここに落とし穴があります。<span class="em">「いつかは解ける」と「現実的な時間で解ける」は、まったくの別物</span>なのです。
+        理論上は解けても、答えが出るのが100年後では、何の役にも立ちません。</p>
+        <p>そこで本講では、「解けるか」の次の問い――<strong>「どれくらい速く解けるか」</strong>に踏み込みます。
+        鍵を握るのは2つの概念です。問題を解くための手順そのものを指す<span class="term">アルゴリズム</span>と、
+        その手順がデータ量に対してどれだけ手間を食うかを測る<span class="term">計算量</span>。
+        この2つを身につけると、「なぜGoogleマップは一瞬で最短ルートを出せるのか」
+        「なぜ暗号は破られないのか」といった、現実の不思議の裏側が見えてきます。
+        プログラミングをしない人にとっても、コンピュータの"効き目"を理解する最重要の道具です。</p>
+        <p>もうひとつ、本講には大きなご利益があります。それは<strong>「ものの考え方」そのものが鍛えられる</strong>こと。
+        「この作業、データが増えたらどうなる？」「もっと無駄のない手順はないか？」――
+        こうした問いは、料理の段取りでも、書類整理でも、仕事の進め方でも役に立つ、普遍的な思考法です。
+        アルゴリズムと計算量は、コンピュータのための知識であると同時に、
+        <span class="em">「効率よく考える」ための一般教養</span>でもあるのです。</p>
+        <p>そしてこの回は、これまでの講とこれからの講をつなぐ"結び目"でもあります。
+        第5講で学んだ「解けるか／解けないか」の地図の内側を、本講は「速く解けるか／事実上解けないか」で塗り分けました。
+        この計算量という物差しは、この先もずっと効いてきます。
+        第7講のデータ構造は「計算量を下げるための道具」ですし、第10講の暗号は「あえて計算量を爆発させて安全を守る」技術、
+        第15講のAIも「完璧な最適解をあきらめ、近似で折り合う」という、本講の発想の上に立っています。
+        <span class="em">「それは、どれくらいの手間で解けるのか？」</span>という問いを持てるようになったあなたは、
+        もうコンピュータ科学の核心の一つを手にしています。</p>
+        <p class="lead-in">アルゴリズムとは何か → 探索で速さの差を体感 → ビッグオー記法 → 指数爆発 → ソート → P対NP。
+        数式は最小限にして、「手順の良し悪しが、どれほど結果を変えるか」を体で感じてもらいます。</p>
+      </section>
+
+      <!-- アルゴリズム -->
+      <section id="s-algo">
+        <h2>アルゴリズムとは何か</h2>
+        <div class="ybox alt">
+          <span class="ylbl">まず捨てたい誤解</span>
+          <p><strong>「アプリが重いのは、結局スマホが古いせいでしょ？」</strong>――半分は当たっています。でも、そこで買い替えに走る前に、知っておきたいことがあります。</p>
+          <p>同じ作業でも、手順（アルゴリズム）が下手だと、最新のマシンでも遅い。逆に手順が賢ければ、非力なマシンでも軽快に動く。<strong>速さは、馬力より段取りで決まる</strong>場面がとても多いのです。「アルゴリズム」と聞くと身構えますが、要は"段取りの良し悪し"の話だと思ってください。</p>
+        </div>
+        <p>アルゴリズムと聞くと身構えてしまいますが、要は<strong>「問題を解くための、きっちり決められた手順」</strong>のこと。
+        料理のレシピや、折り紙の折り方、目的地までの道順の説明も、広い意味ではアルゴリズムです。
+        ポイントは、誰がやっても（あるいは機械がやっても）同じ結果にたどり着くように、
+        手順が曖昧さなく定まっていること。
+        コンピュータは自分で考えてはくれないので、人間が「こうやって解け」と手順を与えてやる必要があります。
+        その手順がアルゴリズムです。</p>
+        <p>ごく簡単な例を挙げましょう。「テストの点数が並んだリストから、最高点を見つける」手順は、こう書けます。
+        ―― ①最初の人の点を「暫定1位」として覚える。②次の人から順に見ていき、暫定1位より高ければ、その点で覚え直す。
+        ③最後まで見たら、覚えている点が最高点。
+        当たり前すぎる手順ですが、これも立派なアルゴリズムで、計算量は <code>O(n)</code>（人数に比例）です。
+        私たちが無意識にやっている「全員ぶん見比べる」という作業を、曖昧さなく言葉にすると、こうなる。
+        <span class="em">アルゴリズムを考えるとは、頭の中の作業を、誰でも（機械でも）たどれる手順に翻訳すること</span>なのです。</p>
+        <div class="def">
+          <p><b>良いアルゴリズムの条件</b></p>
+          <p style="margin-bottom:0">①正しい答えが出る ②必ず終わる、という大前提に加えて、
+          <strong>③速い（手間が少ない） ④省メモリ（場所を食わない）</strong>であるほど良い。
+          同じ問題を正しく解くアルゴリズムは何通りもあり、その"出来"の差が、本講の主役である。</p>
+        </div>
+        <p>面白いのは、コンピュータがなくてもアルゴリズムは考えられる、という点です。
+        実際、アルゴリズムという考え方は、計算機が生まれるはるか前から数学のなかにありました。
+        「アルゴリズム（algorithm）」という言葉そのものが、
+        9世紀ペルシアの数学者<span class="term">アル＝フワーリズミー</span>の名前に由来します。
+        彼が著した、方程式の解き方を体系的に述べた書物が、後にヨーロッパで「手順による計算法」の代名詞となり、
+        その名がなまって algorithm になりました。ちなみに「代数（algebra）」も、彼の著書の題名に由来します。
+        <span class="em">アルゴリズムは、コンピュータの技術ではなく、人類が積み上げてきた"考え方"の遺産</span>なのです。</p>
+        <div class="history">
+          <p><strong>アルゴリズム研究の巨人・クヌース。</strong>
+          現代のアルゴリズム研究を語るうえで欠かせないのが、ドナルド・クヌースです。
+          彼が半世紀以上かけて書き継いでいる『The Art of Computer Programming（TAOCP）』は、
+          アルゴリズムの聖典とも呼ばれる大著で、いまも未完のまま執筆が続いています。
+          クヌースは「自分の本の組版が気に入らない」という理由で、
+          数式まで美しく組める組版ソフト<strong>TeX（テフ）</strong>を自作してしまったことでも有名です。
+          さらに、自著の誤りを見つけた人に「16進数で1ドル（約2.56ドル）の小切手」を贈るという、
+          ユーモアあふれる賞金制度でも知られています。
+          アルゴリズムの世界には、こうした探究心とこだわりの強い"職人"たちが、確かな土台を築いてきました。</p>
+        </div>
+      </section>
+
+      <!-- 探索 -->
+      <section id="s-search">
+        <h2>探索で体感する、速さの差</h2>
+        <div class="ybox">
+          <span class="ylbl">雑なたとえ</span>
+          <p>探し方のうまい・へたを、紙の辞書で考えてみましょう。「algorithm」を引くのに、<strong>1ページ目から順にめくっていく人</strong>と、<strong>真ん中を開いて「あ、もっと後ろだな」と一気に半分に絞る人</strong>がいます。</p>
+          <p>前者が線形探索、後者が二分探索です。10ページなら大差ないのに、ページ数が増えるほど差は残酷に開く。100万ページでも、後者ならたった20回ほどで目的地に着きます。<strong>同じ「探す」でも、やり方ひとつでここまで違う</strong>――この体感が、計算量の話のいい入口になります。</p>
+        </div>
+        <p>「手順の良し悪しで、こんなにも違うのか」を、いちばん分かりやすく体感できるのが「探索（さがす）」です。
+        分厚い英和辞典（1万語が、すでにアルファベット順に並んでいるとします）から
+        「computer」という単語を探す場面を考えましょう。やり方は大きく2つあります。</p>
+        <p><strong>① 線形探索（しらみつぶし）</strong>。1ページ目から順に、1語ずつめくって確認していく方法です。
+        運が悪ければ、最後の1語にたどり着くまで1万回めくることになります。
+        確実ですが、データが増えるほど比例して時間がかかります。</p>
+        <p><strong>② 二分探索（半分ずつ捨てる）</strong>。すでに順番に並んでいることを活かします。
+        まず辞典のちょうど真ん中を開く。目当ての語が、開いたページより前か後かを見て、
+        <span class="em">いらない半分をまるごと捨てる</span>。残った半分の、また真ん中を開く……これを繰り返します。</p>
+        <p>この二分探索、どこかで見た覚えはないでしょうか。そう、第1講の「数当てゲーム」とまったく同じ理屈です。
+        1回ごとに候補が半分になるので、1万語でも <code>log₂10000 ≒ 14回</code> で見つかってしまう。
+        ―― <strong>1万回 対 14回</strong>。これが「手順（アルゴリズム）」の差です。
+        しかもデータが増えるほど、この差は天文学的に広がります。
+        100万語に増えても、線形探索が最悪100万回かかるのに対し、二分探索はわずか約20回。
+        「並べ替えておく」というひと手間が、後の探索を桁違いに速くするのです。</p>
+        <p>具体的に、1〜100の中から「73」を二分探索で探す様子を追ってみましょう。
+        毎回、残った範囲のちょうど真ん中と比べ、いらない半分を捨てていきます。</p>
+        <pre><code>範囲 1〜100 → 真ん中50。73は大きい → 51〜100に絞る
+範囲 51〜100 → 真ん中75。73は小さい → 51〜74に絞る
+範囲 51〜74 → 真ん中62。73は大きい → 63〜74に絞る
+範囲 63〜74 → 真ん中68 → … と続け、数回で73に到達</code></pre>
+        <p>100個の候補が、わずか7回ほどで1個に絞り込まれます（<code>2⁷＝128 ≧ 100</code>だから）。
+        「毎回半分」という、ただそれだけの工夫が、これほどの威力を発揮するのです。</p>
+        <div class="note">
+          <span class="lbl">大事な前提</span>
+          二分探索が使えるのは「データが並んでいる」場合だけです。バラバラのデータでは真ん中を見ても判断できません。
+          だから、あらかじめ並べ替える「ソート」（後述）が重要になり、
+          探索とソートはセットで語られるのです。
+        </div>
+      </section>
+
+      <!-- ビッグオー -->
+      <section id="s-order">
+        <h2>計算量とビッグオー記法</h2>
+        <p>「14回」「1万回」といった具体的な回数は、データの量によって変わります。
+        そこでコンピュータ科学では、具体的な回数そのものより、
+        <strong>「データの量 n が増えたとき、手間がどんな"勢い"で増えるか」</strong>に注目します。
+        この増え方の型を表す記法が<span class="term">ビッグオー記法（O記法）</span>です。
+        細かい係数や定数は無視して、伸びの本質だけを取り出すのが特徴です。</p>
+        <p>たとえば線形探索は、データが10倍になれば手間も約10倍。これを <code>O(n)</code> と書きます。
+        二分探索は、データが10倍になってもほとんど増えない。これを <code>O(log n)</code>。
+        次の表で、代表的な計算量を「遅い順」に並べてみましょう。
+        この表のイメージが頭に入っていれば、もう計算量の話の半分は理解したも同然です。</p>
+        <table class="tbl">
+          <caption>表1：代表的な計算量（n＝データ量。下にいくほど急激に遅くなる）</caption>
+          <tr><th>記法</th><th>呼び名</th><th>nが10倍になると…</th><th>身近な例</th></tr>
+          <tr><td>O(1)</td><td>定数時間</td><td>変わらない（最強）</td><td>配列の番地アクセス、ハッシュ表の参照（第7講）</td></tr>
+          <tr><td>O(log n)</td><td>対数時間</td><td>ほぼ変わらない</td><td>二分探索</td></tr>
+          <tr><td>O(n)</td><td>線形時間</td><td>約10倍</td><td>線形探索、合計を求める</td></tr>
+          <tr><td>O(n log n)</td><td>準線形</td><td>約13倍</td><td>高速なソート（マージソート等）</td></tr>
+          <tr><td>O(n²)</td><td>二乗時間</td><td>約100倍</td><td>素朴なソート、総当たりの組合せ比較</td></tr>
+          <tr><td>O(2ⁿ)</td><td>指数時間</td><td>天文学的（事実上不能）</td><td>全部の組み合わせを総当たり</td></tr>
+        </table>
+        <p>ここで強調したいのは、<span class="em">データが少ないうちは、計算量の差はほとんど気にならない</span>ということ。
+        n が10や20なら、O(n) でも O(n²) でも一瞬です。
+        差が牙をむくのは、n が大きくなったとき。
+        だから「少ないデータでは速かったプログラムが、本番の大量データで突然固まる」という事故が起きます。
+        プログラムの実力は、データが大きくなったときにこそ問われるのです。</p>
+        <p>ここで、第5講とつなげて大事な線引きをしておきましょう。
+        第5講では「解ける／解けない（計算可能か）」を区別しました。本講はその先で、
+        解ける問題のなかを「現実的に解ける／事実上解けない」でさらに分けています。
+        その境界線として、コンピュータ科学では
+        <code>O(n)</code> や <code>O(n²)</code> のように<strong>n の"べき乗"でおさまる計算量を「多項式時間」と呼び、
+        ざっくり"実用的に解ける"の目安</strong>とします。
+        一方 <code>O(2ⁿ)</code> のような指数時間は"事実上解けない"側。
+        じつは、さきほどのP対NPの「P」とは、まさにこの<strong>多項式時間で解ける問題のグループ</strong>のことなのです。
+        「速さの型」が、問題の難しさを分類する物差しそのものになっている、というわけです。</p>
+        <p>どれくらい違うのか、具体的な数字で見てみましょう。
+        データが100万件（n＝10⁶）あるとき、1回の処理を1マイクロ秒（100万分の1秒）でこなせる機械を仮定します。
+        <code>O(n)</code> なら100万回で約1秒。<code>O(n log n)</code> なら約2千万回で約20秒。
+        ところが <code>O(n²)</code> だと1兆回で、なんと<strong>約11日</strong>かかります。
+        さらに <code>O(2ⁿ)</code> となると、n＝100でも宇宙の年齢をはるかに超える。
+        同じ問題・同じ機械でも、アルゴリズムの型が違うだけで「1秒」と「11日」と「永遠」に分かれるのです。
+        <span class="em">速さを決めているのは、機械のパワーよりも、まず手順の良し悪し</span>――この感覚が、本講のいちばんの収穫です。</p>
+      </section>
+
+      <!-- 指数爆発 -->
+      <section id="s-explosion">
+        <h2>指数爆発の恐怖</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-a">説明役</span>「指数爆発」のいちばん身近な例、たぶん幹事をやったことがある人なら知ってます。飲み会の日程調整です。</p>
+          <p><span class="spk spk-b">聞き役</span>あー……参加者が増えると、急に「全員OKな日」が消滅するやつ。</p>
+          <p><span class="spk spk-a">説明役</span>そう。候補日と人数が少し増えるだけで、組み合わせが爆発的にふくれ上がる。コンピュータですら音を上げるのが、この「ちょっと増えただけで手に負えなくなる」タイプの問題なんです。</p>
+        </div>
+        <p>表のいちばん下、<code>O(2ⁿ)</code> の恐ろしさを、もう少し味わっておきましょう。
+        これは「n が1増えるだけで、手間が2倍になる」という増え方です。
+        n が10で約1000、20で約100万、30で約10億、60ともなれば、
+        その数は、最速のスーパーコンピュータを<strong>宇宙の年齢ぶん走らせても終わらない</strong>ほどになります。
+        「総当たりで全部の組み合わせを試す」という素朴な作戦が、なぜしばしば破滅するのか。理由はこれです。</p>
+        <div class="trivia">
+          <p>指数爆発の怖さを伝える、古い寓話があります。
+          チェス盤を発明した男が、王様にこう願い出ました。
+          「1マス目に米1粒、2マス目に2粒、3マス目に4粒……と<strong>倍々で</strong>、64マスぶんの米をください」。
+          王様は「なんとつつましい願いだ」と笑って許しました。
+          ところが計算してみると、最後のマスでは <code>2⁶³</code> 粒、全マスの合計は<strong>約1844京粒</strong>――
+          全世界が何百年生産しても、到底足りない量でした。
+          「倍々」を甘く見ると破滅する。指数関数とは、それほどまでに凶暴なのです。
+          コンピュータ科学者が <code>O(2ⁿ)</code> のアルゴリズムを「使い物にならない」と嫌うのも、同じ理由です。</p>
+        </div>
+        <p>だからこそ、賢いアルゴリズムを考える価値があります。
+        総当たりなら <code>O(2ⁿ)</code> で絶望的な問題でも、
+        うまい工夫で <code>O(n²)</code> や <code>O(n log n)</code> に落とせれば、現実的な時間で解けるようになる。
+        <span class="em">「コンピュータが速いから解ける」のではなく、「賢い手順を見つけたから解ける」</span>。
+        ハードの進歩より、アルゴリズムの工夫のほうが、効き目が大きいことも珍しくないのです。</p>
+        <p>ところで、この指数爆発は「困りもの」であると同時に、<strong>頼もしい味方</strong>にもなります。
+        パスワードの総当たり攻撃を思い出してください（第1講）。
+        パスワードを1文字長くする、使う文字種を増やすたびに、試すべき組み合わせは指数的に膨れ上がります。
+        攻撃する側にとっては、まさに「米粒が宇宙規模に増える」あの爆発が立ちはだかる。
+        <span class="em">解く側を絶望させる指数爆発を、守る側があえて利用する</span>――これが暗号の基本戦略です（第10講）。
+        同じ「指数関数の凶暴さ」が、攻撃者には壁、防御者には盾になる。
+        計算量の感覚を持つと、こうした攻防の構図までスッと見通せるようになります。</p>
+      </section>
+
+      <!-- ソート -->
+      <section id="s-sort">
+        <h2>並べ替えの奥深さ ― ソートアルゴリズム</h2>
+        <p>計算量の違いを体感する定番の題材が、データの並べ替え（ソート）です。
+        トランプを小さい順に並べる方法を考えると、手順の違いがよく分かります。</p>
+        <ul>
+          <li><strong>バブルソート</strong>：隣どうしを比べ、逆順なら入れ替える。これを端から何度も繰り返す。
+          素朴で分かりやすいが、<code>O(n²)</code> と遅い。トランプ全部を、隣同士の交換だけで並べるイメージ。</li>
+          <li><strong>マージソート</strong>：山を半分ずつに分割していき、最小単位まで分けてから、
+          「整列済みの2つの山を合体させる」操作で組み上げる。<code>O(n log n)</code> と速い。</li>
+          <li><strong>クイックソート</strong>：基準値を1つ選び、それより小さい組・大きい組に振り分け、各組をまた同じやり方で処理する。
+          平均 <code>O(n log n)</code> で、実用上とても高速。</li>
+        </ul>
+        <p>「分けて、それぞれを片付けて、まとめる」というマージソートやクイックソートの戦略は、
+        <span class="term">分割統治法</span>と呼ばれ、アルゴリズム設計の王道のひとつです。
+        大きな問題を、自分と同じ形の小さな問題に分けて解く――この発想は、いろいろな場面で顔を出します。</p>
+        <p>身近な例で考えてみましょう。本棚のマンガを巻数順に並べ替えるとき、
+        多くの人は、近くにある巻どうしを少しずつ入れ替えていきます。これはバブルソートに近いやり方で、
+        冊数が増えるほど手間が <code>O(n²)</code> で膨らみ、つらくなる。
+        一方、いったん「1〜10巻の山」「11〜20巻の山」とおおまかに分けてから各山を並べ、最後に合体させれば、
+        ずっと効率よく片付きます。これが分割統治の発想です。
+        <span class="em">同じ「並べ替え」でも、やり方しだいで労力がまるで違う</span>――
+        これは、コンピュータに限らず、私たちの日常の作業にも通じる教訓です。
+        ちなみに、実際のプログラミング言語に組み込まれたソート機能は、
+        マージソートやクイックソートなど複数の手法を、データの性質に応じて賢く組み合わせた
+        高性能な実装になっていることが多く、私たちは普段その恩恵を意識せず使っています。</p>
+        <p>そして、ここでも第1講のエントロピーが顔を出します。
+        じつは「比較によって並べ替える」やり方は、理論上 <code>O(n log n)</code> より速くはできない、と証明されています。
+        なぜか。n個のものの並び順は <code>n!</code>（n の階乗）通りあり、
+        そのどれか1つに絞り込むには、第1講の「Yes/No質問」が最低でも約 <code>n log n</code> 回必要だからです。
+        <span class="em">並べ替えの速さの限界すら、情報量で決まっている</span>。
+        第1講で学んだ「1つに絞るのに必要な質問の回数」が、ここで効いてくるのです。</p>
+      </section>
+
+      <!-- P対NP -->
+      <section id="s-pnp">
+        <h2>P対NP問題 ― 100万ドルの難問</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-b">聞き役</span>「答えの確認は一瞬なのに、答えを見つけるのは絶望的に大変」って、ちょっとずるくないですか。</p>
+          <p><span class="spk spk-a">説明役</span>でも身に覚えありませんか? ジグソーパズルって、完成形を見せられたら「合ってる」と一瞬で分かる。でも自力で完成させるのは、めちゃくちゃ時間がかかる。</p>
+          <p><span class="spk spk-b">聞き役</span>たしかに。「答え合わせは楽、答え探しは地獄」。それが世界中の難問の正体だと言われると、妙に納得しますね。</p>
+        </div>
+        <p>最後に、コンピュータ科学で最も有名な未解決問題に触れておきましょう。
+        まず、問題を2つのタイプに分けて考えます。</p>
+        <ul>
+          <li><strong>P</strong>：答えを<strong>そこそこ速く（現実的な時間で）見つけられる</strong>問題。</li>
+          <li><strong>NP</strong>：答えを見つけるのは大変かもしれないが、
+          <strong>答えを見せられれば、それが正しいかは速く確認できる</strong>問題。</li>
+        </ul>
+        <p>分かりやすいのが数独（ナンプレ）です。完成したマス目を見せられれば、
+        「ルール通りに埋まっているか」はすぐ確認できます（これがNPの性質）。
+        でも、白紙の状態から解くのは、ぐっと難しい。
+        ジグソーパズルも同じで、完成品が正しいかの確認は一瞬でも、ゼロから組むのは大変です。</p>
+        <p>ここで、ひとつの根源的な問いが立ちます。
+        <span class="em">「答えを速く"確認"できる問題は、答えを速く"発見"することもできるのか？」</span>
+        言い換えれば、<strong>P と NP は同じものなのか（P＝NP）、それとも違うのか（P≠NP）</strong>。
+        これが、クレイ数学研究所が賞金100万ドルをかけた7つの難問のひとつ、<span class="term">P対NP問題</span>です。</p>
+        <p>NPの代表として有名なのが<strong>巡回セールスマン問題</strong>です。
+        「複数の街をすべて1度ずつ訪れて出発点に戻る、最短の道順を見つけよ」という問題で、
+        一見やさしそうですが、街の数が増えると経路の組み合わせが指数的に爆発し、総当たりでは手に負えなくなります。
+        ところが「このルートの総距離は◯◯kmだ」と答えを見せられれば、検算はあっという間。
+        まさに「発見は難しいが、確認は簡単」なNPの典型です。
+        配送ルートの最適化や、基板の配線設計など、現実の重要な問題の多くが、この巡回セールスマン問題の仲間に属しています。
+        だからこそ、完璧な最短解を探すのをあきらめ、「そこそこ良い解」で手を打つ近似アルゴリズムが、実務では大活躍するのです。</p>
+        <p>多くの研究者は「P≠NP（確認は楽でも、発見は本質的に難しい）」だろうと予想していますが、
+        いまだに誰も証明できていません。
+        そして、これは机上の空論ではありません。もし万一 P＝NP が証明されてしまったら――
+        現代の暗号（第10講）の多くは「解読の答えを見つけるのが事実上不可能」という前提に立っているので、
+        その前提が崩れ、世界中のセキュリティが根底から揺らぐことになります。
+        抽象的な数学の問いが、私たちの暮らしの安全と、じかにつながっているのです。</p>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用</h2>
+        <h3>Googleマップは、なぜ一瞬で最短ルートを出せるのか</h3>
+        <p>カーナビや乗換案内が、膨大な道路網からほぼ一瞬で最短ルートを出せるのは、
+        賢いアルゴリズムのおかげです。
+        もし「考えられる全ルートを総当たりで比較」していたら、それこそ指数爆発で永遠に終わりません。
+        実際には、出発点に近いところから順に最短距離を確定していく賢い手順（ダイクストラ法や、その改良版）を使い、
+        無駄な計算をばっさり省いています。
+        この「点と線のネットワークを効率よくたどる」話は、次の第8講（グラフ）でくわしく扱います。
+        日常の便利さの裏には、必ず計算量と戦うアルゴリズムがいるのです。</p>
+        <h3>「速さ」がサービスの価値を決める</h3>
+        <p>検索エンジンが膨大なWebから一瞬で結果を返すのも、
+        通販サイトが何百万の商品から候補を絞るのも、SNSがタイムラインを組むのも、
+        すべて計算量との戦いです。
+        同じ機能でも、アルゴリズムが非効率なら「重くて使えないサービス」になり、
+        効率的なら「快適なサービス」になる。
+        <span class="em">ユーザー体験の良し悪しは、見えないところでアルゴリズムが決めている</span>のです。
+        そして暗号（第10講）のように、「わざと"発見"を難しくする」ことを安全の根拠にする技術もある。
+        計算量は、速さの追求にも、安全の確保にも使える、両刃の剣なのです。</p>
+        <h3>「完璧」をあきらめる、という戦略</h3>
+        <p>本講のもうひとつの大事な教訓は、<strong>「完璧な答えを、いさぎよくあきらめる」</strong>という発想です。
+        巡回セールスマン問題のように、厳密な最適解を求めると指数爆発してしまう問題は、現実にたくさんあります。
+        そこで実務では、「最適ではないが、十分に良い解」を高速に求める<span class="term">近似アルゴリズム</span>や、
+        運まかせの要素を取り入れて答えに近づく手法が活躍します。
+        配送計画も、AIの学習も、ゲームの思考ルーチンも、多くは「完璧」ではなく「実用上"いい感じ"」を狙っています。
+        <span class="em">解けない問題と正面衝突せず、賢く折り合いをつける</span>――これも、計算量を知った者だけができる戦い方です。
+        この「ほどほどで手を打つ」知恵は、第15講のAIにもつながっていきます。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「コンピュータが速いから、どんな処理も一瞬で終わる」</p>
+          <p class="a">アルゴリズムの計算量しだいです。<code>O(2ⁿ)</code> のような手順だと、どんな高速マシンでもデータが少し増えただけで終わらなくなります。
+          速さを決めるのはハードだけでなく、手順そのものです。</p>
+          <p class="q">誤解②：「計算量が小さいアルゴリズムが、つねに最善」</p>
+          <p class="a">データが少ないうちは、計算量の大きい単純な手順のほうが速いこともあります。
+          O記法は「nが大きいときの傾向」の話。実際には、データ量や状況に応じた使い分けが必要です。</p>
+          <p class="q">誤解③：「最新のハードを買えば、遅いプログラムも速くなる」</p>
+          <p class="a">焼け石に水のことが多いです。<code>O(n²)</code> を <code>O(n log n)</code> に変えるアルゴリズムの改善のほうが、
+          ハードの買い替えよりはるかに効きます。本質的な遅さは、手順を変えないと直りません。</p>
+          <p class="q">誤解④：「P対NPは、ただの数学の遊び」</p>
+          <p class="a">現実に直結しています。多くの暗号は「答えの発見が難しい（P≠NP的）」ことを安全の根拠にしているため、
+          もしP＝NPなら、世界中の暗号やセキュリティの前提が崩れます。</p>
+          <p class="q">誤解⑤：「O記法の数字が同じなら、速さも同じ」</p>
+          <p class="a">O記法は「増え方の型」だけを表し、定数倍の違いは無視します。
+          同じ <code>O(n log n)</code> でも、実装によって実際の速さは数倍違うことがあります。
+          O記法は"大づかみの傾向"をつかむ道具であって、最後の細かいチューニングは別問題、と心得ましょう。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <div class="ybox">
+        <span class="ylbl">この発想、生活にも出ます</span>
+        <p>「頑張る量を増やす」より「やり方を変える」ほうが効く――計算量の話は、そのまま日々の段取りの教訓です。散らかった部屋を片づけるのに毎回全部の箱を開けて探す人と、ラベルを貼って分類しておく人。後者は、探し物という"処理"が桁違いに速い。</p>
+        <p>残業を増やす前に手順を疑う。気合を入れる前に並べ方を変える。<strong>規模が大きくなるほど、根性より段取りがものを言う</strong>。これは仕事でも家事でも、けっこう冷酷なまでに当てはまる法則です。</p>
+      </div>
+
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <p>この講で持ち帰ってほしいのは、ビッグオー記法の暗記ではありません。<strong>「遅い」を、根性不足ではなく"手順の問題"として見直せる目</strong>です。これが身につくと、何かが重いとき、買い替える前にまず「やり方、変えられないか?」と問えるようになります。</p>
+        <div class="summary">
+          <ul>
+            <li>同じ問題でも、アルゴリズム次第で速さは桁違い（線形探索1万回 対 二分探索14回）。</li>
+            <li>計算量はビッグオー O( ) で「データ増加に対する手間の伸び方」を表す。O(2ⁿ) は事実上解けない。</li>
+            <li>指数爆発は凶暴。賢い手順で O(n²) や O(n log n) に落とせれば、現実的な時間で解ける。</li>
+            <li>比較ソートの速さの下限 O(n log n) も、情報量（第1講のエントロピー）で説明できる。</li>
+            <li>P対NP：答えの「確認」が楽な問題で「発見」も楽か、は未解決の100万ドル難問。暗号の安全性と直結。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>ソート済み100万件のデータから1件を二分探索で探すと、最悪およそ何回の比較で済むか（<code>log₂(10⁶)</code> を見積もる）。</li>
+            <li><code>O(n²)</code> のアルゴリズムで、n が10倍になると手間は何倍になるか。</li>
+            <li>「少ないデータでは速かったのに、本番で突然固まった」プログラムは、どんな計算量だった可能性が高いか。</li>
+            <li>「ジグソーパズルを完成させる」のは P と NP のどちらの感覚に近いか。完成品の検証と、ゼロから組む難しさを比べて考えよ。</li>
+            <li>遅いプログラムを速くしたい。「高性能なPCに買い替える」と「アルゴリズムを見直す」、本質的に効くのはどちらか。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) <code>log₂(10⁶) ≈ 20</code> 回。100万件でも、たった20回前後で特定できる。<br>
+            (2) <code>10² ＝ 100倍</code>。二乗時間はデータ増加にとても弱い。<br>
+            (3) <code>O(n²)</code> や <code>O(2ⁿ)</code> など、データ量に弱い計算量。少量では一瞬でも、大量データで急に破綻する。<br>
+            (4) 完成品が正しいかの確認は速いが、ゼロから組むのは組合せ的に大変――NPの直感そのもの。<br>
+            (5) 多くの場合<strong>アルゴリズムの見直し</strong>。計算量の型そのものを改善するほうが、ハードの数倍程度の高速化よりはるかに効く。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">大槻兼資（著）・秋葉拓哉（監修）『問題解決力を鍛える！アルゴリズムとデータ構造』</span>（講談社）
+          ― 探索・ソート・計算量を、豊富な図と例題で学べる定番の入門書。第6〜8講と相性抜群。</li>
+          <li><span class="bk">『なっとく！アルゴリズム』（アディティア・バーガバ）</span>（翔泳社）
+          ― イラスト中心で、二分探索・分割統治・計算量を直感的につかめる一冊。最初の1冊に最適。</li>
+          <li><span class="bk">渡辺治『P≠NP予想とはなにか』</span>（講談社ブルーバックス）
+          ― P対NP問題を、専門家がやさしく解説する新書。本講の最後の話をもっと深く知りたい人へ。</li>
+          <li><span class="bk">トーマス・コルメンほか『アルゴリズムイントロダクション』</span>（近代科学社）
+          ― 通称「CLRS」。アルゴリズムの世界的定番教科書。本格的に学ぶ際の決定版。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part1_lecture5.html"><span class="lab">← 前の講</span>第5講 計算とは何か</a>
+        <a class="nx" href="part1_lecture7.html"><span class="lab">次の講 →</span>第7講 データ構造</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第1部 第6講「アルゴリズムと計算量」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

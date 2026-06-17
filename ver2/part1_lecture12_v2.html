@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第1部 第12講 データベースと表形式データ ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="銀行の残高はなぜ二重引き落としされないのか。表形式データ、SQL、正規化、トランザクション（ACID）を身近に学ぶ。ゆるコンピュータ科学講義 第1部 第12講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#c8503a; --accent-soft:#f7e3dd;
+    --accent2:#2f6f6a; --accent2-soft:#dcebe9;
+    --code-bg:#2b2722; --code-ink:#f3ead9;
+    --sidebar:#262320; --sidebar-ink:#e9e2d4; --sidebar-muted:#a59c8a;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#16140f; --paper:#1f1c16; --ink:#ece6d8; --muted:#a79e8c;
+    --line:#332f27; --accent:#e8775f; --accent-soft:#3a221c;
+    --accent2:#6fb6ad; --accent2-soft:#1c2c2a;
+    --code-bg:#100e0a; --code-ink:#f3ead9;
+    --sidebar:#100e0a; --sidebar-ink:#e9e2d4; --sidebar-muted:#8d8472;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#a83c2c 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"SELECT *";position:absolute;right:8px;bottom:-6px;font-family:ui-monospace,monospace;font-size:3.6rem;font-weight:800;color:rgba(255,255,255,.08)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.9;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent2);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent2-soft);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent2)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:var(--accent2-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#2b2722}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent2-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent2-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent2);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent2-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent2);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+  /* --- ゆるラジオ版の追加スタイル --- */
+  .yhook{margin:24px 0;padding:18px 24px;border-radius:18px;background:radial-gradient(circle at top left,var(--accent-soft),var(--paper));border:1px solid var(--accent);line-height:1.95}
+  .yhook .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.08em;color:#fff;background:var(--accent);padding:3px 12px;border-radius:999px;margin-bottom:8px}
+  .yhook p{margin:.5em 0}.yhook p:last-child{margin-bottom:0}
+  .ybox{margin:24px 0;padding:4px 22px 16px;border-radius:14px;border:1px solid var(--line);border-left:5px solid var(--accent);background:var(--paper)}
+  .ybox .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin:14px 0 4px}
+  .ybox p{margin:.6em 0}.ybox p:last-child{margin-bottom:0}
+  .ybox.alt{border-left-color:var(--accent2)}.ybox.alt .ylbl{color:var(--accent2);background:var(--accent2-soft)}
+  .ydlg{margin:24px 0;padding:10px 20px;border-radius:16px;background:var(--accent-soft);border:1px solid var(--line)}
+  .ydlg p{margin:.6em 0;line-height:1.8}.ydlg p:last-child{margin-bottom:0}
+  .spk{display:inline-block;font-weight:800;margin-right:.5em;padding:.08em .7em;border-radius:999px;font-size:.72em;white-space:nowrap;vertical-align:.08em}
+  .spk-a{background:var(--accent);color:#fff}.spk-b{background:var(--accent2);color:#fff}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第12講 データベースと表形式データ</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第1部 第12講</span><br>データベースと表形式データ</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-relational">表でデータを表す</a></li>
+      <li><a href="#s-sql">SQL ― データの注文書</a></li>
+      <li><a href="#s-normalize">正規化 ― 重複を排す</a></li>
+      <li><a href="#s-transaction">トランザクションとACID</a></li>
+      <li><a href="#s-nosql">NoSQLとトレードオフ</a></li>
+      <li><a href="#s-history">歴史 ― 表計算とデータベース</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第1部 基礎教養編 ／ 第12講</div>
+        <h1>データベースと表形式データ<br>― 世界を支える、地味な巨人</h1>
+        <p>銀行の残高が、二重に引き落とされないのはなぜか。派手さはないが、社会を裏で支える技術。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― 大量・同時・正確を、いかに守るか</h2>
+        <div class="yhook">
+          <span class="ylbl">この講を一言でいうと</span>
+          <p>人気ライブのチケットを、全国の何万人が同じ瞬間に取り合う。それでも、同じ席が二人に売られたりはしません。銀行で同時に何百万件の振り込みが走っても、残高は1円も狂わない。<strong>「大量・同時・正確」を同時に守る</strong>、この涼しい顔の番人がデータベースです。</p>
+          <p>つい「Excelのすごいやつ」と思いがちですが、そこが落とし穴。本講で見るのは、表計算とは似て非なる、<strong>正確さを"設計"で守りぬくための知恵</strong>です。</p>
+        </div>
+        <p>データをファイルに保存するだけなら、簡単です。
+        しかし、銀行の口座残高、ECサイトの在庫、SNSの投稿、航空券の予約のように、
+        <strong>大量にあり、大勢が同時にアクセスし、絶対に間違えられない</strong>データとなると、話はまるで別物になります。
+        「複数人が同時に同じデータを書き換えたら？」「処理の途中で電源が落ちたら？」――
+        こうした難問を専門に引き受けるのが<span class="term">データベース管理システム（DBMS）</span>です。</p>
+        <p>データベースは、コンピュータ科学のなかでも、とびきり<strong>地味だが、とびきり重要</strong>な分野です。
+        私たちが何気なく使う、ネットバンキング、ネット通販、座席予約、行政の手続き――
+        その裏では、必ずといっていいほどデータベースが、データの正しさを黙々と守っています。
+        派手なAIやアプリの影で、世界の金融・物流・行政を支える縁の下の力持ち。それがデータベースです。
+        考えてみれば、私たちの生活は、無数のデータベースに支えられています。
+        銀行口座、健康保険、住民登録、図書館の蔵書、通販の注文履歴、交通系ICカードの残高――
+        これらはすべて、どこかのデータベースに記録され、瞬時に出し入れされています。
+        もしデータベースが一斉に止まれば、社会は文字どおり機能を止めてしまうでしょう。
+        <span class="em">目に見えないけれど、現代社会の記憶そのものを担っている</span>のが、データベースなのです。
+        この講では、その中心にある「表でデータを扱う」という考え方と、
+        「絶対に矛盾を起こさない」ための巧妙な仕組みを見ていきます。</p>
+        <p>なぜ、専用の「データの置き場」がそれほど大変なのか。少し想像してみてください。
+        ひとつのファイルに残高を書いておくだけなら簡単です。
+        ですが、世界中のATMやアプリから、<strong>同じ口座に、同じ瞬間に</strong>読み書きが来たらどうなるでしょう。
+        ひとつの操作が書き込んでいる途中で、別の操作が割り込んで読んだら、中途半端な値を見てしまうかもしれない。
+        さらに、処理の最中に停電やネットワーク障害が起きることもある。
+        <span class="em">「同時に大勢が触る」「いつ壊れるか分からない」という過酷な条件のもとで、それでも1円も狂わせない</span>――
+        この一見あたりまえの要求を本気で満たすことが、いかに難しいか。
+        その難問に専門で立ち向かうのが、データベースという分野なのです。</p>
+        <p class="lead-in">表形式（リレーショナル）→ SQL → 正規化 → トランザクション（ACID）→ NoSQL。
+        第7講のデータ構造や、これまでの「トレードオフ」の考え方が、ここで実用の場面で生きてきます。</p>
+      </section>
+
+      <!-- リレーショナル -->
+      <section id="s-relational">
+        <h2>表でデータを表す ― リレーショナルモデル</h2>
+        <div class="ybox alt">
+          <span class="ylbl">まず捨てたい誤解</span>
+          <p><strong>「データベースって、要するにExcelの強いやつでしょ?」</strong>――見た目は同じ"表"なので、無理もない誤解です。半分は当たっています。</p>
+          <p>でも決定的に違うのが、<strong>「大勢が同時にいじっても壊れない」「矛盾したデータを最初から入れさせない」</strong>という守りの固さ。Excelを十人で同時に書き換えたら、すぐ喧嘩になりますよね。データベースは、その喧嘩を起こさせないために、後で見る厳格なルールで武装しているのです。</p>
+        </div>
+        <p>最も広く普及しているのが、データを<strong>表（テーブル）</strong>で管理する
+        <span class="term">リレーショナルデータベース</span>です。
+        イメージはExcelの表そのもの。行が1件のデータ（顧客1人、注文1件）、列が項目（名前・住所など）を表します。</p>
+        <table class="tbl">
+          <caption>表1：「顧客」テーブル（行が1人、列が項目）</caption>
+          <tr><th>顧客ID</th><th>名前</th><th>都市</th></tr>
+          <tr><td>1</td><td>田中</td><td>東京</td></tr>
+          <tr><td>2</td><td>鈴木</td><td>大阪</td></tr>
+        </table>
+        <p>このモデルの賢いところは、情報を1つの巨大な表に詰め込むのではなく、
+        <strong>「顧客」「注文」「商品」のように複数の表に分け、IDで関連づける（リレーション）</strong>点にあります。
+        たとえば「注文」テーブルには、注文の中身と一緒に「顧客ID」だけを書いておく。
+        誰が注文したかの詳細は「顧客」テーブルを見ればわかる、という仕組みです。
+        こうしておけば、田中さんが引っ越しても、「顧客」テーブルの住所を<strong>1か所だけ</strong>直せば済みます。
+        もし全注文に住所を直接書き込んでいたら、何百件もの注文を直して回る羽目になり、
+        直し漏れ＝矛盾が生まれてしまう。
+        <span class="em">データを正しく保つために、あえて分けて、つなぐ</span>。この設計思想が、リレーショナルモデルの核心です。</p>
+        <p>このつなぎを支えるのが「キー」という考え方です。
+        各行を一意に識別する番号（顧客IDなど）を<strong>主キー</strong>と呼びます。
+        「顧客ID」のように、同じ値が二人とかぶらない、行の"背番号"です。
+        そして、別の表からその主キーを参照して関連づける列を<strong>外部キー</strong>と呼びます。
+        「注文」表の中の「顧客ID」が外部キーで、これが「顧客」表の主キーを指している。
+        この主キーと外部キーのつながりが、バラバラの表を一つのまとまったデータベースに織り上げているのです。
+        ちょうど、第8講のグラフが「点と線」で関係を表したように、
+        データベースは「表とキー」で、データ同士の関係を表現しているとも言えます。</p>
+      </section>
+
+      <!-- SQL -->
+      <section id="s-sql">
+        <h2>SQL ― データの「注文書」</h2>
+        <div class="ybox">
+          <span class="ylbl">雑なたとえ</span>
+          <p>SQLは、かなり雑に言うと<strong>レストランの注文書</strong>です。</p>
+          <p>あなたは厨房に乗り込んで「まず鍋を熱して、玉ねぎを炒めて……」とは言いません。「ハンバーグ、ライス大盛りで」と<strong>"欲しい結果"だけ</strong>を書いて渡す。作り方は店に任せる。SQLもこれと同じで、「この条件のデータをこう並べて出して」と注文するだけ。どうやって探すかの段取りは、データベースが勝手にやってくれる。<strong>「やり方」でなく「ほしいもの」を書く</strong>――この発想が、SQLの気持ちよさの正体です。</p>
+        </div>
+        <p>データベースから欲しいデータを取り出すための専用言語が<span class="term">SQL（エスキューエル）</span>です。
+        SQLの面白いところは、第11講の普通のプログラミング言語とは、考え方が根本的に違う点にあります。
+        普通の言語が「どうやって処理するか（手順）」を書くのに対し、
+        SQLは<span class="em">「何が欲しいか（条件）」だけを書く</span>のです。</p>
+        <pre><code>SELECT 名前           -- 「名前」が欲しい
+FROM   顧客            -- 「顧客」テーブルから
+WHERE  都市 = '東京';  -- 都市が東京の人だけ</code></pre>
+        <p>「東京の顧客の名前をちょうだい」と<strong>注文するだけ</strong>。
+        どの順で表をめくり、どんなデータ構造（第7講の木やハッシュ！）を使って高速に探すかは、
+        DBMSが裏でうまく最適化してくれます。
+        この「やり方は任せて、結果だけを注文する」スタイルを<span class="term">宣言型</span>と呼びます。
+        利用者は「何が欲しいか」に集中でき、「どう取ってくるか」という面倒は機械にまかせられる。
+        これも、第11講で見た「抽象化（下の層の複雑さを隠す）」のひとつの形です。</p>
+        <p>膨大なデータからでも、SQLの問い合わせが一瞬で結果を返せるのは、
+        内部で第7講の<strong>索引（インデックス）</strong>が効いているからです。
+        あらかじめ「この列で引けるように」索引を張っておくことで、
+        全件を1行ずつ見る（線形探索）代わりに、木をたどって目的の行へ直行できる。
+        第6講のアルゴリズム、第7講のデータ構造が、データベースの速さを足もとで支えているのです。</p>
+        <p>SQLの真価は、複数の表を「つなぎ合わせて」一度に問い合わせられる点にもあります。
+        たとえば「東京の顧客が、何を注文したか」を知りたいとき、
+        「顧客」表と「注文」表を、顧客IDをかけ橋にして結合（JOIN）し、東京の人だけに絞る、という指示が一文で書けます。
+        さらに「都市ごとに、注文の合計金額を出す」といった集計（GROUP BY）も得意。
+        <span class="em">バラバラに分けて保存したデータを、必要なときに自在に組み合わせて取り出せる</span>のが、
+        リレーショナルデータベースの強みです。
+        正規化で「きれいに分けて」おき、SQLで「必要に応じてつなぐ」。この分業が、柔軟さと正しさを両立させているのです。</p>
+      </section>
+
+      <!-- 正規化 -->
+      <section id="s-normalize">
+        <h2>正規化 ― 重複と矛盾を、設計でなくす</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-b">聞き役</span>同じ住所を、注文票のあちこちに書いておくの、何がいけないんですか。楽じゃないですか。</p>
+          <p><span class="spk spk-a">説明役</span>引っ越したとき地獄を見ます。10か所に書いてあったら、10か所すべて直さないと「古い住所」と「新しい住所」が混在する。1か所でも直し忘れたら、もうどっちが正しいか分からない。</p>
+          <p><span class="spk spk-b">聞き役</span>あー……「同じことは一か所だけに書く」。これ、第2部のWebの回でも聞いた気がします。</p>
+        </div>
+        <p>さきほど「住所を1か所だけ直せばいい」ように設計する、という話をしました。
+        この「重複を排して、データの矛盾を防ぐ」ための設計指針を<span class="term">正規化</span>と呼びます。</p>
+        <p>正規化されていないデータベースは、同じ情報があちこちに重複します。
+        すると、片方だけ更新して片方を直し忘れる、という事故（更新異常）が起きやすい。
+        「会員情報を変えたのに、一部の画面では古いままだった」といった不具合の多くは、根っこにこの重複があります。
+        正規化は、<strong>「ひとつの事実は、ただ一か所にだけ書く」</strong>という原則でデータを整理し、
+        こうした矛盾を、運用の注意ではなく<strong>設計の段階で根本からなくす</strong>のです。</p>
+        <div class="note">
+          <span class="lbl">用語の整理</span>
+          ここでいう「正規化」は、第2講（文字コードのUnicode正規化）や、第9講（圧縮）の文脈とは別の概念です。
+          ただし「無駄・重複・矛盾を削ぎ落とし、すっきりした形に整える」という精神は、どれも通じています。
+          コンピュータ科学では、同じ言葉が分野ごとに少しずつ違う意味で使われることがあるので、文脈に注意しましょう。
+        </div>
+        <p>ただし、正規化にもトレードオフがあります。
+        データを細かく分けすぎると、欲しい情報を得るのに複数の表を毎回つなぎ合わせる必要が生じ、
+        読み出しが遅くなることがあります。
+        そこで実務では、速度のためにあえて少し重複を許す（非正規化する）こともある。
+        <span class="em">「正しさ」と「速さ」のあいだで、どこに線を引くか</span>――ここでも、おなじみのトレードオフが顔を出します。</p>
+      </section>
+
+      <!-- トランザクション -->
+      <section id="s-transaction">
+        <h2>トランザクションとACID ― 全部やるか、何もしないか</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-a">説明役</span>送金って、「Aさんから1万円引く」と「Bさんに1万円足す」の二つで一組ですよね。もし片方だけ成功したら?</p>
+          <p><span class="spk spk-b">聞き役</span>引かれたのに相手に届いてない……それ、ただの蒸発じゃないですか。怖すぎる。</p>
+          <p><span class="spk spk-a">説明役</span>だから「全部やるか、何もしないか」のどちらかしか許さない。途中で力尽きたら、なかったことにして巻き戻す。この"中途半端を許さない"約束が、トランザクションです。</p>
+        </div>
+        <p>データベースの真骨頂が<span class="term">トランザクション</span>です。
+        銀行で、AさんがBさんに1万円を送金する処理を考えましょう。これは、じつは2つのステップに分かれます。</p>
+        <pre><code>① Aの残高から 1万円 引く
+② Bの残高に 1万円 足す</code></pre>
+        <p>もし、①の直後に電源が落ちたら、どうなるでしょう。
+        Aのお金は減ったのに、Bには届いていない。<strong>1万円が、この世から消えてしまいます</strong>。
+        これを防ぐのがトランザクションの考え方です。
+        <span class="em">「①と②をひとつのまとまりとして扱い、全部成功するか、1つでも失敗したら全部なかったことにする（ロールバック）」</span>。
+        中途半端な状態を、絶対に残しません。
+        この、信頼できる処理が満たすべき性質を、頭文字をとって<span class="term">ACID</span>と呼びます。</p>
+        <div class="def">
+          <p><b>ACID ― 信頼できる処理の4条件</b></p>
+          <p style="margin:.2em 0"><b>A</b>tomicity（原子性）：全部やるか、何もしないか。中途半端なし。</p>
+          <p style="margin:.2em 0"><b>C</b>onsistency（一貫性）：処理の前後で、ルール（残高は負にならない等）を守る。</p>
+          <p style="margin:.2em 0"><b>I</b>solation（独立性）：同時に走る処理どうしが、互いに干渉しない。</p>
+          <p style="margin-bottom:0"><b>D</b>urability（永続性）：完了した処理は、電源が落ちても消えない。</p>
+        </div>
+        <p>とくに<strong>独立性</strong>は、私たちの日常に直結します。
+        人気コンサートの最後の1席を、2人が同時に予約しようとしたとき、二重販売を防ぐのがこの仕組み（ロック）です。
+        一方が処理しているあいだ、もう一方を少し待たせることで、データの矛盾を防ぐ。
+        オンラインの予約や決済が「ダブらない」のは、このトランザクションが、地道に整合性を守ってくれているおかげなのです。
+        私たちが安心してネットで買い物や送金ができる土台には、この堅牢で地味な技術があります。</p>
+        <p>もっとも、この「待たせる」仕組みには副作用もあります。
+        2つの処理が、互いに相手が確保している資源を待ち合って、両方とも永遠に止まってしまう
+        <strong>デッドロック（すくみ合い）</strong>です。
+        「AさんがBの資源を待ち、BさんがAの資源を待つ」状態で、どちらも譲らず固まってしまう。
+        狭い廊下で二人が譲り合えずに鉢合わせし、両方動けなくなるイメージです。
+        データベースはこれを検知して、片方の処理をいったん取り消してやり直させる、といった工夫で切り抜けます。
+        <span class="em">「正しさを守るために待たせる」ことが、新たな問題を生む</span>――
+        トレードオフは、こんなところにも顔を出すのです。</p>
+      </section>
+
+      <!-- NoSQL -->
+      <section id="s-nosql">
+        <h2>NoSQLとトレードオフ ― 正確さか、速さ・規模か</h2>
+        <p>厳格なACIDは、信頼性の要です。しかし近年、世界規模のサービス（巨大SNSや動画配信）では、
+        この厳格さが<strong>足かせ</strong>になる場面も出てきました。
+        世界中に分散した何千台ものサーバーで「常に完璧な整合性」を保とうとすると、
+        互いの同期に時間がかかり、速度が犠牲になるからです。</p>
+        <p>そこで登場したのが、<span class="term">NoSQL</span>と総称される、別系統のデータベースです。
+        これらは「多少データの反映が遅れてもいいから、とにかく高速に、大量に、柔軟にさばく」ことを優先します。
+        表形式にこだわらず、鍵と値のペア（第7講のハッシュ！）や、文書、グラフ（第8講！）など、
+        用途に合った多様なデータの持ち方を選べるのも特徴です。</p>
+        <p>大事なのは、<span class="em">「正確さ」を取るか、「速さ・規模」を取るか</span>という、本講義でおなじみのトレードオフ。
+        1円の狂いも許されない銀行の残高はACIDの厳格なデータベースで、
+        多少反映が遅れても実害の小さいSNSの「いいね数」はNoSQL的な仕組みで――というように、
+        <strong>用途に応じて使い分ける</strong>のが現代の定石です。
+        ここでも「万能の最善はなく、適材適所」という、第7講以来の教訓が当てはまります。</p>
+        <p>分散したデータベースには、避けて通れない原理的な悩みがあります。
+        データを世界中の複数のサーバーにコピーして置くと、「速さ・どこでもつながる強さ・常に一致した値」の
+        3つを<strong>同時に完璧には満たせない</strong>、という事情です（CAP定理として知られています）。
+        たとえば、あるサーバーと別のサーバーの通信が一時的に切れたとき、
+        「多少古くてもいいから答えを返す」か「正しい値が確認できるまで待つ（あるいは断る）」か、どちらかを選ぶしかない。
+        <span class="em">分散すればするほど、整合性を保つのは難しくなる</span>のです。
+        だから巨大サービスの設計では、「この機能はどこまで厳密さが必要か」を一つひとつ見極め、
+        厳密さが要る部分と、速度・可用性を優先する部分を、巧みに使い分けています。
+        この分散システムの奥深い世界は、第2部のデータセンターやインフラの回でも顔を出します。</p>
+      </section>
+
+      <!-- 歴史 -->
+      <section id="s-history">
+        <h2>歴史 ― 表計算と、リレーショナルの父</h2>
+        <div class="history">
+          <p><strong>リレーショナルモデルの父・コッド。</strong>
+          「データを表で管理し、IDで関連づける」というリレーショナルモデルは、
+          1970年、IBMの研究者エドガー・F・コッドによって提唱されました。
+          当時のデータベースは、データ同士が複雑に絡み合った独自構造で、扱いが難しいものでした。
+          コッドは、これを数学（集合論や論理）に基づいた、すっきりした「表」のモデルで整理してみせたのです。
+          理論先行で当初は懐疑的に見られましたが、その明快さと強さから、やがて世界の標準となりました。
+          SQLも、このコッドの理論を土台に生まれています。
+          <span class="em">きちんとした理論が、数十年にわたって実務を支え続ける</span>――データベースは、その好例です。</p>
+        </div>
+        <p>一方、もっと身近な「表でデータを扱う道具」として、私たちは<strong>表計算ソフト（Excelなど）</strong>に親しんでいます。
+        1979年に登場した初期の表計算ソフト「VisiCalc」は、
+        「これが使いたいからパソコンを買う」と言わせるほどの衝撃を与え、
+        パソコンが一気にビジネスの道具として普及するきっかけになりました。
+        表計算とデータベースは、どちらも「行と列の表」を扱う親戚ですが、得意分野が違います。
+        表計算は手軽な集計やグラフ作成に強く、データベースは大量・同時・正確なデータ管理に強い。
+        「Excelで顧客管理をしていたら限界が来た」という話の裏には、この役割の違いがあるのです。</p>
+        <div class="trivia">
+          <p>表計算ソフトは、世界でもっとも使われている"プログラミング環境"だとも言われます。
+          セルに <code>=A1+B1</code> と書くのは、立派なプログラミング（数式という宣言型の指示）。
+          自覚なく数億人が日々プログラムを書いている、という見方もできるのです。
+          一方で、表計算は手軽さゆえの落とし穴も抱えています。
+          科学研究で、遺伝子の名前が表計算ソフトに勝手に日付へ変換されてしまう誤変換が多発し、
+          専門家がついに一部の遺伝子の名称ルールを変更した、という実話まであります。
+          「便利な自動処理が、かえって事故を生む」――道具の親切さと危うさは、いつも背中合わせなのです。</p>
+        </div>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用</h2>
+        <h3>CSV ― データ交換の共通語</h3>
+        <p>異なるソフトやシステムのあいだでデータをやり取りするとき、よく使われるのが<span class="term">CSV</span>という形式です。
+        中身は驚くほど単純で、<strong>値をカンマ（,）で区切り、1行が1件のデータ</strong>という、ただのテキストファイル。
+        <code>田中,東京,30</code> のように書くだけです。
+        単純ゆえに、表計算ソフトでもデータベースでもプログラムでも、ほぼ何でも読み書きできる。
+        派手な機能はないけれど、<span class="em">「みんなが読める」という最強の互換性</span>を持つため、
+        データ交換の"共通語"として、いまも広く使われています。
+        ここにも第2講の「中身はただのテキスト（バイト列）」という視点が生きています。</p>
+        <h3>あなたの操作は、すべてデータベースが受け止めている</h3>
+        <p>SNSに投稿する、商品をカートに入れる、座席を予約する、ポイントが貯まる――
+        私たちのあらゆる操作は、その裏でデータベースへの読み書きとして記録されています。
+        「いいね」が押した瞬間に反映され、二重にカウントされず、消えもしないのは、
+        本講で学んだトランザクションや整合性の仕組みが働いているから。
+        ふだんまったく意識しませんが、<strong>デジタルサービスの信頼性は、データベースの信頼性そのもの</strong>です。
+        この「大量のデータを正確にさばく」というテーマは、第2部のデータセンターやインフラの話へと続いていきます。</p>
+        <h3>データは「21世紀の石油」</h3>
+        <p>現代では、企業や社会にとってデータそのものが、きわめて価値の高い資産になりました。
+        購買履歴、行動ログ、センサーの記録――こうした膨大なデータを、ためて・整理して・分析することで、
+        新しいサービスやAI（第15講）が生まれています。
+        その土台にあるのが、本講で学んだ「データを正しく、効率よく保管・検索する」技術です。
+        <span class="em">どれだけ高度なAIも、もとになる良質なデータと、それを支えるデータベースなしには成り立たない</span>。
+        派手なAIブームの足もとを、地味なデータベース技術が、いまも変わらず支えているのです。
+        だからこそ、データをどう守り、誰が持ち、どう使うか――というプライバシーや倫理の問題（第2部）も、
+        ますます重要になっています。</p>
+        <h3>消えないための備え ― バックアップと冗長化</h3>
+        <p>大切なデータを預かるデータベースにとって、「絶対に失わない」ことは、速さと並ぶ最重要課題です。
+        機械はいつか壊れ、災害も起こりうる。そこで、データは<strong>複数の場所に複製（バックアップ）</strong>して持ちます。
+        さらに、複数のサーバーに同じデータを持たせておき、1台が壊れても別の1台が肩代わりする「冗長化」も行います。
+        これは第9講の誤り訂正の「あえて無駄（予備）を持たせて、壊れても復元する」という発想と、根は同じ。
+        <span class="em">「壊れないように作る」のではなく「壊れても大丈夫なように作る」</span>――
+        この考え方は、社会インフラを支えるシステム設計の、最も大切な心構えのひとつです。</p>
+        <p>さらに、トランザクションの「永続性（D）」を保証するため、データベースは更新の記録を逐一"ログ"に書き留めています。
+        万一、処理の途中で電源が落ちても、再起動時にこのログを見て、
+        「どこまで確実に完了していたか」を復元できる。
+        私たちが安心して送金や予約をできる裏では、こうした幾重もの"転ばぬ先の杖"が、地道に働いているのです。</p>
+        <h3>クラウドが変えた、データベースの常識</h3>
+        <p>かつて、データベースは自社で高価なサーバーを買って運用するものでした。
+        しかしクラウド（第13講・第2部）の登場で、いまや「必要なときに、必要なだけ」データベースを借りられる時代になりました。
+        利用が増えれば自動で能力を増やし、減れば縮める。世界中に複製を置いて、どこからでも速くアクセスできるようにする。
+        こうした柔軟さによって、小さなスタートアップでも、いきなり世界規模のサービスを作れるようになりました。
+        <span class="em">データを扱う技術の進歩が、誰がサービスを作れるか、という可能性そのものを広げてきた</span>のです。
+        地味に見えるデータベースが、じつは現代のビジネスの形まで変えている――この影響力こそ、本講で感じ取ってほしいことです。</p>
+        <h3>データの「設計図」を描く ― データモデリング</h3>
+        <p>データベースを作るとき、いきなり表を作り始めるのではなく、まず<strong>「どんなデータを、どう関連づけるか」の設計図</strong>を描きます。
+        「顧客がいて、商品があって、顧客は商品を注文する」――この現実世界の関係を、点（もの）と線（関係）で整理する作業です
+        （第8講のグラフの発想が、ここでも生きています）。
+        この設計図づくり（データモデリング）が雑だと、後からどれだけ頑張っても使いにくいデータベースになってしまう。
+        <span class="em">良いデータベースは、最初の「世界の捉え方」でほとんど決まる</span>のです。
+        これは第7講で見た「コードを書く前のデータ構造の設計」と、まったく同じ精神。
+        作り始める前に、よく考えて設計する――地味ですが、これが品質を左右する分かれ道です。</p>
+        <p>そして、データベースには「守り」の視点も欠かせません。
+        利用者の入力をそのまま命令文に混ぜてしまうと、悪意ある入力で不正な操作を実行されてしまう
+        <strong>SQLインジェクション</strong>という、古典的で、いまも後を絶たない攻撃が成立します。
+        「外から来た入力は、まず疑ってかかる」というのが、データを扱う者の鉄則。
+        大量の個人情報を預かるデータベースは、攻撃者にとって格好の標的でもあります。
+        だから、正しく速く扱う技術と同じくらい、<span class="em">安全に守る技術</span>が重要になる――
+        この「攻撃と防御」のテーマは、第2部のセキュリティの回で本格的に扱います。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「データはExcelで管理すれば十分。データベースは大げさ」</p>
+          <p class="a">小規模なら表計算で十分です。しかし大量・同時アクセス・絶対に間違えられない、という条件が加わると、
+          整合性や同時実行を守るデータベースが必要になります。役割が違うのです。</p>
+          <p class="q">誤解②：「同じ情報は、すぐ取り出せるように、あちこちにコピーしておくべき」</p>
+          <p class="a">逆効果です。重複は更新漏れによる矛盾の温床。正規化の原則は「ひとつの事実は一か所だけ」。
+          必要な情報はIDでつないで取り出します（ただし速度のため、あえて重複を許す設計もあります）。</p>
+          <p class="q">誤解③：「送金などの処理は、1つの命令で一気に行われている」</p>
+          <p class="a">実際は複数のステップに分かれます。だからこそ、途中で失敗しても矛盾しないよう、
+          トランザクション（全部やるか何もしないか）でひとまとまりに守っているのです。</p>
+          <p class="q">誤解④：「NoSQLは、リレーショナルデータベースの上位互換」</p>
+          <p class="a">上下ではなく使い分けです。NoSQLは速度・規模・柔軟性に強い一方、厳格な整合性は苦手なことが多い。
+          銀行の残高のように正確さが命の用途では、いまもリレーショナルデータベースが主役です。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <div class="ybox">
+        <span class="ylbl">この発想、生活にも出ます</span>
+        <p>「同じ事実は、一か所だけに書く」。これは家計簿でも、連絡先でも、仕事の手順書でも効く鉄則です。あちこちに同じ情報を転記すると、必ずどこかが食い違い、「どれが本物?」という事故が起きる。二重管理は、ほぼ確実に破綻します。</p>
+        <p>もうひとつ、「全部やるか、何もしないか」も生活の知恵です。中途半端に手をつけて投げ出すと、かえって混乱が残る。<strong>やるなら最後まで、無理なら最初の状態にきれいに戻す</strong>。データベースの厳格さは、じつは私たちの段取りにも、そのまま教訓になります。</p>
+      </div>
+
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <p>この講で持ち帰ってほしいのは、SQLの文法ではありません。<strong>データベースは「強いExcel」ではなく、正確さを"設計"で守りぬく仕組みだ</strong>という見方です。二重予約が起きないのも、残高が狂わないのも、偶然ではなく、先人が作り込んだ厳格なルールの賜物なのです。</p>
+        <div class="summary">
+          <ul>
+            <li>DBMSは「大量・同時・正確」が要求されるデータ管理の専門家。金融・物流・行政という社会インフラを、見えないところで支えている。</li>
+            <li>リレーショナルDBは表でデータを管理し、IDで関連づける。重複を排す設計が正規化。</li>
+            <li>SQLは「やり方」でなく「欲しい結果」を注文する宣言型言語。最適化はDBMSが担う（抽象化）。</li>
+            <li>トランザクション（ACID）で「全部やるか、何もしないか」を保証。送金や二重販売防止の要。</li>
+            <li>NoSQLは速度・規模を優先。正確さ重視はリレーショナル、と用途で使い分ける（トレードオフ）。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>顧客の住所を、全注文レコードに毎回コピーして持つと、引っ越し時に何が困るか。正規化の利点で説明せよ。</li>
+            <li>SQLが「宣言型」と呼ばれるのはなぜか。普通のプログラミング言語との違いから説明せよ。</li>
+            <li>送金処理がトランザクションになっていないと、停電時にどんな事故が起こりうるか。</li>
+            <li>「銀行の残高」と「SNSのいいね数」で、整合性の厳しさをどちらにどれだけ求めるべきか。理由とともに。</li>
+            <li>SQLの問い合わせが、大量データでも一瞬で結果を返せるのは、第7講のどんな仕組みのおかげか。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) 住所が何百件にも重複し、引っ越し時に全部直す必要が生じ、直し漏れで矛盾（同一人物の住所が食い違う）が起きる。正規化すれば1か所修正で済む。<br>
+            (2) 「どう取ってくるか（手順）」でなく「何が欲しいか（条件）」だけを書くから。取り出し方の最適化はDBMSに任せる。<br>
+            (3) ①引いた直後に落ちると、送金元の金は減ったのに送金先に届かない、という中途半端な状態（お金の消失）が残る。<br>
+            (4) 残高は1円も狂えないので厳格なACIDが必須。いいね数は多少反映が遅れても実害が小さいので、速度優先（NoSQL的）でよい。<br>
+            (5) 索引（インデックス）。木やハッシュを使って、全件を見ずに目的の行へ直行できるから。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">ミック『達人に学ぶSQL徹底指南書（第2版）』</span>（翔泳社）
+          ― SQLの考え方（宣言型・集合指向）を、なぜそう書くのかから学べる定番書。本講の続きに。</li>
+          <li><span class="bk">ミック『達人に学ぶDB設計徹底指南書』</span>（翔泳社）
+          ― 正規化やテーブル設計を、実務目線でていねいに解説。データベース設計の勘どころが身につく。</li>
+          <li><span class="bk">増田智明ほか『おうちで学べるデータベースのきほん』</span>（翔泳社）
+          ― トランザクションやACIDなど、データベースの基礎を初学者向けにやさしく解説する一冊。</li>
+          <li><span class="bk">マーティン・クレップマン『データ指向アプリケーションデザイン』</span>（オライリー・ジャパン）
+          ― リレーショナルからNoSQL、分散システムまでを俯瞰する名著。もっと深く知りたくなったら（第2部の予習にも）。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part1_lecture11.html"><span class="lab">← 前の講</span>第11講 プログラミング言語</a>
+        <a class="nx" href="part1_lecture13.html"><span class="lab">次の講 →</span>第13講 インターネットの基礎</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第1部 第12講「データベースと表形式データ」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

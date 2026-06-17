@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第2部 第11講 NVIDIAとAIインフラ ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="ゲーム用の部品が、なぜ世界一の企業を生んだのか。GPU・CUDA・AIインフラを「並列計算とプラットフォーム」という視点で学ぶ。ゆるコンピュータ科学講義 第2部 第11講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#2f6f6a; --accent-soft:#dcebe9;
+    --accent2:#c8503a; --accent2-soft:#f7e3dd;
+    --code-bg:#21302e; --code-ink:#eaf3f1;
+    --sidebar:#1f2b29; --sidebar-ink:#e3ece9; --sidebar-muted:#94a7a3;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#111413; --paper:#172220; --ink:#e6ece9; --muted:#9aa9a5;
+    --line:#283633; --accent:#6fb6ad; --accent-soft:#16302c;
+    --accent2:#e8775f; --accent2-soft:#3a221c;
+    --code-bg:#0c1413; --code-ink:#eaf3f1;
+    --sidebar:#0c1413; --sidebar-ink:#e3ece9; --sidebar-muted:#7d8e8a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#245a55 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"▲";position:absolute;right:30px;bottom:6px;font-size:3.4rem;font-weight:800;opacity:.14}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.92;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent-soft);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent2);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent2-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#172220}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent2);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+  /* --- ゆるラジオ版の追加スタイル --- */
+  .yhook{margin:24px 0;padding:18px 24px;border-radius:18px;background:radial-gradient(circle at top left,var(--accent-soft),var(--paper));border:1px solid var(--accent);line-height:1.95}
+  .yhook .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.08em;color:#fff;background:var(--accent);padding:3px 12px;border-radius:999px;margin-bottom:8px}
+  .yhook p{margin:.5em 0}.yhook p:last-child{margin-bottom:0}
+  .ybox{margin:24px 0;padding:4px 22px 16px;border-radius:14px;border:1px solid var(--line);border-left:5px solid var(--accent);background:var(--paper)}
+  .ybox .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin:14px 0 4px}
+  .ybox p{margin:.6em 0}.ybox p:last-child{margin-bottom:0}
+  .ybox.alt{border-left-color:var(--accent2)}.ybox.alt .ylbl{color:var(--accent2);background:var(--accent2-soft)}
+  .ydlg{margin:24px 0;padding:10px 20px;border-radius:16px;background:var(--accent-soft);border:1px solid var(--line)}
+  .ydlg p{margin:.6em 0;line-height:1.8}.ydlg p:last-child{margin-bottom:0}
+  .spk{display:inline-block;font-weight:800;margin-right:.5em;padding:.08em .7em;border-radius:999px;font-size:.72em;white-space:nowrap;vertical-align:.08em}
+  .spk-a{background:var(--accent);color:#fff}.spk-b{background:var(--accent2);color:#fff}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第2部 第11講 NVIDIAとAIインフラ</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第2部 第11講</span><br>NVIDIAとAIインフラ</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-parallel">なぜ並列計算なのか</a></li>
+      <li><a href="#s-pivot">ゲーム用GPUの大転身</a></li>
+      <li><a href="#s-cuda">CUDA ― 堀を作った一手</a></li>
+      <li><a href="#s-infra">AIインフラという巨大装置</a></li>
+      <li><a href="#s-cost">学習と推論 ― 二つのコスト</a></li>
+      <li><a href="#s-apply">現代への応用と論点</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第2部 応用・社会・現代技術編 ／ 第11講</div>
+        <h1>NVIDIAとAIインフラ<br>― ゲームの部品が、知能の土台になった日</h1>
+        <p>3Dゲームを描くための脇役だったGPUが、なぜ世界の頂点に立つ企業を生み、AIブームの心臓になったのか。技術と戦略が交わる物語。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <section id="s-intro">
+        <h2>はじめに ― ある「脇役」の大出世</h2>
+        <div class="yhook">
+          <span class="ylbl">この講を一言でいうと</span>
+          <p>ほんの十数年前まで、NVIDIAの名を知っているのは熱心なゲーマーくらいでした。それが今や、世界で最も価値の高い企業の常連です。<strong>ゲームの脇役だった部品（GPU）が、どうやってAI時代の主役になったのか。</strong></p>
+          <p>この物語の裏に、技術の世界の大事な教訓がひそんでいます。勝敗を決めたのは「いちばん速い部品」ではなく、<strong>「いちばん使いやすい土台」を誰が押さえたか</strong>だった、ということ。本講は、一企業の出世物語に見せかけた、"土台を制する者が制す"という現代の必勝法の話です。</p>
+        </div>
+        <p>「世界で最も価値の高い企業を挙げてみて」と言われたら、いまや<strong>NVIDIA（エヌビディア）</strong>の名が、当たり前のように上位に並びます。
+        ところが、ほんの十数年前までこの社名を知っていたのは、せいぜい高性能ゲームに目のないパソコン好きくらいのものでした。
+        いったい、この会社に何が起きたのでしょう。</p>
+        <p>前の第2部第10講で、チップには性格の違いがあること――<strong>CPUは「少数精鋭の天才」、GPUは「単純作業をこなす大群」</strong>だと学びました。
+        そして、AI（深層学習）の計算の正体が、その大群がいちばん得意とする「単純な計算の、気の遠くなるような繰り返し」とぴたり一致していた、という大事な事実にも触れました。
+        本講は、まさにその一致を出発点に、<span class="em">「ゲーム用の部品が、どうやってAI時代の土台になったのか」</span>という物語を、技術と戦略の両面からたどっていきます。</p>
+        <p>これは、一企業のサクセスストーリーにとどまりません。
+        並列という発想、土台（プラットフォーム）を押さえる力、そして避けられないトレードオフ――この講義が繰り返し見てきたものが、現実の産業の舞台で、これでもかと展開されるのです。
+        GPUとは何かという「技術の中身」と、なぜそれがこれほどの力を握ったのかという「戦略」。この二つを両輪で押さえていきましょう。
+        読み終えるころには、「AI向けのGPUが足りない」「データセンターに巨額投資」といったニュースの裏側で、いったい何が動いているのかが、くっきり見えているはずです。</p>
+        <div class="lead-in">技術が世界を変えるとき、勝敗を決めるのは「いちばん速い部品」だけではない。「いちばん使いやすい土台」を、誰が押さえたか――この回の隠れた主題です。</div>
+      </section>
+
+      <section id="s-parallel">
+        <h2>なぜ並列計算なのか ― 一人の天才より、千人の作業員</h2>
+        <div class="ybox">
+          <span class="ylbl">雑なたとえ</span>
+          <p>並列計算の威力は、かなり雑に言うと<strong>「1万人ぶんのテストを採点する」</strong>場面で分かります。</p>
+          <p>一人の天才が、ものすごい速さで順番に採点していく。これがCPU。でも、どんなに速くても1万枚は1万枚ぶんの時間がかかる。一方、そこそこの採点者を1万人集めて、一人1枚ずつ<strong>一斉に</strong>やらせたら? 一瞬です。AIの計算は、この「単純だけど大量で、しかも互いに独立した」仕事の塊。だから大群（GPU）が圧勝するのです。</p>
+        </div>
+        <p>まず、AIの計算がなぜGPU向きなのかを、もう一段かみくだいて理解しておきましょう。
+        ここが本講のすべての土台になります。</p>
+        <p>第1部や第2部第10講で見たように、CPUは複雑な仕事を「順番に」高速にこなすのが得意です。
+        これを<strong>逐次処理</strong>といいます。一本道を、ものすごい速さで駆け抜けるイメージです。
+        ところが世の中には、<span class="em">「同じような単純計算を、とにかく大量に、しかも互いに独立してこなしたい」</span>という種類の仕事があります。
+        この場合、一本道をいくら速く走っても限界があり、それより<strong>道を何千本も並べて、同時に走らせた</strong>ほうが圧倒的に速い。これが<strong>並列処理</strong>です。</p>
+        <div class="def"><b>並列処理とは</b><br>一つの大きな仕事を、互いに独立した小さな仕事に分け、たくさんの計算装置で「同時に」進める方式。一人が順番にやる(逐次)より、分担できる仕事ほど劇的に速くなる。ただし「分けられない仕事」「順番が大事な仕事」には向かない。</div>
+        <p>たとえば「1万人ぶんのテストの点数を、それぞれ2倍にする」という作業を考えてみましょう。
+        一人ひとりの計算は単純な掛け算で、しかも互いにまったく無関係です。
+        これを一人で順にやれば1万回ぶんの時間がかかりますが、1万人で手分けすれば一瞬で終わります。
+        AIの学習・推論で行われている計算の大半は、まさにこの<span class="em">「膨大な数の、単純で独立した掛け算と足し算（行列演算）」</span>なのです。
+        だから、賢い少数のCPUより、単純でも大群のGPUのほうが、桁違いに速くこなせる。</p>
+        <figure>
+        <svg viewBox="0 0 520 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="逐次処理と並列処理の比較">
+          <text x="120" y="24" text-anchor="middle" font-size="13" fill="#1f2b29" font-weight="bold">逐次(CPU的)</text>
+          <rect x="60" y="40" width="120" height="22" rx="5" fill="#c8503a"/>
+          <text x="120" y="56" text-anchor="middle" font-size="10" fill="#fff">仕事1</text>
+          <rect x="60" y="68" width="120" height="22" rx="5" fill="#c8503a"/>
+          <text x="120" y="84" text-anchor="middle" font-size="10" fill="#fff">仕事2</text>
+          <rect x="60" y="96" width="120" height="22" rx="5" fill="#c8503a"/>
+          <text x="120" y="112" text-anchor="middle" font-size="10" fill="#fff">仕事3</text>
+          <rect x="60" y="124" width="120" height="22" rx="5" fill="#c8503a"/>
+          <text x="120" y="140" text-anchor="middle" font-size="10" fill="#fff">仕事4</text>
+          <text x="120" y="170" text-anchor="middle" font-size="10" fill="#6b6459">順番に → 時間がかかる</text>
+          <text x="400" y="24" text-anchor="middle" font-size="13" fill="#1f2b29" font-weight="bold">並列(GPU的)</text>
+          <rect x="320" y="40" width="38" height="60" rx="5" fill="#2f6f6a"/>
+          <rect x="364" y="40" width="38" height="60" rx="5" fill="#2f6f6a"/>
+          <rect x="408" y="40" width="38" height="60" rx="5" fill="#2f6f6a"/>
+          <rect x="452" y="40" width="38" height="60" rx="5" fill="#2f6f6a"/>
+          <text x="405" y="74" text-anchor="middle" font-size="10" fill="#fff">同時</text>
+          <text x="405" y="170" text-anchor="middle" font-size="10" fill="#6b6459">いっせいに → 速い</text>
+        </svg>
+        <figcaption>分けられる仕事なら、並べて同時に走らせるほど速い。AIの計算はこの典型だった。</figcaption>
+        </figure>
+        <p>ただし、ここにも本講義おなじみの<strong>トレードオフ</strong>があります。
+        並列処理は万能ではありません。<span class="em">「前の結果を使って次を決める」ような、順番が本質的に大事な仕事</span>は、いくら作業員を増やしても分担できず、速くなりません。
+        人を増やしても、一本の長い物語を「先頭から順に」書く速さは変わらないのと同じです。
+        だから今のコンピュータは、順番が大事な仕事はCPUに、分担できる大量計算はGPUに、と役割分担しています。
+        GPUがCPUを「置きかえた」のではなく、<strong>適材適所で手を組んでいる</strong>のだと理解してください。</p>
+        <p>この「並列化には限界がある」という事実には、じつは有名な経験則があります。
+        <strong>アムダールの法則</strong>と呼ばれるもので、ざっくり言えば<span class="em">「全体のうち、どうしても順番にやるしかない部分が残っていれば、いくら並列化しても、その部分の時間より速くはならない」</span>という考え方です。
+        たとえば、仕事の9割が並列化できても、残り1割がどうしても順番待ちなら、作業員を無限に増やしても全体は10倍までしか速くならない。
+        これは、第1部から本講義が繰り返してきた<strong>「限界」</strong>というテーマの、計算の世界での現れです。
+        だからこそ技術者は、「いかに仕事の中の『分担できる部分』を増やすか」に知恵を絞ってきました。
+        AIの計算が爆発的に普及したのは、それが<span class="em">たまたま「ほぼ全部が分担できる」という、並列化にとって理想的な性質</span>を持っていたから、という幸運も大きかったのです。</p>
+      </section>
+
+      <section id="s-pivot">
+        <h2>ゲーム用GPUの大転身 ― 偶然と必然</h2>
+        <div class="ybox alt">
+          <span class="ylbl">まず捨てたい誤解</span>
+          <p><strong>「NVIDIAが強いのは、いちばん速いチップを作ってるからでしょ?」</strong>――速さも武器ですが、本質はそこではありません。</p>
+          <p>本当の強さは、<strong>CUDAというソフトの"堀"</strong>にあります。世界中のAI開発が「CUDA前提」で積み上がってしまったので、他社がいくら速いチップを出しても、簡単には乗り換えられない。<strong>速い部品より、人が集まって離れられない土台を押さえたほうが強い</strong>。この一点が、この講のいちばんの肝です。</p>
+        </div>
+        <p>では、なぜその「大群の計算機」を、よりにもよってNVIDIAが握っていたのでしょうか。
+        ここには、偶然と必然が絡み合った、面白い経緯があります。</p>
+        <p>NVIDIAはもともと、1990年代から<strong>3Dゲームの画面を描くためのGPU</strong>を作る会社でした。
+        前述のとおり、3Dの画面描画は「何百万個もの画素の色を、同時に計算する」という、まさに並列計算の塊です。
+        ゲーム市場という巨大で熱心な顧客がいたおかげで、NVIDIAは「単純な計算を大量に並列でこなすチップ」を、何世代にもわたって磨き続けることができました。
+        <span class="em">AIのためではなく、ゲームのために、たまたま並列計算の達人になっていた</span>のです。</p>
+        <p>2010年代に入り、深層学習（ディープラーニング）が画像認識などで劇的な成果を上げ始めると、研究者たちはその膨大な計算をどうこなすかに頭を悩ませました。
+        そこで「ゲーム用のGPUを計算に転用したら、CPUよりはるかに速いのではないか」と試した人々がいた。
+        結果は劇的でした。<strong>GPUを使うと、AIの学習が桁違いに速くなった</strong>のです。
+        この発見が、眠っていた深層学習を一気に実用へと押し上げ、今日のAIブームの号砲となりました。</p>
+        <div class="trivia">
+        <p>深層学習のアイデア自体は、実はかなり古くからありました。
+        「脳の神経細胞をまねた仕組みで学習させる」という発想は、数十年前から研究されていたのです。
+        ところが長らく実用にならなかった。理由のひとつが、<strong>計算力が足りなかった</strong>こと。
+        理論はあっても、それを動かす「馬力」がなかったのです。
+        そこへGPUという安価で強力な並列計算機が現れ、さらにインターネットの普及で大量の学習データがそろった。
+        <span class="em">アイデア・計算力・データという三つの歯車がかみ合った瞬間</span>、眠っていた理論が一気に目を覚ました。
+        いい発想も、それを支える土台がそろわなければ花開かない――技術史にくり返し現れる教訓です。</p>
+        </div>
+        <div class="history">
+        <p>NVIDIAは1993年、ジェンスン・フアン（黄仁勳）らによって創業されました。
+        フアンは長年CEOを務め、「いつか並列計算が世界を変える」という信念のもと、ゲーム以外の用途への投資を早くから続けてきたことで知られます。
+        多くの人がGPUを「ゲームの部品」としか見ていなかった時代に、汎用的な計算基盤としての可能性に賭けた。
+        その長い助走があったからこそ、AIブームが来たとき、NVIDIAだけが「すぐ使える土台」を用意できていたのです。
+        幸運だけでなく、未来への一貫した投資が、好機を実りに変えた好例といえます。</p>
+        </div>
+        <p>ここで強調したいのは、<span class="em">「速い部品を持っていた」だけでは、これほどの覇権は生まれなかった</span>という点です。
+        実は、AIにGPUが有効だと分かれば、他社も似たチップを作ろうとします。
+        にもかかわらずNVIDIAが長く優位を保っているのには、ハードウェアとは別の、もう一つの決定的な要因がありました。
+        それが、次に見る<strong>CUDA</strong>という、ソフトウェアの「堀」です。</p>
+      </section>
+
+      <section id="s-cuda">
+        <h2>CUDA ― 速さよりも「使いやすさ」で堀を作る</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-b">聞き役</span>でも、速いチップさえあれば勝てそうなものじゃないですか。なんでソフト（CUDA）がそんなに大事なんです?</p>
+          <p><span class="spk spk-a">説明役</span>どんな高性能な機械も、扱いにくければ誰も使いません。CUDAは、その難しいGPUを「書きやすく」した。すると世界中の研究者が集まって、道具やノウハウを積み上げていった。</p>
+          <p><span class="spk spk-b">聞き役</span>あー、人とノウハウが集まると、もうそこから引っ越せなくなる。お店の常連が増えるほど、別の店に移りにくくなるのと同じか。土台を押さえた者勝ち、ですね。</p>
+        </div>
+        <p>どんなに高性能なGPUがあっても、それを使ってプログラムを書くのが難しければ、研究者や企業は使ってくれません。
+        ここでNVIDIAが打った一手が、<strong>CUDA（クーダ）</strong>でした。
+        2006年ごろから提供を始めた、<span class="em">GPUを「計算機」として使うためのソフトウェアの仕組み</span>です。</p>
+        <div class="def"><b>CUDAとは</b><br>NVIDIAのGPUを、画面描画以外の一般的な計算に使うためのソフトウェア基盤(開発環境)。プログラマーが、GPUの何千ものコアを比較的書きやすい形で扱えるようにした。これにより「ゲーム用の部品」が「誰でも使える並列計算機」になった。</div>
+        <p>これはまさに、第1部から繰り返してきた<strong>「抽象化」</strong>の力です。
+        本来、何千ものコアを直接あやつるのは、とてつもなく面倒で難しい作業です。
+        CUDAは、その複雑さを覆い隠し（抽象化し）、プログラマーが「計算したい中身」に集中できるようにしました。
+        その結果、世界中の大学・研究機関・企業が、こぞってCUDAでAIや科学計算のプログラムを書くようになった。
+        <span class="em">便利な土台があれば、人はそこに集まる</span>。第2部第3講や第7講で見た「プラットフォーム」の話と、まったく同じ構図です。</p>
+        <p>たとえてみましょう。
+        どんなに性能のいい工作機械があっても、その操作が職人技でしか扱えなければ、使える人はごく少数にとどまります。
+        ところが、誰でも扱える分かりやすい操作盤と、豊富な説明書、困ったときに頼れる仲間のコミュニティまで用意されていたら、どうでしょう。
+        多くの人がその機械を選び、ノウハウや道具（ライブラリ）を持ち寄り、改良が積み重なって、ますます使いやすくなっていきます。
+        CUDAがやったのは、まさにこれでした。
+        GPUという強力だが扱いにくい機械に、<span class="em">「使いやすい操作盤」と「育っていく道具箱とコミュニティ」</span>を与えたのです。
+        ハードの性能だけでなく、その周りに人とソフトの生態系（エコシステム）を育てたこと――これこそが、後から振り返れば決定的な一手でした。</p>
+        <p>そして、ここに戦略の妙があります。
+        いったん世界中のAIプログラムやライブラリ、研究者の知識が「CUDA前提」で積み上がってしまうと、<strong>他社がいくら速いGPUを作っても、簡単には乗り換えられない</strong>のです。
+        ソフトウェアを全部書き直し、ノウハウを蓄え直さなければならないからです。
+        この「乗り換えにくさ」は、ビジネスの世界で<span class="em">「堀（モート）」</span>と呼ばれます。城を守る堀のように、競争相手の侵入を防ぐ仕組みです。</p>
+        <p>NVIDIAの強さの本質は、実は<strong>「速いチップ」そのものよりも、その周りに築いた CUDA という分厚いソフトウェアの堀</strong>にある、としばしば言われます。
+        ハードは真似できても、世界中の開発者が積み上げた資産と習慣は、一朝一夕には移せない。
+        ここから、技術の世界の重要な教訓が引き出せます。
+        <span class="em">勝者を決めるのは、単体の性能ではなく、人々が集まる「使いやすい土台（エコシステム）」を押さえられるかどうか</span>だ、ということです。
+        これは、第2部第4講で見たOSやアプリストアの覇権の話とも、深く響き合っています。</p>
+        <div class="note"><span class="lbl">補足：堀は永遠ではない</span>
+        とはいえ、堀は絶対ではありません。各社や業界団体は、CUDAに依存しない共通の仕組みを作ろうと努力していますし、グーグルのTPU（第10講）のように自前の道を行く動きもあります。歴史を振り返れば、強固に見えた覇権が、新しい潮流で覆ることは何度もありました。今の優位がこの先も続くと決めつけないことも、技術を冷静に見る目には大切です。</div>
+      </section>
+
+      <section id="s-infra">
+        <h2>AIインフラという巨大装置 ― 電気を知能に変える工場</h2>
+        <p>現代のAI、とくに大規模言語モデルのような巨大なAIは、もはや一台のパソコンや一個のGPUで動くものではありません。
+        その裏側には、想像を絶する規模の<strong>AIインフラ</strong>が広がっています。
+        この回の後半は、その「見えない巨大装置」の話です。</p>
+        <p>巨大AIを動かすには、何千、何万というGPUを、巨大な建物の中にびっしりと並べます。
+        これが第2部第12講でも扱う<strong>データセンター</strong>です。
+        ただGPUを並べるだけではありません。それらを高速につなぐ特殊なネットワーク、膨大な電力を供給する設備、そして発熱を冷やす大規模な冷却システムが必要になります。
+        <span class="em">AIインフラとは、煎じ詰めれば「大量の電気と水（冷却）を使って、計算という形で知能を生み出す工場」</span>なのです。</p>
+        <p>ここで効いてくるのが、前講のテーマだった<strong>限界</strong>です。
+        GPUを何万個も動かせば、消費する電力は都市一つぶんにもなり得ます。
+        発する熱を冷やすために大量の水や電力を使い、それが環境負荷や地域の資源との摩擦を生むこともあります。
+        つまり、AIの能力は<span class="em">「賢いアルゴリズム」だけでなく、「どれだけ電力と計算資源を投じられるか」という、きわめて物理的・経済的な制約</span>に縛られている。
+        AIをめぐる競争が、巨額の設備投資とエネルギーの競争でもある理由が、ここにあります。「知能」のコストは、最終的に電気代として現れるのです。
+        私たちはAIを「ソフトウェア」や「頭脳」として語りがちですが、その正体は、世界のどこかにある巨大な建物で、轟音とともに電気を消費し、熱を吐き出し続ける、きわめて物理的な存在でもある。
+        この「見えない物理」を忘れないことが、AIを地に足をつけて理解する第一歩です。
+        魔法のように見える技術ほど、その裏側にある泥くさい現実を知っておくことが、冷静な判断を支えてくれます。
+        華やかなニュースの奥にある、電気と熱と物理の世界――そこまで見通せてこそ、本当に技術を理解したと言えるのです。</p>
+        <p>だからこそ、AI時代の主導権は、優れたアルゴリズムを持つ研究者だけでなく、<strong>膨大なGPUとデータセンターを確保できる、ごく一部の巨大企業や国家</strong>に偏りがちになります。
+        計算資源そのものが、新しい時代の「力」になった。
+        かつて石油や鉄が国力を左右したように、いまや「どれだけの計算をこなせるか」が、企業や国の競争力を測るものさしの一つになりつつあります。
+        これは便利さの裏にある重要な論点であり、本講義の最終盤、第2部第15講「コンピュータ科学と社会」で改めて向き合うテーマでもあります。</p>
+      </section>
+
+      <section id="s-cost">
+        <h2>学習と推論 ― AIの二つのコストを分けて考える</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-a">説明役</span>AIのコストは、二つに分けると見通しがよくなります。「学習」と「推論」。学習は、いわば<strong>何年もかけた修行</strong>です。</p>
+          <p><span class="spk spk-b">聞き役</span>じゃあ推論は、修行を終えて実際に働くほう?</p>
+          <p><span class="spk spk-a">説明役</span>そう。学習は一回が桁違いに高い代わりに、たまにしかやらない。推論は一回は安いけど、<strong>世界中の人が毎日何億回も使う</strong>から、合計すると馬鹿にならない。だから「学習に巨額投資」と「推論を安くする工夫」は、別の話として読むんです。</p>
+        </div>
+        <p>AIインフラの話をもう少し正確にするために、AIの計算を<strong>二つの段階</strong>に分けて理解しておきましょう。
+        この区別は、AIのニュースを読み解くうえで、とても役に立ちます。</p>
+        <table class="tbl">
+          <caption>AIの計算は大きく二段階に分かれる</caption>
+          <tr><th></th><th>学習(トレーニング)</th><th>推論(インファレンス)</th></tr>
+          <tr><th>何をする</th><td>大量のデータからモデルを作る</td><td>できたモデルを使って答えを出す</td></tr>
+          <tr><th>たとえ</th><td>長い修行・教育</td><td>本番で実際に働く</td></tr>
+          <tr><th>計算量</th><td>とてつもなく大きい(数週間〜)</td><td>一回は小さいが回数が膨大</td></tr>
+          <tr><th>頻度</th><td>たまに(モデルを作る/更新するとき)</td><td>常時(ユーザーが使うたび)</td></tr>
+        </table>
+        <p><strong>学習</strong>は、AIに大量のデータを見せて「賢くしていく」段階です。
+        人間でいえば、何年もかけた修行や教育にあたります。
+        ここでは、何千ものGPUを何週間も回し続けるような、莫大な計算が一気に必要になります。巨大AIの開発に数十億円規模の費用がかかると言われるのは、主にこの段階のコストです。</p>
+        <p>一方<strong>推論</strong>は、できあがったAIに実際に質問して答えてもらう段階です。
+        あなたがAIに何かを尋ねるたびに、この推論が走っています。
+        一回あたりの計算は学習よりずっと小さいですが、<span class="em">世界中の人が、毎日、何億回と使う</span>ため、合計すれば膨大な計算と電力になります。
+        最近では「学習の費用」だけでなく「推論の費用（使われ続けるコスト）」が、AIサービスの採算を左右する大問題になっています。
+        無料でAIを使えるサービスが多いと、つい「タダで動いている」ように錯覚しがちですが、その裏では、あなたの一回の質問ごとに、どこかのデータセンターでGPUが回り、電気が消費されています。
+        <span class="em">便利さの裏には、必ず誰かが負担している物理的なコストがある</span>。第2部第7講で「クラウドの向こうには現実の機械がある」と学んだことと、まったく同じです。</p>
+        <p>この学習と推論の違いは、人間の学びにもよく似ています。
+        私たちも、何年もかけて学校で学ぶ「修行の時期」と、その知識を使って日々働く「実践の時期」があります。
+        修行には時間も費用もかかりますが、一度身につけた力は、その後くり返し使える。
+        AIも同じで、<strong>一度の高価な学習</strong>が、その後の<strong>無数の推論</strong>を支えています。
+        だからこそ、できあがったモデルをいかに効率よく、安く、速く動かすか（推論の最適化）が、技術者たちの腕の見せどころになっているのです。</p>
+        <p>この区別を知っていると、ニュースの解像度が上がります。
+        「巨大モデルの学習に巨額投資」という話は学習段階のコスト、「AIを安く速く使えるようにする工夫」という話は推論段階の効率化――そう切り分けて読めるようになる。
+        そして、第10講で見た<strong>専用チップ（推論専用の省電力チップなど）</strong>が注目される理由も、この「推論を、いかに安く大量にこなすか」という課題から来ているのです。
+        技術は、つねにコストという現実とセットで動いている。これも本講義が大切にしてきた視点です。</p>
+      </section>
+
+      <section id="s-apply">
+        <h2>現代への応用と論点</h2>
+        <h3>すべての産業を巻き込むAIインフラ</h3>
+        <p>AIインフラは、もはやIT企業だけの話ではありません。
+        製薬会社は新薬候補の探索に、自動車メーカーは自動運転の開発に、金融機関はリスク分析に、巨大な計算資源を使い始めています。
+        電力会社やエネルギー業界にとっても、AIデータセンターの急増は需要予測を揺るがす大問題です。
+        <span class="em">「計算する力」が、あらゆる産業の競争力の土台になりつつある</span>――これが現代の大きな潮流です。</p>
+        <h3>独占と依存という論点</h3>
+        <p>一方で、特定の企業（NVIDIA）や特定の地域（半導体製造の集中、第10講）に、これほど重要な技術が集中していることには、大きな懸念もあります。
+        供給が滞れば世界中のAI開発が止まり、価格や供給を一社が左右できてしまう。
+        だからこそ各国・各社は、自前のAIチップ開発や、CUDAに依存しない仕組み作りに動いています。
+        これは第2部第9講で学んだ<strong>「中央集権か、分散か」</strong>という信頼の問題と、根は同じです。
+        便利さと引き換えに、私たちは何に依存しているのか――立ち止まって問う価値があります。</p>
+        <h3>過熱とのつきあい方</h3>
+        <p>AIインフラへの投資は、ときに過熱し、バブル的な様相を見せることもあります。
+        第2部第3講や第9講で見たように、新技術はしばしば過剰な期待とともに語られます。
+        本当に必要な計算なのか、それとも熱狂に押されているだけなのか。
+        <span class="em">仕組みと限界を理解した目で、冷静に実力を見極める</span>姿勢は、ここでも変わらず重要です。
+        技術の中身を知る者だけが、流行の波に飲まれず、地に足をつけて判断できるのです。</p>
+        <p>本講を振り返ると、NVIDIAの物語は、一つの企業の話であると同時に、<span class="em">技術が社会的な力に変わっていく過程</span>そのものでした。
+        ゲームのための部品という小さな出発点が、並列計算という普遍的な性質ゆえにAIと出会い、CUDAという土台づくりによって覇権となり、ついには国家間の競争や環境問題にまで関わる存在になった。
+        ここには、本講義の四つのテーマ――<strong>抽象化</strong>（CUDAという土台）、<strong>トレードオフ</strong>（汎用と特化、速さと使いやすさ）、<strong>限界</strong>（並列化の限界、電力の壁）、そして<strong>すべては情報</strong>（電気を計算＝知能に変える）――が、すべて顔をそろえています。
+        一枚のチップの物語を通して、私たちは現代技術の縮図を見ているのです。</p>
+      </section>
+
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">Q. GPUはCPUより高性能だから、これからはCPUは要らなくなる？</p>
+          <p class="a">A. 違います。GPUは「分担できる大量の単純計算」に強いだけで、「順番が大事な複雑な処理」はCPUの担当です。OSもアプリも、その制御はCPUが行っています。両者は優劣ではなく役割分担の関係で、これからも手を組んで動きます。GPUは万能の上位互換ではありません。</p>
+          <p class="q">Q. NVIDIAが強いのは、いちばん速いチップを作っているから？</p>
+          <p class="a">A. それも一因ですが、本質はCUDAというソフトウェアの「堀」です。世界中のAI開発がCUDA前提で積み上がっているため、他社が速いチップを出しても簡単には乗り換えられない。技術の覇権は、単体性能より「使いやすい土台（エコシステム）を押さえること」で決まる、という好例です。</p>
+          <p class="q">Q. AIが賢いかどうかは、アルゴリズムの工夫だけで決まる？</p>
+          <p class="a">A. アルゴリズムは重要ですが、それだけではありません。現代の巨大AIの能力は、「どれだけ大量のデータと計算資源（GPU・電力）を投じられたか」に大きく左右されます。AIの力は、賢いアイデアと、膨大な物理資源の、両方の上に成り立っているのです。</p>
+        </div>
+      </section>
+
+      <div class="ybox">
+        <span class="ylbl">この発想、生活にも出ます</span>
+        <p>「いちばん速い部品より、いちばん使いやすい土台を押さえた者が勝つ」。これはビジネスでも人生でも効きます。一発の優秀さで勝負するより、<strong>人が集まり、離れにくくなる場所</strong>を作ったほうが、強くて長続きする。特定の決済アプリやポイント経済圏から抜けにくいのも、同じ"堀"の力です。</p>
+        <p>もうひとつ、AIの賢さは「アルゴリズムの工夫」だけでなく「どれだけ電力と計算資源を注げたか」にも左右される、という現実。<strong>知能のコストは、最後は電気代として現れる</strong>。便利の裏に物理あり、を忘れずにいたいところです。</p>
+      </div>
+
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <p>この講で持ち帰ってほしいのは、企業名ではありません。<strong>技術の勝敗を決めるのは、単体の性能ではなく、人が集まる"使いやすい土台"を押さえられるかだ</strong>という見方です。GPUの速さより、CUDAという堀。この視点があると、ニュースの「AIにGPUが足りない」「巨額のデータセンター投資」の意味が、立体的に読めるようになります。</p>
+        <div class="summary">
+        <ul>
+          <li>AIの計算の正体は「単純で独立した計算の大量くり返し」。だから少数精鋭の<strong>CPU（逐次）</strong>より、大群の<strong>GPU（並列）</strong>が桁違いに速い。ただし順番が大事な仕事は並列化できない、というトレードオフがある。</li>
+          <li>NVIDIAは元来ゲーム用GPUの会社で、<span class="em">ゲームのために並列計算の達人になっていた</span>。深層学習ブームでその力が一致し、AI時代の主役へ。</li>
+          <li>覇権の本質は速いチップより<strong>CUDA</strong>という抽象化された土台＝ソフトの「堀」。便利な土台に人が集まり、乗り換えにくくなる。第2部第3・4・7講のプラットフォームの話と同型。</li>
+          <li><strong>AIインフラ</strong>とは「電力と冷却を使い、計算で知能を生む工場」。AIの能力は賢さだけでなく、電力・計算資源という<strong>物理的・経済的な限界</strong>に縛られる。</li>
+          <li>AIの計算は<strong>学習（たまに・巨大）</strong>と<strong>推論（常時・回数膨大）</strong>に分かれる。この区別がコストとニュースの読み解きの鍵。</li>
+          <li>計算資源の集中は、独占・依存・環境という論点を生む。第9講「中央集権か分散か」、第15講「技術と社会」へとつながる。</li>
+        </ul>
+        </div>
+      </section>
+
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+        <ol>
+          <li>身のまわりの作業で「並列化すると速くなるもの」と「人を増やしても速くならないもの」を、それぞれ挙げてみよう。両者の違いは何だろうか。</li>
+          <li>NVIDIAのCUDAのように「便利な土台を押さえて、乗り換えにくくする」戦略を、IT以外の身近な商品やサービス（たとえば特定の会員制度や規格）で探してみよう。</li>
+          <li>AIの能力が「電力と計算資源をどれだけ投じられるか」に左右されるとしたら、それは社会にとってどんな良いこと／心配なことを生むだろうか。第15講の予習として考えてみよう。</li>
+        </ol>
+        <details class="ans"><summary>考えるヒント</summary>
+        <p>1. 並列化できる例：大量の年賀状の宛名書き、たくさんの皿洗い（人数ぶん速くなる）。並列化できない例：一本の小説を順に書く、料理を「煮込む」工程（人を増やしても煮込み時間は縮まない）。「互いに独立しているか／順番に依存するか」が分かれ目です。</p>
+        <p>2. たとえば特定の電子マネーやポイント経済圏、ある規格に対応した周辺機器がそろってしまうと別規格に移りにくい、など。「資産や習慣が積み上がるほど乗り換えにくくなる」構造を見つけられればよい。</p>
+        <p>3. 良い面：豊富な資源を持つ組織が高度なAIを生み、医療や科学を進歩させうる。心配な面：力が一部の巨大企業・国家に集中し、格差や依存、環境負荷が深刻化しうる。正解は一つではなく、両面を考えられることが大切です。</p>
+        </details>
+        </div>
+      </section>
+
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">『NVIDIA 半導体の覇者 ジェンスン・フアン』関連の評伝・記事</span>― 創業から覇権までの経緯と、長期投資の哲学を知るのに。</li>
+          <li><span class="bk">『ディープラーニング革命』テレンス・セイノフスキー（著）</span>― なぜ今になって深層学習が花開いたのか、その背景（計算力・データ）を平易に描く。</li>
+          <li><span class="bk">『人工知能は人間を超えるか』松尾豊（著）</span>― 日本語で読める深層学習入門の定番。AIの仕組みと限界を冷静に解説。</li>
+          <li><span class="bk">各社のAIインフラ・データセンターに関する技術ブログや解説記事</span>― 学習と推論、消費電力、冷却などの実態を一次情報に近い形で追える。</li>
+          <li><span class="bk">第2部第10講「半導体・メモリ・GPU・TPU」</span>― 本講の土台。チップそのものの理解を深めたい人は、あわせて読み返すと理解が立体的になる。</li>
+        </ul>
+        <p>次の第2部第12講では、本講で登場した<strong>データセンター</strong>を正面から扱います。あなたが見る動画や使うクラウドが、世界中のどこで、どう動いているのか――「インターネットの巨大な裏側」をのぞいていきましょう。</p>
+      </section>
+
+      <nav class="pager">
+        <a class="pv" href="part2_lecture10.html">← 第10講 半導体・メモリ・GPU・TPU</a>
+        <a class="nx" href="part2_lecture12.html">第12講 データセンター・CDN・動画配信 →</a>
+      </nav>
+
+    </div>
+
+    <footer>
+      <div class="wrap">
+        <p>ゆるコンピュータ科学講義 ／ 第2部 応用・社会・現代技術編 ／ 第11講「NVIDIAとAIインフラ」</p>
+        <p>本講は技術と産業構造の理解を目的とした教育用コンテンツです。特定の企業や製品への投資を推奨するものではなく、産業動向は簡略化して説明しています。</p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>

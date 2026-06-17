@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第1部 第5講 計算とは何か ― ゆるコンピュータ科学講義</title>
+<meta name="description" content="コンピュータが生まれる前に、その限界は証明されていた。チューリングマシン、万能機械、停止性問題を身近に学ぶ。ゆるコンピュータ科学講義 第1部 第5講。">
+<style>
+  :root{
+    --bg:#f7f5f0; --paper:#fffdf8; --ink:#23211c; --muted:#6b6459;
+    --line:#e4ddd0; --accent:#c8503a; --accent-soft:#f7e3dd;
+    --accent2:#2f6f6a; --accent2-soft:#dcebe9;
+    --code-bg:#2b2722; --code-ink:#f3ead9;
+    --sidebar:#262320; --sidebar-ink:#e9e2d4; --sidebar-muted:#a59c8a;
+    --shadow:0 1px 2px rgba(40,34,24,.06),0 8px 28px rgba(40,34,24,.07);
+    --maxw:760px;
+  }
+  html[data-theme="dark"]{
+    --bg:#16140f; --paper:#1f1c16; --ink:#ece6d8; --muted:#a79e8c;
+    --line:#332f27; --accent:#e8775f; --accent-soft:#3a221c;
+    --accent2:#6fb6ad; --accent2-soft:#1c2c2a;
+    --code-bg:#100e0a; --code-ink:#f3ead9;
+    --sidebar:#100e0a; --sidebar-ink:#e9e2d4; --sidebar-muted:#8d8472;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.95;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .layout{display:flex;align-items:flex-start}
+  #sidebar{position:sticky;top:0;height:100vh;flex:0 0 280px;width:280px;
+    background:var(--sidebar);color:var(--sidebar-ink);overflow-y:auto;padding:24px 18px 50px;}
+  #sidebar .back{display:inline-block;color:var(--sidebar-muted);text-decoration:none;font-size:.8rem;margin-bottom:16px}
+  #sidebar .back:hover{color:var(--sidebar-ink)}
+  #sidebar .ttl{font-weight:800;font-size:.96rem;line-height:1.5}
+  #sidebar .ttl .pn{display:inline-block;background:var(--accent);color:#fff;font-size:.66rem;padding:2px 9px;border-radius:999px;letter-spacing:.06em;margin-bottom:8px}
+  #sidebar .toc{list-style:none;margin:18px 0 0;padding:0}
+  #sidebar .toc a{display:block;color:var(--sidebar-ink);text-decoration:none;padding:7px 10px;border-radius:8px;font-size:.85rem;line-height:1.4;transition:background .15s}
+  #sidebar .toc a:hover{background:rgba(255,255,255,.06)}
+  #sidebar .toc a.active{background:var(--accent);color:#fff}
+  .side-tools{display:flex;gap:8px;margin-top:22px}
+  .side-tools button{flex:1;background:rgba(255,255,255,.06);color:var(--sidebar-ink);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;cursor:pointer;font-size:.76rem;font-family:inherit}
+  .side-tools button:hover{background:rgba(255,255,255,.12)}
+  main{flex:1 1 auto;min-width:0;padding:0 0 110px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  #progress{position:fixed;top:0;left:280px;right:0;height:3px;z-index:50}
+  #progress > i{display:block;height:100%;width:0;background:var(--accent)}
+  #topbar{display:none}
+  .lec-hero{background:linear-gradient(160deg,var(--accent) 0%,#a83c2c 100%);color:#fff;padding:54px 0 46px;position:relative;overflow:hidden}
+  .lec-hero:after{content:"...10110...";position:absolute;right:-6px;bottom:-10px;font-family:ui-monospace,monospace;font-size:3.6rem;font-weight:800;color:rgba(255,255,255,.08)}
+  .lec-hero .wrap{position:relative;z-index:1}
+  .lec-hero .crumb{font-size:.8rem;opacity:.9;margin-bottom:10px;font-weight:600;letter-spacing:.04em}
+  .lec-hero h1{font-size:1.95rem;line-height:1.4;margin:0 0 .35em;font-weight:800}
+  .lec-hero p{font-size:1.0rem;opacity:.96;margin:0;max-width:34em}
+  h2{font-size:1.42rem;font-weight:800;margin:2.4em 0 .6em;line-height:1.45;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+  h2:first-of-type{margin-top:1.6em}
+  h3{font-size:1.13rem;font-weight:800;margin:1.8em 0 .4em;color:var(--accent2);line-height:1.5}
+  p{margin:.9em 0}
+  a{color:var(--accent)}
+  strong{font-weight:800}
+  .em{background:linear-gradient(transparent 62%,var(--accent-soft) 62%);font-weight:700;padding:0 1px}
+  .term{border-bottom:2px dotted var(--accent2);font-weight:700}
+  ul,ol{padding-left:1.4em}
+  li{margin:6px 0}
+  .lead-in{font-size:1.04rem;color:var(--muted);border-left:4px solid var(--accent);padding:2px 0 2px 18px;margin:1.6em 0}
+  .def{background:var(--accent2-soft);border-left:5px solid var(--accent2);border-radius:0 12px 12px 0;padding:16px 22px;margin:24px 0}
+  .def b{color:var(--accent2)}
+  .note{border:1px dashed var(--line);border-radius:12px;padding:14px 20px;margin:22px 0;background:var(--paper);font-size:.95rem}
+  .note .lbl{font-weight:800;color:var(--accent);font-size:.78rem;letter-spacing:.08em;display:block;margin-bottom:4px}
+  .history{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:24px 0;box-shadow:var(--shadow)}
+  .history:before{content:"🏛 歴史と人物";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent2);background:var(--accent2-soft);padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .history p:last-child{margin-bottom:0}
+  .trivia{background:var(--accent-soft);border-radius:14px;padding:18px 24px;margin:24px 0;border:1px solid rgba(200,80,58,.15)}
+  .trivia:before{content:"☕ ちょっと寄り道";display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:#fff;padding:3px 11px;border-radius:999px;margin-bottom:8px;box-shadow:var(--shadow)}
+  html[data-theme="dark"] .trivia:before{background:#2b2722}
+  .trivia p:first-of-type{margin-top:0}.trivia p:last-child{margin-bottom:0}
+  .myth{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:0 12px 12px 0;padding:6px 22px;margin:18px 0}
+  .myth .q{font-weight:800;color:var(--accent);margin:14px 0 2px}
+  .myth .a{margin:2px 0 14px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86rem;line-height:1.7;margin:18px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  p code,li code,td code{background:var(--accent2-soft);color:var(--ink);padding:1px 6px;border-radius:6px;font-size:.86em}
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.9rem}
+  .tbl th,.tbl td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  .tbl th{background:var(--accent2-soft);font-weight:800}
+  .tbl caption{caption-side:bottom;color:var(--muted);font-size:.8rem;margin-top:8px}
+  figure{margin:24px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  figcaption{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 24px;margin:14px 0;box-shadow:var(--shadow)}
+  .summary ul{margin:0}.summary li{margin:7px 0}
+  .exercise{border:2px solid var(--accent2);border-radius:14px;padding:16px 24px;margin:16px 0}
+  .exercise ol{margin:.4em 0}
+  details.ans{margin-top:10px;background:var(--accent2-soft);border-radius:10px;padding:2px 16px}
+  details.ans summary{cursor:pointer;font-weight:700;color:var(--accent2);padding:8px 0}
+  details.ans[open] summary{margin-bottom:6px}
+  .reading{margin:10px 0;padding-left:1.3em}
+  .reading li{margin:9px 0}
+  .reading .bk{font-weight:700}
+  .pager{display:flex;justify-content:space-between;gap:12px;margin:40px 0 0}
+  .pager a{flex:1;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);background:var(--paper);font-size:.9rem}
+  .pager a:hover{border-color:var(--accent)}
+  .pager .nx{text-align:right}
+  .pager .disabled{opacity:.5;pointer-events:none}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:.84rem}
+  footer .wrap{max-width:var(--maxw)}
+  .backtop{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border:none;width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:1.1rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .backtop.show{opacity:1;pointer-events:auto}
+  @media (max-width:980px){
+    #progress{left:0}
+    #sidebar{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #sidebar.open{transform:translateX(0)}
+    #topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:55;background:var(--paper);border-bottom:1px solid var(--line);padding:10px 16px}
+    #topbar button{background:none;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+    #topbar .t{font-weight:800;font-size:.86rem}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:58}
+    .scrim.show{display:block}
+    .lec-hero h1{font-size:1.55rem}
+    body{font-size:16px}
+  }
+  @media print{#sidebar,#topbar,#progress,.backtop,.side-tools,.pager{display:none}.lec-hero:after{display:none}}
+  /* --- ゆるラジオ版の追加スタイル --- */
+  .yhook{margin:24px 0;padding:18px 24px;border-radius:18px;background:radial-gradient(circle at top left,var(--accent-soft),var(--paper));border:1px solid var(--accent);line-height:1.95}
+  .yhook .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.08em;color:#fff;background:var(--accent);padding:3px 12px;border-radius:999px;margin-bottom:8px}
+  .yhook p{margin:.5em 0}.yhook p:last-child{margin-bottom:0}
+  .ybox{margin:24px 0;padding:4px 22px 16px;border-radius:14px;border:1px solid var(--line);border-left:5px solid var(--accent);background:var(--paper)}
+  .ybox .ylbl{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 11px;border-radius:999px;margin:14px 0 4px}
+  .ybox p{margin:.6em 0}.ybox p:last-child{margin-bottom:0}
+  .ybox.alt{border-left-color:var(--accent2)}.ybox.alt .ylbl{color:var(--accent2);background:var(--accent2-soft)}
+  .ydlg{margin:24px 0;padding:10px 20px;border-radius:16px;background:var(--accent-soft);border:1px solid var(--line)}
+  .ydlg p{margin:.6em 0;line-height:1.8}.ydlg p:last-child{margin-bottom:0}
+  .spk{display:inline-block;font-weight:800;margin-right:.5em;padding:.08em .7em;border-radius:999px;font-size:.72em;white-space:nowrap;vertical-align:.08em}
+  .spk-a{background:var(--accent);color:#fff}.spk-b{background:var(--accent2);color:#fff}
+</style>
+</head>
+<body>
+<div id="progress"><i></i></div>
+<div id="topbar">
+  <button id="menuBtn" aria-label="目次">☰</button>
+  <span class="t">第5講 計算とは何か</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+  <nav id="sidebar" aria-label="目次">
+    <a class="back" href="index.html">← 講義一覧へ</a>
+    <div class="ttl"><span class="pn">第1部 第5講</span><br>計算とは何か</div>
+    <ul class="toc">
+      <li><a href="#s-intro">はじめに</a></li>
+      <li><a href="#s-tm">チューリングマシン</a></li>
+      <li><a href="#s-computable">「計算できる」の定義</a></li>
+      <li><a href="#s-universal">万能チューリングマシン</a></li>
+      <li><a href="#s-halting">解けない問題 ― 停止性問題</a></li>
+      <li><a href="#s-history">人物 ― アラン・チューリング</a></li>
+      <li><a href="#s-apply">現代への応用</a></li>
+      <li><a href="#s-myth">よくある誤解</a></li>
+      <li><a href="#s-summary">まとめ</a></li>
+      <li><a href="#s-exercise">考えてみよう</a></li>
+      <li><a href="#s-reading">さらに読む本・資料</a></li>
+    </ul>
+    <div class="side-tools">
+      <button id="themeBtn">🌓 配色</button>
+      <button id="fontBtn">A＋ 文字</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="lec-hero">
+      <div class="wrap">
+        <div class="crumb">ゆるコンピュータ科学講義 ／ 第1部 基礎教養編 ／ 第5講</div>
+        <h1>計算とは何か<br>― チューリングマシンと「解けない問題」</h1>
+        <p>コンピュータが生まれる前に、その能力と限界は、すでに数学的に証明されていた。</p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- はじめに -->
+      <section id="s-intro">
+        <h2>はじめに ― 機械を作る前に「計算」を定義する</h2>
+        <div class="yhook">
+          <span class="ylbl">この講を一言でいうと</span>
+          <p>「計算するって、そもそもどういうこと？」――この、改めて聞かれると詰まる問いに、ある天才が<strong>紙テープと記号、それを読み書きするだけのバカみたいに単純な空想の機械</strong>で答えを出しました。</p>
+          <p>驚くのはここからです。そのあまりに素朴な機械が、原理上は<strong>あらゆる計算をこなせる</strong>。そして同時に、<strong>どうやっても解けない問題が存在する</strong>ことまで証明されてしまう。本講は、コンピュータの「できること」と「絶対にできないこと」の両方の輪郭を、いっぺんに引いた回です。</p>
+        </div>
+        <p>第4講で、私たちは実物のコンピュータ（ノイマン型）の設計図を手に入れました。
+        ここで一度、時計の針を少しだけ戻します。
+        じつは<strong>実物の電子計算機が生まれるより前</strong>に、
+        「そもそも計算とは何か」「機械に何ができて、何ができないのか」が、
+        一人の数学者によって、紙とペンの上で徹底的に考え抜かれていたのです。</p>
+        <p>その人物が<span class="term">アラン・チューリング</span>。1936年、まだ電子計算機が影も形もなかった時代に、
+        彼はとほうもない問いに挑みました。
+        <span class="em">「『計算する』とは、突き詰めれば、どういう手続きのことなのか？」</span>
+        機械を作るより先に、計算という行為そのものを数学的に定義しようとしたのです。
+        そしてその副産物として、<strong>どんなに技術が進んでも原理的に解けない問題が存在する</strong>ことまで証明してしまいました。
+        本講は、コンピュータ科学のいちばん深く、いちばんスリリングな部分です。</p>
+        <p>少し不思議に思うかもしれません。「実物の機械もないのに、何ができて何ができないか、どうして分かるの？」と。
+        じつは、これこそがコンピュータ科学が"科学"である理由です。
+        物理学者が、実際に光速で飛ばなくても数式から宇宙の性質を導けるように、
+        チューリングは、実機を作らずとも「計算」という行為の本質を数学的に分析し、
+        その能力と限界を、机上で証明してみせました。
+        <span class="em">具体的な機械の性能ではなく、"計算"という営みそのものの法則を扱う</span>――
+        だからこの講で得る結論は、いまのコンピュータだけでなく、未来のどんな計算機にも当てはまる、普遍的なものなのです。
+        流行の技術がどれだけ変わっても色あせない、最も骨太な知識がここにあります。</p>
+        <p class="lead-in">チューリングマシン（計算の最小モデル）→ それが「計算できる」の定義になった → 万能機械 → そして「解けない問題」。
+        哲学的にも聞こえますが、ウイルス対策やバグ検出といった、現実の限界に直結する話です。</p>
+      </section>
+
+      <!-- チューリングマシン -->
+      <section id="s-tm">
+        <h2>チューリングマシン ― 計算を極限まで削ぎ落とす</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-a">説明役</span>計算する機械って、突き詰めると「長い紙テープ」と「記号を読み書きするヘッド」と「単純なルール表」だけで作れるんですよ。</p>
+          <p><span class="spk spk-b">聞き役</span>えっ、それだけ？ いまどきのCPUの立場がないというか……。</p>
+          <p><span class="spk spk-a">説明役</span>その拍子抜けが大事なんです。最先端のスパコンも、原理的にできることの範囲は、この素朴な紙テープ機械と同じ。速いか遅いかの違いでしかないんです。</p>
+        </div>
+        <p>チューリングは、人間が紙と鉛筆で計算する様子を、じっと観察しました。
+        私たちは紙のマスに数字を書き、消し、次のマスへ目を移し、頭の中の「今の状態」に従って次の手を決めています。
+        この行為を、これ以上削れないところまで削ぎ落とすと、何が残るか。
+        彼が考えた仮想の機械は、たったこれだけの部品でできています。</p>
+        <ul>
+          <li><strong>テープ</strong>：マス目が一列に並んだ、無限に長い紙テープ。各マスには記号（0か1など）を1つ書ける。</li>
+          <li><strong>ヘッド</strong>：いまテープの1マスを見ていて、そこを読んだり書いたりできる。左右に1マスずつ動ける。</li>
+          <li><strong>状態</strong>：機械の「気分」にあたる、有限個の内部状態。</li>
+        </ul>
+        <p>そして、やれることも4つだけ。<strong>テープのマスを「読む」「書く」「1マス動く」「状態を変える」</strong>。
+        「いまの状態」と「読んだ記号」の組み合わせに応じて、
+        「何を書き、どちらへ動き、次にどの状態になるか」が、あらかじめ決められた表に従って進みます。
+        これが<span class="term">チューリングマシン</span>です。</p>
+        <figure>
+          <svg viewBox="0 0 540 170" role="img" aria-label="チューリングマシンの模式図">
+            <style>.cell{fill:var(--paper);stroke:var(--ink);stroke-width:1.5}.cellnow{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2.5}.cc{font:15px monospace;fill:var(--ink);text-anchor:middle;font-weight:700}.head{fill:var(--accent2-soft);stroke:var(--accent2);stroke-width:2}.hl{font:11px sans-serif;fill:var(--ink);text-anchor:middle;font-weight:700}</style>
+            <rect class="cell" x="40" y="90" width="50" height="50"/><text class="cc" x="65" y="122">1</text>
+            <rect class="cell" x="90" y="90" width="50" height="50"/><text class="cc" x="115" y="122">0</text>
+            <rect class="cell" x="140" y="90" width="50" height="50"/><text class="cc" x="165" y="122">1</text>
+            <rect class="cellnow" x="190" y="90" width="50" height="50"/><text class="cc" x="215" y="122">1</text>
+            <rect class="cell" x="240" y="90" width="50" height="50"/><text class="cc" x="265" y="122">0</text>
+            <rect class="cell" x="290" y="90" width="50" height="50"/><text class="cc" x="315" y="122">_</text>
+            <rect class="cell" x="340" y="90" width="50" height="50"/><text class="cc" x="365" y="122">_</text>
+            <text class="cc" x="410" y="122">…</text>
+            <rect class="head" x="180" y="30" width="70" height="44" rx="8"/>
+            <text class="hl" x="215" y="50">ヘッド</text><text class="hl" x="215" y="65">状態:q3</text>
+            <line x1="215" y1="74" x2="215" y2="88" stroke="var(--accent2)" stroke-width="2"/>
+            <polygon points="209,84 215,92 221,84" fill="var(--accent2)"/>
+            <text class="hl" x="280" y="20" style="fill:var(--muted)">無限に長いテープ →</text>
+          </svg>
+          <figcaption>図1：チューリングマシン。テープを読み書きし、状態を変えるだけの、限界まで単純化された機械。</figcaption>
+        </figure>
+        <h3>実際に動かしてみる ― 「1を足す」機械</h3>
+        <p>言葉だけではピンと来ないので、ごく簡単な動作を追ってみましょう。
+        テープに二進数が書いてあり、「その数に1を足す」チューリングマシンを考えます。
+        やることは、人間の筆算と同じです。<strong>いちばん下の桁（右端）から見て、
+        0なら1に書き換えて終了。1なら0に書き換えて、繰り上がりを持って左の桁へ進む</strong>。</p>
+        <pre><code>テープ:  1 0 1 1   （二進の11）に 1 を足したい
+右端から: …1 → 0 にして繰り上がり、左へ
+        …次も1 → 0 にして繰り上がり、左へ
+        …次は0 → 1 にして終了
+結果:    1 1 0 0   （二進の12）✓</code></pre>
+        <p>「いまの桁を読む → 書き換える → 状態（繰り上がり中かどうか）に応じて左へ動く」。
+        たったこれだけのルールの繰り返しで、足し算がきちんと実行されました。
+        第3講では足し算を"論理ゲート"で作りましたが、ここでは同じ足し算を"テープとヘッドの動き"で表している。
+        <span class="em">同じ計算が、まったく違う仕組みで表現できる</span>――この自由さが、次の話につながります。</p>
+        <p>あまりに単純で、「こんなおもちゃで何ができるの？」と思うはずですが、
+        この単純な機械に、無限のテープと十分な手順を与えれば、
+        現実のどんな計算でも――表計算も、画像処理も、AIの推論でさえ――原理的には再現できてしまうのです。
+        ここからが、驚きの始まりです。</p>
+      </section>
+
+      <!-- 計算できるの定義 -->
+      <section id="s-computable">
+        <h2>「計算できる」の定義になった</h2>
+        <p>このおもちゃのような機械が、じつは恐ろしく強力でした。
+        <span class="em">現実のコンピュータにできる計算は、すべてこのチューリングマシンでも（時間さえかければ）できる</span>
+        ことが分かっているのです。逆に、チューリングマシンにできない計算は、
+        どんなスーパーコンピュータにも、未来のどんな機械にもできません。</p>
+        <p>つまりチューリングマシンは、単なる思考実験ではなく、
+        <strong>「計算できる」という言葉の数学的な定義そのもの</strong>になりました。
+        ある問題について「これは計算可能か？」と問うことは、
+        「それを解くチューリングマシンが作れるか？」と問うことと、同じ意味になったのです。
+        この考えは「どんな計算も、突き詰めればこの単純な機械に還元できる」という主張（チャーチ＝チューリングの提唱）として、
+        計算という概念の土台になっています。</p>
+        <p>面白いのは、チューリングと同じ頃、別の数学者たちもまったく違う方法で
+        「計算とは何か」を定義しようとしていたことです。
+        たとえばアロンゾ・チャーチは「ラムダ計算」という、関数だけを使うまるで見た目の異なる体系を作りました。
+        ところが調べてみると、<span class="em">それらが定義する「計算できる範囲」は、すべてぴったり同じだった</span>のです。
+        まったく別の入口から登ったのに、たどり着いた山頂が同じ――。
+        これは「計算可能性」という概念が、たまたまのモデルに依らない、
+        確かな実体を持っていることの強い証拠とされています。
+        （ちなみに、このラムダ計算の考え方は、第11講で扱う"関数型プログラミング"の源流にもなっています。）</p>
+        <p>もうひとつ、見落とされがちな重要な点があります。
+        チューリングマシンが定義したのは「何が計算できるか」という<strong>可能・不可能の境界</strong>であって、
+        「どれくらい速く計算できるか」は別問題だ、ということです。
+        テープを1マスずつしか動けないチューリングマシンは、現実のコンピュータに比べれば、はるかに"のろま"です。
+        しかし<span class="em">「時間さえ無限にかければ、何ができるか」という能力の範囲は、両者でまったく同じ</span>。
+        速いか遅いかと、できるかできないかは、別の物差しなのです。
+        この「できる／できない」の地図を引いたのが本講で、
+        その内側を「速い／遅い」でさらに細かく塗り分けるのが、次の第6講「アルゴリズムと計算量」の仕事になります。
+        まず輪郭を、次に内訳を――という二段構えで、計算の全体像が見えてきます。</p>
+        <div class="note">
+          <span class="lbl">第3〜4講とのつながり</span>
+          第3講では論理ゲートで、第4講ではノイマン型で「実際に計算する機械」を組み立てました。
+          本講のチューリングマシンは、それらの<strong>"理論側の地図"</strong>です。
+          現実の機械が「どう作るか」を示すなら、チューリングマシンは「そもそも何ができる範囲なのか」の境界線を引きます。
+          実装と理論、両側からコンピュータを挟み撃ちにしているわけです。
+        </div>
+        <h3>「解ける問題」と「解けない問題」の地図</h3>
+        <p>計算可能性という物差しを手にすると、世の中の問題を地図のように分類できます。
+        「ある数が素数かどうか」「2つの地点の最短経路は何か」――こうした問題は、
+        時間さえかければ必ず答えが出る<strong>「決定可能（解ける）」</strong>な問題です。
+        一方、前述の停止性問題のように、どんな手続きを用意しても必ず正しく答えを出すことはできない
+        <strong>「決定不能（解けない）」</strong>な問題も存在します。
+        たとえば「2つのプログラムが、まったく同じ動きをするか（同値か）を必ず判定する」という問題も、
+        じつは決定不能であることが知られています。</p>
+        <p>つまりコンピュータの世界には、<span class="em">「がんばれば解ける問題」と「がんばっても原理的に解けない問題」の
+        はっきりした境界線</span>が引かれているのです。
+        そして次の第6講では、「解ける」問題のなかでもさらに、
+        「現実的な時間で解けるのか、それとも宇宙の年齢でも終わらないのか」という、
+        もう一段細かい地図を描いていきます。
+        「解けるか」（本講）→「速く解けるか」（次講）と、問いが一段深まっていくわけです。</p>
+      </section>
+
+      <!-- 万能 -->
+      <section id="s-universal">
+        <h2>万能チューリングマシン ― ソフトウェアの原型</h2>
+        <div class="ybox">
+          <span class="ylbl">雑なたとえ</span>
+          <p>万能チューリングマシンは、かなり雑に言うと<strong>「他のどんな機械のものまねでもできる、ものまね芸人」</strong>です。</p>
+          <p>足し算機のレシピを渡せば足し算機になりきり、別のレシピを渡せば別の機械になりきる。中身を作り替えるのではなく、「やり方の説明書」を読み込むだけで、何にでも化ける。これは前講のノイマン型と双子の発想で、まさに<strong>ソフトウェアという考え方の原型</strong>です。アプリを入れ替えるだけでスマホが別物になるのも、元をたどればこの芸人芸なのです。</p>
+        </div>
+        <p>チューリングは、さらにすごいことを示しました。
+        「特定の計算をする専用マシン」を1つずつ作る代わりに、
+        <strong>「他のどんなマシンの動作記述（プログラム）でも読み込んで、その通りに振る舞えるマシン」</strong>を
+        1台だけ作れる、と。これを<span class="term">万能チューリングマシン</span>と呼びます。</p>
+        <p>お気づきでしょうか。これはまさに、第4講のノイマン型――
+        「プログラムをデータとして読み込んで実行する、汎用の機械」――の<strong>理論的な原型</strong>です。
+        ハードを作り替えなくても、与えるプログラム（ソフト）を変えるだけで何にでもなれる。
+        私たちが当たり前に使っている「1台のPCでゲームも表計算もできる」という性質は、
+        実物の計算機が登場する<strong>約10年も前に</strong>、チューリングによって理論的に証明されていたのです。
+        ソフトウェアという概念は、この万能機械のアイデアから生まれた、と言ってもいいでしょう。</p>
+        <p>身近な例で言えば、「あるゲーム機の動きを、別のパソコン上で再現するソフト（エミュレータ）」や、
+        「ブラウザが、Webページに書かれたプログラム（JavaScript）を読み込んで実行する」のも、
+        この万能機械の発想そのものです。
+        <span class="em">機械が、別の機械の振る舞いを"読み込んで真似る"</span>。
+        いまや当たり前すぎて意識もしませんが、これができること自体が、チューリングの示した深い真実なのです。</p>
+      </section>
+
+      <!-- 停止性問題 -->
+      <section id="s-halting">
+        <h2>解けない問題 ― 停止性問題</h2>
+        <div class="ybox alt">
+          <span class="ylbl">まず捨てたい誤解</span>
+          <p><strong>「コンピュータなら、どんな問題でも、いつかは解けるんでしょ？」</strong>――速さの問題ではなく、ここには原理的な壁があります。</p>
+          <p>たとえば「このプログラムは、いつか止まるか、それとも永遠に動き続けるか」を<strong>事前に必ず判定できる万能プログラム</strong>は、どうやっても作れない。これは「まだ誰も作れていない」ではなく、「論理的に作れないと証明されている」種類の不可能です。万能の機械にも、超えられない一線がある――その発見の物語が、この節です。</p>
+        </div>
+        <p>ここからが、チューリングの議論のいちばんスリリングな、そして少し怖い部分です。
+        彼は「計算できることの範囲」を定義しただけでなく、
+        <span class="em">どんなに高性能なコンピュータでも、原理的に絶対に解けない問題がある</span>ことを証明しました。
+        その代表が<span class="term">停止性問題（Halting Problem）</span>です。</p>
+        <div class="def">
+          <p><b>停止性問題</b></p>
+          <p style="margin-bottom:0">「あるプログラムと、その入力」を渡されたとき、
+          そのプログラムが<strong>いつか停止するか、それとも永遠に動き続ける（無限ループする）か</strong>を、
+          <strong>必ず正しく言い当てるプログラム</strong>は作れるか？ ―― 答えは「<b>作れない</b>」。</p>
+        </div>
+        <p>証明の核は、おなじみの「自己言及のパラドックス」です。
+        かりに、何でも判定できる万能の判定プログラム <code>H</code> があるとしましょう。
+        ならば、それを意地悪に使う"へそ曲がり"なプログラム <code>D</code> を作れます。
+        <code>D</code> は、自分自身を <code>H</code> に判定させ、その結果と<strong>逆のこと</strong>をするのです。
+        ―― 「お前は停止する」と言われたら、わざと無限ループに入る。
+        「お前は停止しない」と言われたら、わざとすぐ停止する。</p>
+        <p>では、この <code>D</code> に <code>D</code> 自身を入力したら、どうなるでしょう。
+        「停止する」と判定されれば停止せず、「停止しない」と判定されれば停止する。
+        <strong>どちらに転んでも、判定が必ず外れる</strong>。
+        これは矛盾です。だから、最初に仮定した万能の判定プログラム <code>H</code> は<strong>存在しえない</strong>――
+        これが背理法による証明の骨格です。</p>
+        <p>この証明のからくりは、第1講で触れた「サクラサク」のような言葉遊びとは違い、
+        論理の核心を突いています。鍵は<strong>「判定する相手として、判定器そのものを使う自己言及」</strong>。
+        自分で自分を判定し、その結果に逆らう――この"自分自身に向けた天邪鬼"が、必ず矛盾を生むのです。
+        「すべてを判定できる」と主張した瞬間に、その主張を裏切る反例を、自分自身から作り出せてしまう。
+        万能をうたうものは、自己言及によって足をすくわれる――これは論理学の、最も美しく、最も手強い罠のひとつです。
+        そしてこの同じ罠が、次に述べる「数学そのものの限界」にも、まったく同じ形で現れることになります。</p>
+        <p>大事なのは、これが「いまの技術が未熟だから解けない」という話<strong>ではない</strong>こと。
+        <span class="em">どれだけ未来の技術が進歩しても、論理的に不可能</span>だ、という主張です。
+        「この文は偽である」という嘘つきのパラドックスと同じ自己言及の罠が、
+        計算という営みの、いちばん底に潜んでいるのです。</p>
+        <h3>「一部は解ける」が「全部は解けない」</h3>
+        <p>誤解しないでほしいのは、これは「プログラムが止まるかどうか、まったく分からない」という意味ではない、ということ。
+        個々のプログラムを見れば、「これは明らかにすぐ止まる」「これは見るからに無限ループだ」と
+        判定できるものはいくらでもあります。
+        停止性問題が言っているのは、<strong>「世の中のあらゆるプログラムについて、例外なく正しく判定する"万能の"方法は存在しない」</strong>ということ。
+        「一部は解ける、でも全部を保証する万能手段はない」――この区別が肝心です。</p>
+        <p>身近なたとえで言えば、「どんな文章でも、それが面白いか面白くないかを必ず正しく判定する万能アルゴリズム」を
+        作るようなもの。個別には「これは面白い」と言えても、
+        <span class="em">あらゆる場合をもれなく正しく判定する一般的な手続き</span>となると、原理的な壁にぶつかる。
+        コンピュータの万能さには、こうした"裏地"のような限界が、必ず縫い込まれているのです。</p>
+        <div class="trivia">
+          <p>「止まるか分からない」を地で行く、有名な例があります。<strong>コラッツ予想</strong>です。
+          ルールはとても簡単。ある正の整数からはじめて、
+          <strong>偶数なら2で割る、奇数なら3倍して1を足す</strong>。これを繰り返すと、どんな数から始めても
+          最後は必ず 1 にたどり着く（＝計算が止まる）、というのがコラッツ予想です。
+          たとえば 6 → 3 → 10 → 5 → 16 → 8 → 4 → 2 → 1。確かに止まりました。
+          ところが、<span class="em">「本当にすべての数で必ず1に行き着くのか」は、いまだに誰も証明できていません</span>。
+          つまり、この単純なプログラムですら「あらゆる入力で停止するか」が未解決なのです。
+          停止性問題の難しさが、こんな小学生でも遊べるルールの中に潜んでいる――数学の奥深さを感じさせます。</p>
+        </div>
+      </section>
+
+      <!-- 人物 -->
+      <section id="s-history">
+        <h2>人物 ― アラン・チューリング</h2>
+        <div class="ydlg">
+          <p><span class="spk spk-b">聞き役</span>「絶対に解けない問題がある」って、なんだか敗北宣言みたいで寂しくないですか。</p>
+          <p><span class="spk spk-a">説明役</span>むしろ逆なんですよ。「ここから先は無理」とはっきり線を引けたからこそ、人類は無駄な挑戦に消耗せず、「できる範囲」で全力を出せるようになった。</p>
+          <p><span class="spk spk-b">聞き役</span>限界を知ることが、かえって前に進む力になる、と。ちょっといい話になってきましたね。</p>
+        </div>
+        <div class="history">
+          <p><strong>アラン・チューリング（1912–1954）。</strong>
+          「コンピュータ科学の父」と呼ばれる、イギリスの数学者です。
+          24歳で発表したチューリングマシンの論文が、計算という概念の土台を築きました。
+          第二次大戦中は、ナチスドイツの暗号「エニグマ」の解読に決定的な貢献をし（第10講で再訪）、
+          専用の解読機械を設計して、戦争の終結を早めたと言われます。
+          戦後は「機械は考えられるか」を問う<strong>チューリングテスト</strong>を提案し（第15講で再訪）、
+          人工知能という分野の扉も開きました。</p>
+          <p>計算理論・暗号・人工知能――本講義の柱のいくつもが、このひとりの人物から伸びています。
+          しかしその晩年は、不当な迫害のなかにありました。
+          当時のイギリスで罪とされた同性愛を理由に有罪とされ、苦しみのうちに41歳の若さで世を去ります。
+          長く名誉を奪われたままでしたが、近年になって公式に謝罪・恩赦がなされ、
+          いまではイギリスの紙幣にその肖像が描かれるまでに再評価されました。
+          天才の悲劇と栄誉が、ともに刻まれた生涯でした。</p>
+        </div>
+        <div class="trivia">
+          <p>チューリングは、かなりの変わり者としても知られていました。
+          世界クラスの長距離ランナーで、オリンピック候補に迫る記録を出したほど。
+          会議に遅れそうなときは、何十kmも走って向かったという逸話があります。
+          花粉症の季節には、ガスマスクをつけて自転車に乗って通勤した、なんて話も。
+          理論の巨人でありながら、どこか浮世離れした行動力の持ち主だったのです。<br>
+          ところで、コンピュータ科学の偉人には個性派が多く、
+          「世界一のコンピュータ科学者なのに、コンピュータ（の実機いじり）はむしろ苦手・嫌いだった」
+          と評される理論家もいます。
+          計算<strong>理論</strong>の世界は、必ずしも機械好きの世界とは限らない――
+          頭の中の論理を愛する人々が、この分野を切り拓いてきたのです。</p>
+        </div>
+        <p>チューリングの探究は、計算機や暗号にとどまりませんでした。
+        晩年の彼は、<strong>「生物の模様は、どうやってできるのか」</strong>という問いに、数学で挑んでいます。
+        ヒョウの斑点や、魚の縞模様、植物の葉の並び方――こうした自然の模様が、
+        2つの物質が広がり、互いに反応し合う単純な数式から、自然に生まれてくることを示したのです
+        （チューリング・パターンと呼ばれます）。
+        計算の限界を定めた人物が、生命の美しい模様の起源にまで迫っていた。
+        <span class="em">「単純なルールから、複雑なパターンが立ち現れる」</span>という、
+        本講義を貫くテーマそのものを、彼は生物の世界にも見出していたのです。
+        一人の天才の関心が、計算・暗号・人工知能・そして生命へと、いかに広く伸びていたか――
+        コンピュータ科学の源流に、こんな豊かな知性がいたことは、記憶に値します。</p>
+      </section>
+
+      <!-- 応用 -->
+      <section id="s-apply">
+        <h2>現代への応用</h2>
+        <p>「解けない問題がある」という話は、抽象的な数学の遊びに聞こえるかもしれません。
+        ところが、これは現実のソフトウェアに、はっきりとした制約として現れます。</p>
+        <h3>「完全なウイルス対策ソフト」は作れない</h3>
+        <p>「このソフトは、<strong>あらゆる</strong>プログラムが悪意ある動作をするかどうかを、完璧に見抜ける」――
+        そんな万能の判定ソフトは、停止性問題と同じ理由で<strong>原理的に作れません</strong>。
+        だからこそセキュリティは、「完全な判定」ではなく、
+        既知のパターン照合や、あやしい振る舞いの監視といった<strong>"それっぽく当てる"近似</strong>の積み重ねに
+        ならざるを得ないのです。いたちごっこが終わらない根本理由が、ここにあります。</p>
+        <h3>「バグを完全に自動検出するツール」も作れない</h3>
+        <p>同じ理由で、「どんなプログラムについても、バグや無限ループの有無を必ず言い当てるツール」も作れません。
+        プログラムが「ちゃんと止まるか」「正しく動くか」を完全自動で保証するのは、一般には不可能。
+        だからソフトウェア開発では、テストやレビューといった<strong>地道な"確かめ"の積み重ね</strong>で
+        品質を上げていくしかないのです（第2部のソフトウェア開発の回で再訪します）。
+        コンパイラが「このコードは絶対に無限ループしません」と保証してくれないのも、根は同じ。
+        <span class="em">チューリングが80年以上前に暴いた限界が、いまも私たちの仕事のやり方を縛っている</span>のです。</p>
+        <h3>数学そのものにも「証明できない真実」がある</h3>
+        <p>じつはチューリングの少し前に、数学者クルト・ゲーデルが、数学そのものについて似た衝撃を与えていました。
+        <strong>不完全性定理</strong>です。ざっくり言えば、「十分に豊かな数学の体系には、
+        <span class="em">正しいのに、その体系の中では証明も反証もできない命題が必ず存在する</span>」という結果。
+        「正しさ」と「証明できること」がイコールではない、と示したのです。</p>
+        <p>停止性問題と不完全性定理は、いわば兄弟のような関係にあります。
+        どちらも自己言及のパラドックスを武器に、「計算」や「証明」という人間の営みに、
+        原理的な天井があることを暴きました。
+        コンピュータも数学も万能ではない――けれど、その限界の輪郭を正確に知ることこそが、
+        20世紀の知性が手にした、もっとも深い成果のひとつなのです。
+        「できないことが分かる」のもまた、立派な知識です。</p>
+        <h3>限界の中で、それでも"正しさ"を保証する</h3>
+        <p>「すべてのバグを自動で見つけることはできない」と聞くと、悲観的に思えるかもしれません。
+        しかし、人類はこの限界の"内側"で、できる限りの工夫を積み重ねてきました。
+        たとえば<strong>形式手法</strong>と呼ばれる分野では、プログラムの満たすべき性質を数学的に書き下し、
+        「この範囲では、確かに正しく動く」ことを厳密に証明します。
+        鉄道の運行制御や、ロケット、医療機器など、絶対に間違えられないシステムでは、こうした厳密な検証が使われています。
+        ポイントは、<span class="em">「あらゆるプログラムを判定する万能手段」は作れなくても、
+        「特定のプログラムが、特定の性質を満たすか」なら、多くの場合は確かめられる</span>ということ。
+        第14講で触れる「すべてのモデルは間違っているが、いくつかは役に立つ」と同じで、
+        万能ではないからといって、無力なわけではないのです。
+        限界を正しく知ったうえで、その手前で最大限賢く立ち回る――これが、理論の限界と向き合う工学の知恵なのです。</p>
+      </section>
+
+      <!-- 誤解 -->
+      <section id="s-myth">
+        <h2>よくある誤解</h2>
+        <div class="myth">
+          <p class="q">誤解①：「性能の高いコンピュータなら、どんな問題でもいつかは解ける」</p>
+          <p class="a">解けません。停止性問題のように、性能とは無関係に<strong>原理的に解けない問題</strong>が存在します。
+          これは「遅い／速い」の話ではなく、「可能／不可能」の話です。</p>
+          <p class="q">誤解②：「チューリングマシンは、実在した古いコンピュータの名前」</p>
+          <p class="a">実在の機械ではなく、<strong>頭の中の理論モデル</strong>です。
+          計算とは何かを考えるための、究極に単純化した"思考の道具"。だからこそ、あらゆる計算機の能力を測る物差しになれます。</p>
+          <p class="q">誤解③：「単純な機械だから、できることも少ない」</p>
+          <p class="a">逆です。読む・書く・動く・状態を変える、という単純な操作でも、
+          <strong>無限のテープと無限の繰り返し</strong >があれば、現実のあらゆる計算を再現できます。単純さと万能性は両立するのです。</p>
+          <p class="q">誤解④：「AIが進化すれば、停止性問題のような限界も超えられる」</p>
+          <p class="a">超えられません。AIもコンピュータ（チューリングマシンと同じ計算能力の範囲）で動く以上、同じ限界の中にいます。
+          「AIなら何でもできる」という期待には、この理論的な天井があることを知っておく価値があります（第15講）。</p>
+          <p class="q">誤解⑤：「停止性問題が解けないなら、コンピュータは信用できない・役立たずだ」</p>
+          <p class="a">そうではありません。「すべてを保証する万能手段がない」だけで、個別の問題の多くは十分に解けます。
+          現実のソフトは、完全な保証の代わりに<strong>テスト・監視・近似</strong>で品質を高めています。
+          限界を知ったうえで、その手前で賢く立ち回る――それが工学の知恵です。</p>
+        </div>
+      </section>
+
+      <!-- まとめ -->
+      <div class="ybox">
+        <span class="ylbl">この発想、生活にも出ます</span>
+        <p>「やってみないと分からないことは、やる前に完璧には判定できない」。停止性問題が突きつけるこの事実は、じつは私たちの日常そのものです。この企画が当たるか、この恋がうまくいくか、この勉強がいつ実を結ぶか――事前に確実に分かる万能の方法は、ありません。</p>
+        <p>だからこそ、人は「ある程度の見込み」で踏み出すしかない。<strong>完璧な事前チェックは原理的に不可能</strong>だと知っておくと、決断にいちいち怯えなくなります。限界を認めることは、あきらめではなく、前に進むための居直りなのです。</p>
+      </div>
+
+      <section id="s-summary">
+        <h2>まとめ</h2>
+        <p>この講で持ち帰ってほしいのは、コンピュータの「万能さ」と「限界」を、同じ一枚のコインの裏表として見られるようになったこと。<strong>何でもできる機械にも、原理的に超えられない一線がある</strong>。この感覚は、AIの可能性と限界を冷静に語るうえでも、ずっと効いてきます。</p>
+        <div class="summary">
+          <ul>
+            <li>チューリングマシンは計算を極限まで単純化した仮想の機械。「計算できる」という言葉の数学的な定義そのものになった。</li>
+            <li>万能チューリングマシンはプログラムを読み込んで何にでもなれる。ノイマン型／ソフトウェアの理論的な原型。</li>
+            <li>停止性問題：プログラムが止まるか必ず判定する万能プログラムは、原理的に作れない。</li>
+            <li>この限界は技術不足ではなく論理的必然。完全なウイルス判定やバグ完全検出が不可能な根拠でもある。</li>
+            <li>チューリングは計算理論・暗号・AI、さらには生物の模様の研究まで手がけた。実物の計算機が登場する前に、計算の能力と限界が数学的に示されていた。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 演習 -->
+      <section id="s-exercise">
+        <h2>考えてみよう</h2>
+        <div class="exercise">
+          <ol>
+            <li>チューリングマシンが「読む・書く・動く・状態を変える」しかできないのに万能なのは、何があるおかげか。</li>
+            <li>停止性問題の証明に出てくる"へそ曲がりプログラムD"は、なぜ矛盾を生むのか。自分の言葉で説明せよ。</li>
+            <li>「すべてのバグを自動で見つけるツール」が原理的に作れないことと、停止性問題はどう関係するか。</li>
+            <li>万能チューリングマシンと、第4講のノイマン型コンピュータは、どんな点で同じ考え方か。</li>
+          </ol>
+          <details class="ans"><summary>ヒントと答え</summary>
+            <p>(1) <strong>無限に長いテープ（記憶）と、状態遷移を好きなだけ繰り返せること</strong>。単純な操作も、無限に組み合わせれば任意の計算になる。<br>
+            (2) Dは、自分への判定結果と<strong>逆の行動</strong>をとるよう作られている。だから判定が「停止」でも「非停止」でも、実際の挙動が判定と食い違い、万能判定器の存在そのものが矛盾する。<br>
+            (3) 「プログラムが正しく止まるか／不正な振る舞いをするか」を完全判定する問題は、停止性問題に帰着でき、同じく一般には解けないから。<br>
+            (4) どちらも<strong>「プログラム（手順）をデータとして読み込み、その通りに実行する」</strong>という、汎用機械の考え方。万能チューリングマシンが理論、ノイマン型がその実装にあたる。</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- さらに読む本 -->
+      <section id="s-reading">
+        <h2>さらに読む本・資料</h2>
+        <ul class="reading">
+          <li><span class="bk">チャールズ・ペゾルド『チューリングを読む』</span>（日経BP）
+          ― チューリングの original 論文を、1行ずつ手取り足取り解説してくれる稀有な一冊。本講をもっと深く味わいたい人へ。</li>
+          <li><span class="bk">高岡詠子『チューリングの計算理論入門』</span>（講談社ブルーバックス）
+          ― チューリングマシンと計算の限界を、図とともにやさしくたどれる新書。最初の一冊に最適。</li>
+          <li><span class="bk">アンドルー・ホッジス『アラン・チューリング ― エニグマ』</span>（勁草書房）
+          ― 映画『イミテーション・ゲーム』の原作にもなった、決定版の伝記。人物から計算理論へ入りたい人に。</li>
+          <li><span class="bk">野﨑昭弘『不完全性定理 ― 数学的体系のあゆみ』</span>（ちくま学芸文庫）
+          ― 「解けない／証明できない」をめぐるゲーデルとチューリングの世界を、平易に案内する名著。</li>
+        </ul>
+      </section>
+
+      <div class="pager">
+        <a class="prv" href="part1_lecture4.html"><span class="lab">← 前の講</span>第4講 コンピュータの設計図</a>
+        <a class="nx" href="part1_lecture6.html"><span class="lab">次の講 →</span>第6講 アルゴリズムと計算量</a>
+      </div>
+    </div><!-- /.wrap -->
+
+    <footer>
+      <div class="wrap">
+        <p><strong>ゆるコンピュータ科学講義 ／ 第1部 第5講「計算とは何か」</strong></p>
+        <p>本教材は、コンピュータ科学を扱うトーク番組で語られた題材に着想を得て構成した、オリジナルの学習教材です。
+        <a href="index.html">講義一覧へもどる</a></p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<button class="backtop" id="backtop" aria-label="先頭へ戻る">↑</button>
+
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+  function close(){sb.classList.remove('open');scrim.classList.remove('show')}
+  if(menu){menu.addEventListener('click',function(){sb.classList.toggle('open');scrim.classList.toggle('show')})}
+  scrim.addEventListener('click',close);
+  sb.querySelectorAll('.toc a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=980)close()})});
+  var links=[].slice.call(sb.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+  var bar=document.querySelector('#progress > i'),backtop=document.getElementById('backtop');
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3,cur=secs[0];
+    secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+(cur&&cur.id))});
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(h>0?(window.scrollY/h*100):0)+'%';
+    backtop.classList.toggle('show',window.scrollY>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);onScroll();
+  backtop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+  document.getElementById('themeBtn').addEventListener('click',function(){var d=document.documentElement;d.setAttribute('data-theme',d.getAttribute('data-theme')==='dark'?'light':'dark')});
+  var sizes=[16,17,19,21],si=1;
+  document.getElementById('fontBtn').addEventListener('click',function(){si=(si+1)%sizes.length;document.body.style.fontSize=sizes[si]+'px';onScroll()});
+})();
+</script>
+</body>
+</html>
